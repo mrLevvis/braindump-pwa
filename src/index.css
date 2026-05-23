@@ -1,1 +1,132 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
+
+:root {
+	--bg-0: #06152b;
+	--bg-1: #0c2246;
+	--bg-2: #12315f;
+
+	--text-0: #eaf2ff;
+	--text-1: #a8bdd9;
+
+	--accent-0: #39c8ff;
+	--accent-1: #7be3ff;
+
+	--ok: #34d399;
+	--warn: #f59e0b;
+	--err: #f87171;
+
+	--shadow-deep: 0 18px 42px rgba(2, 8, 23, 0.34);
+	--shadow-soft: 0 10px 24px rgba(2, 8, 23, 0.22);
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+	min-height: 100%;
+}
+
+body {
+	margin: 0;
+	font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+	color: var(--text-0);
+	background: linear-gradient(145deg, var(--bg-0) 0%, var(--bg-1) 46%, var(--bg-2) 100%);
+}
+
+body::before,
+body::after {
+	content: '';
+	position: fixed;
+	inset: 0;
+	pointer-events: none;
+	z-index: -1;
+}
+
+body::before {
+	background:
+		radial-gradient(circle at 18% 18%, rgba(57, 200, 255, 0.2) 0%, transparent 45%),
+		radial-gradient(circle at 82% 78%, rgba(123, 227, 255, 0.12) 0%, transparent 40%);
+}
+
+body::after {
+	background-image:
+		linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+	background-size: 28px 28px;
+	opacity: 0.1;
+}
+
+.glass-panel {
+	background: linear-gradient(160deg, rgba(17, 46, 88, 0.7), rgba(9, 26, 56, 0.62));
+	border: 1px solid rgba(123, 227, 255, 0.22);
+	box-shadow: var(--shadow-deep);
+	backdrop-filter: blur(14px);
+}
+
+.glass-panel-soft {
+	background: linear-gradient(160deg, rgba(18, 49, 95, 0.58), rgba(7, 23, 51, 0.52));
+	border: 1px solid rgba(168, 189, 217, 0.2);
+	box-shadow: var(--shadow-soft);
+	backdrop-filter: blur(12px);
+}
+
+.section-label {
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.09em;
+	color: var(--text-1);
+}
+
+.liquid-record-btn {
+	position: relative;
+	overflow: hidden;
+	border: 1px solid rgba(123, 227, 255, 0.45);
+	background: linear-gradient(145deg, rgba(57, 200, 255, 0.9), rgba(32, 135, 214, 0.88));
+	box-shadow:
+		0 14px 30px rgba(19, 121, 188, 0.35),
+		inset 0 1px 0 rgba(255, 255, 255, 0.32);
+	backdrop-filter: blur(18px);
+}
+
+.liquid-record-btn::after {
+	content: '';
+	position: absolute;
+	inset: 7px;
+	border-radius: 999px;
+	background: radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 0.42), transparent 56%);
+	pointer-events: none;
+}
+
+.liquid-record-btn[data-recording='true'] {
+	background: linear-gradient(145deg, rgba(248, 113, 113, 0.92), rgba(220, 38, 38, 0.9));
+	border-color: rgba(248, 113, 113, 0.66);
+	box-shadow:
+		0 16px 36px rgba(220, 38, 38, 0.36),
+		0 0 24px rgba(248, 113, 113, 0.35);
+	animation: recording-pulse 1.45s ease-in-out infinite;
+}
+
+@keyframes recording-pulse {
+	0%,
+	100% {
+		transform: scale(1);
+	}
+
+	50% {
+		transform: scale(1.06);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
+}
