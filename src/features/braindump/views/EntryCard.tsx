@@ -27,27 +27,26 @@ interface EntryTagsProps {
  */
 
 const ENTRY_CARD_CLASS = [
-  'neo-glass-soft',
+  'glass-panel-soft',
   'mb-3',
   'rounded-[18px]',
-  'border',
   'p-4',
   'transition-all',
   'duration-150',
   'hover:translate-y-[-1px]',
-  'hover:border-[rgba(123,227,255,0.26)]',
+  'hover:shadow-[0_12px_28px_rgba(2,8,23,0.24),inset_0_1px_0_rgba(255,255,255,0.16)]',
 ].join(' ');
 
 const CATEGORY_COLOR_CLASS: Record<EntryCategory, string> = {
-  TASK: ['text-[var(--ok)]', 'border-[rgba(52,211,153,0.34)]', 'bg-[rgba(52,211,153,0.14)]'].join(' '),
-  EVENT: ['text-[var(--warn)]', 'border-[rgba(245,158,11,0.34)]', 'bg-[rgba(245,158,11,0.14)]'].join(' '),
-  NOTE: ['text-[var(--accent-1)]', 'border-[rgba(123,227,255,0.32)]', 'bg-[rgba(123,227,255,0.12)]'].join(' '),
+  TASK: ['text-[var(--ok)]', 'bg-[rgba(52,211,153,0.14)]'].join(' '),
+  EVENT: ['text-[var(--warn)]', 'bg-[rgba(245,158,11,0.14)]'].join(' '),
+  NOTE: ['text-[var(--accent-1)]', 'bg-[rgba(123,227,255,0.12)]'].join(' '),
 };
 
 const CATEGORY_BADGE_BASE_CLASS = [
   'inline-flex',
   'rounded-full',
-  'border',
+  'shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]',
   'px-2.5',
   'py-1',
   'text-[11px]',
@@ -57,9 +56,8 @@ const CATEGORY_BADGE_BASE_CLASS = [
 
 const TAG_PILL_CLASS = [
   'rounded-md',
-  'border',
-  'border-[rgba(168,189,217,0.24)]',
   'bg-[rgba(168,189,217,0.1)]',
+  'shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]',
   'px-2.5',
   'py-1',
   'text-[10px]',

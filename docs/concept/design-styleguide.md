@@ -4,8 +4,8 @@
 Dieser Styleguide definiert die visuelle und interaktive Sprache fuer die Braindump-PWA.
 
 Leitidee:
-- 80% Neo-Glass Productivity fuer Struktur, Lesbarkeit und Fokus.
-- 20% Liquid-Glass fuer gezielte Highlights mit Wow-Effekt.
+- 70% ruhiges Productivity-Glass fuer Struktur, Lesbarkeit und Fokus.
+- 30% Liquid-Glass Finish fuer Tiefe, Lichtreflexe und Priorisierung.
 
 ## Designprinzipien
 - Produktivitaet vor Dekoration: Inhalte bleiben immer klar lesbar.
@@ -13,6 +13,7 @@ Leitidee:
 - Akzente sind selten: Liquid-Effekte nur an wichtigen Aktionen.
 - Mobile First: alle Komponenten funktionieren auf kleinen Bildschirmen.
 - Performance bewusst: Blur, Schatten und Animationen sparsam einsetzen.
+- Borderless by default: keine harten 1px-Rahmen fuer Panels, stattdessen Lichtkanten und Tiefenschatten.
 
 ## Farbpalette
 ### Basis (Dark Ocean)
@@ -63,12 +64,23 @@ Regeln:
   - Pill/Record-Button: 999px
 
 - Schatten:
-  - Tief: 0 18px 42px rgba(2, 8, 23, 0.34)
-  - Soft: 0 10px 24px rgba(2, 8, 23, 0.22)
+  - Tief (Base Token): 0 18px 42px rgba(2, 8, 23, 0.34)
+  - Soft (Base Token): 0 10px 24px rgba(2, 8, 23, 0.22)
+  - Panel-Shadow (aktuell): 0 22px 46px rgba(2, 8, 23, 0.38) + 0 6px 18px rgba(8, 41, 82, 0.28)
+  - Soft-Panel-Shadow (aktuell): 0 14px 30px rgba(2, 8, 23, 0.28) + 0 4px 12px rgba(8, 41, 82, 0.2)
 
 - Blur:
-  - Neo-Glass Flaechen: 12-16px
-  - Liquid-Glass Highlights: 16-20px
+  - Primary Panels: blur(20px) saturate(150%)
+  - Secondary Panels: blur(16px) saturate(140%)
+  - Liquid CTA: blur(18px)
+
+## Borderless-Glass Regeln
+- Keine sichtbaren Standard-Border auf Header-, Input- und Entry-Panels.
+- Lesbare Trennung durch Layer statt Rahmen:
+  - Inner Highlight: inset 0 1px 0 rgba(255,255,255,0.18-0.24)
+  - Inner Edge Glow: inset 0 0 0 1px rgba(185,216,255,0.18)
+  - Bottom Depth: inset negative-y Shadow fuer Volumen
+- Jede Glass-Flaeche bekommt einen Sheen-Layer (diagonaler Lichtverlauf), aber mit niedriger Opazitaet.
 
 ## Komponentenstil
 ### App-Hintergrund
@@ -78,16 +90,19 @@ Regeln:
 ### Header (sticky)
 - Neo-Glass Panel
 - Klare Zentrierung des Titels
-- Kein Liquid-Effekt im Header
+- Erlaubt: subtiler Liquid-Sheen fuer Materialanmutung
+- Verboten: aggressive Glow-Animationen im Header
 
 ### Entry Cards
-- Neo-Glass oder Neo-Glass Soft
+- Glass Soft (borderless)
 - Gut lesbare Text-Hierarchie
 - Status/Category nur als kleine Akzentmarker
+- Hover nur ueber Tiefe (leichtes Lift + Shadow), nicht ueber Rahmenfarbe
 
 ### Input Dock (unten fixiert)
 - Neo-Glass als Basisflaeche
-- Input-Feld mit hoher Lesbarkeit und klarer Fokuskante
+- Input-Feld borderless mit Inset-Highlight
+- Fokus ueber Ring/Glow, nicht ueber Border-Farbwechsel
 
 ### Voice Record Button
 - Primaeres Liquid-Element
@@ -106,11 +121,12 @@ Vermeiden:
 - Springende Layouts bei Statuswechseln
 
 ## Neo/Liquid-Verhaeltnis
-- 80% Neo-Glass (Cards, Header, Input-Flaechen)
-- 20% Liquid-Glass (Record CTA, aktive Chips, Floating Primary Action)
+- 70% Productivity-Glass (Cards, Header, Input-Flaechen)
+- 30% Liquid-Glass (Record CTA, Reflex-Layer auf Panels, aktive Micro-Akzente)
 
 Harte Regel:
 - Gleichzeitig maximal 1-2 sichtbare Liquid-Highlights pro View.
+- Panels muessen sich auch ohne Border klar vom Hintergrund abheben.
 
 ## Accessibility und Qualitaet
 - Zielkontrast fuer Texte mindestens WCAG AA.
@@ -123,11 +139,13 @@ Do:
 - Nutze kuehle, ruhige Farben fuer den Grundton.
 - Halte Textflaechen sauber und kontrastreich.
 - Setze Liquid nur als visuelle Priorisierung ein.
+- Nutze Tiefenschatten + Inset-Layer als Trennung von Surface und Background.
 
 Don’t:
 - Kein Liquid auf grossen Textflaechen.
 - Kein Neon-Mix mit vielen konkurrierenden Akzentfarben.
 - Keine starke Unschärfe auf leistungsschwachen Mobilgeraeten.
+- Keine Rueckkehr zu harten Panel-Bordern als primaere Trennung.
 
 ## CSS Token Startpunkt
 ```css
@@ -149,10 +167,11 @@ Don’t:
 ```
 
 ## Komponenten-Mapping fuer dieses Repo
-- Header: Neo-Glass
-- EntryList + EntryCard: Neo-Glass Soft
-- InputSection: Neo-Glass
-- VoiceRecordButton: Liquid-Glass (nur bei aktiven States intensiv)
+- Header: glass-panel (borderless, strong readability shadow)
+- EntryList + EntryCard: glass-panel-soft (borderless)
+- InputSection: glass-panel (borderless)
+- TextInput: borderless Input + Focus-Ring
+- VoiceRecordButton: Liquid-Glass (Recording State intensiv)
 
 ## Abnahme-Checkliste
 - Wirkt die UI ruhig und fokussiert?
@@ -160,3 +179,4 @@ Don’t:
 - Sind Liquid-Elemente selten und bewusst gesetzt?
 - Bleibt Scrollen auf Mobile fluessig?
 - Ist Recording visuell klar erkennbar?
+- Heben sich Panels ohne Border eindeutig vom Hintergrund ab?
