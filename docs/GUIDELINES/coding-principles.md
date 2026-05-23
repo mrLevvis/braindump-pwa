@@ -18,11 +18,43 @@ Strikte Trennung von UI (`components`), State (`store`), Logik (`features`) und 
 # **UI-Readability in React-Komponenten**
 Lange `className`-Strings, Style-Mappings und Formatter nicht inline im JSX halten, sondern als benannte Konstanten/Helper auf Modulebene auslagern. Ziel: JSX bleibt primär Struktur und Inhalt.
 
+Wenn Utility-Klassen lang werden, nutze das Token-Pattern:
+- Klassen als String-Array pro Zeile strukturieren
+- Mit `.join(' ')` zusammenführen
+- Kurze Klassen dürfen als normaler String bleiben
+
+Beispiel:
+
+```ts
+const BUTTON_CLASS = [
+	'inline-flex',
+	'items-center',
+	'rounded-full',
+	'transition-all',
+	'focus:outline-none',
+].join(' ');
+```
+
 # **Presentational vs. Container-Komponenten**
 Kleine, rein darstellende Teile (z.B. Badge, Tag-Liste) als lokale Presentational-Komponenten kapseln. Die Hauptkomponente orchestriert nur Daten und Layout.
 
 # **Defensive Rendering & Fail-Safe Defaults**
 UI darf bei unvollständigen oder fehlerhaften Daten nicht brechen. Beispiele: `tags ?? []`, Fallback-Zeit (`--:--`) bei ungültigem Datum, Early Returns für leere States.
+
+# **Array-Functions bevorzugen**
+Für Collection-Verarbeitung bevorzugen wir deklarative Array-Methoden (`map`, `filter`, `reduce`, `some`, `every`) statt `for`- oder `forEach`-Schleifen, sofern es die Lesbarkeit verbessert.
+
+Ausnahme: Wenn Performance oder Abbruchlogik (`break`/`continue`) klar besser über Schleifen ausdrückbar ist, darf eine Schleife verwendet werden.
+
+# **Single-Statement if als Einzeiler**
+Wenn ein `if` nur genau eine Anweisung enthält, schreiben wir es als Einzeiler.
+
+Beispiel:
+
+```ts
+if (!value) return;
+if (isValid) submit();
+```
 
 # **Semantisches HTML zuerst**
 Passende HTML-Elemente bevorzugen (z.B. `time` statt `span` für Uhrzeiten inkl. `dateTime`), damit Accessibility und Maschinenlesbarkeit verbessert werden.
