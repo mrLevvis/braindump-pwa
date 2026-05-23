@@ -26,17 +26,47 @@ interface EntryTagsProps {
  * - Card/Badge/Tag konsistent bleiben
  */
 
-const ENTRY_CARD_CLASS =
-  'neo-glass-soft mb-3 rounded-[18px] border p-4 transition-all duration-150 hover:translate-y-[-1px] hover:border-[rgba(123,227,255,0.26)]';
+const ENTRY_CARD_CLASS = [
+  'neo-glass-soft',
+  'mb-3',
+  'rounded-[18px]',
+  'border',
+  'p-4',
+  'transition-all',
+  'duration-150',
+  'hover:translate-y-[-1px]',
+  'hover:border-[rgba(123,227,255,0.26)]',
+].join(' ');
 
 const CATEGORY_COLOR_CLASS: Record<EntryCategory, string> = {
-  TASK: 'text-[var(--ok)] border-[rgba(52,211,153,0.34)] bg-[rgba(52,211,153,0.14)]',
-  EVENT: 'text-[var(--warn)] border-[rgba(245,158,11,0.34)] bg-[rgba(245,158,11,0.14)]',
-  NOTE: 'text-[var(--accent-1)] border-[rgba(123,227,255,0.32)] bg-[rgba(123,227,255,0.12)]',
+  TASK: ['text-[var(--ok)]', 'border-[rgba(52,211,153,0.34)]', 'bg-[rgba(52,211,153,0.14)]'].join(' '),
+  EVENT: ['text-[var(--warn)]', 'border-[rgba(245,158,11,0.34)]', 'bg-[rgba(245,158,11,0.14)]'].join(' '),
+  NOTE: ['text-[var(--accent-1)]', 'border-[rgba(123,227,255,0.32)]', 'bg-[rgba(123,227,255,0.12)]'].join(' '),
 };
 
-const TAG_PILL_CLASS =
-  'rounded-md border border-[rgba(168,189,217,0.24)] bg-[rgba(168,189,217,0.1)] px-2.5 py-1 text-[10px] font-semibold tracking-wide text-[var(--text-1)]';
+const CATEGORY_BADGE_BASE_CLASS = [
+  'inline-flex',
+  'rounded-full',
+  'border',
+  'px-2.5',
+  'py-1',
+  'text-[11px]',
+  'font-semibold',
+  'tracking-wide',
+].join(' ');
+
+const TAG_PILL_CLASS = [
+  'rounded-md',
+  'border',
+  'border-[rgba(168,189,217,0.24)]',
+  'bg-[rgba(168,189,217,0.1)]',
+  'px-2.5',
+  'py-1',
+  'text-[10px]',
+  'font-semibold',
+  'tracking-wide',
+  'text-[var(--text-1)]',
+].join(' ');
 
 /* -------------------------------------------------------------------------- */
 /*                           Formatting / Utilities                           */
@@ -51,9 +81,7 @@ const formatCreatedTime = (createdAtIso: string) => {
   const createdAt = new Date(createdAtIso);
 
   // Fail-safe fuer unerwartete oder defekte Datumswerte aus APIs/Seeds.
-  if (Number.isNaN(createdAt.getTime())) {
-    return '--:--';
-  }
+  if (Number.isNaN(createdAt.getTime())) return '--:--';
 
   return TIME_FORMATTER.format(createdAt);
 };
@@ -67,7 +95,7 @@ const CategoryBadge = ({ category }: Readonly<CategoryBadgeProps>) => {
 
   return (
     <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide ${categoryColorClass}`}
+      className={`${CATEGORY_BADGE_BASE_CLASS} ${categoryColorClass}`}
     >
       {category}
     </span>
@@ -76,9 +104,7 @@ const CategoryBadge = ({ category }: Readonly<CategoryBadgeProps>) => {
 
 const EntryTags = ({ tags }: Readonly<EntryTagsProps>) => {
   // Frueher Return haelt den Happy-Path unten kompakt.
-  if (tags.length === 0) {
-    return null;
-  }
+  if (tags.length === 0) return null;
 
   return (
     <div className="mt-3 flex flex-wrap gap-2">

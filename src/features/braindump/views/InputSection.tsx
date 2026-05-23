@@ -1,6 +1,10 @@
 import { TextInput } from '../../../components/ui/TextInput';
 import { VoiceRecordButton } from '../../../components/voice/VoiceRecordButton';
 
+/* -------------------------------------------------------------------------- */
+/*                                   Props                                    */
+/* -------------------------------------------------------------------------- */
+
 interface InputSectionProps {
   textValue: string;
   onTextChange: (value: string) => void;
@@ -10,6 +14,39 @@ interface InputSectionProps {
   disabled?: boolean;
 }
 
+/* -------------------------------------------------------------------------- */
+/*                              Styling Tokens                                */
+/* -------------------------------------------------------------------------- */
+
+const CONTAINER_CLASS = [
+  'fixed',
+  'bottom-0',
+  'left-0',
+  'right-0',
+  'bg-gradient-to-t',
+  'from-[color:rgba(6,21,43,0.95)]',
+  'via-[color:rgba(6,21,43,0.75)]',
+  'to-transparent',
+  'px-4',
+  'pb-[calc(env(safe-area-inset-bottom,0px)+14px)]',
+  'pt-6',
+].join(' ');
+
+const PANEL_CLASS = [
+  'glass-panel',
+  'mx-auto',
+  'flex',
+  'max-w-md',
+  'items-center',
+  'gap-3',
+  'rounded-[18px]',
+  'p-2.5',
+].join(' ');
+
+/* -------------------------------------------------------------------------- */
+/*                              UI Component                                  */
+/* -------------------------------------------------------------------------- */
+
 export const InputSection = ({
   textValue,
   onTextChange,
@@ -17,16 +54,18 @@ export const InputSection = ({
   isRecording,
   onVoiceClick,
   disabled = false,
-}: InputSectionProps) => {
+}: Readonly<InputSectionProps>) => {
+  const isTextInputDisabled = disabled || isRecording;
+
   return (
-    <div className="fixed bottom-0 left-0 right-0 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+14px)] pt-6 bg-gradient-to-t from-[color:rgba(6,21,43,0.95)] via-[color:rgba(6,21,43,0.75)] to-transparent">
-      <div className="glass-panel mx-auto flex max-w-md items-center gap-3 rounded-[18px] p-2.5">
+    <div className={CONTAINER_CLASS}>
+      <div className={PANEL_CLASS}>
         <div className="flex-1">
           <TextInput
             value={textValue}
             onChange={onTextChange}
             onSubmit={onTextSubmit}
-            disabled={disabled || isRecording}
+            disabled={isTextInputDisabled}
           />
         </div>
         <VoiceRecordButton
