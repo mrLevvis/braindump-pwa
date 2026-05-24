@@ -27,6 +27,27 @@ const MOCK_ENTRIES: BrainDumpEntry[] = [
     category: 'NOTE',
     payload: { tags: ['Prinzipien'] },
   },
+  {
+    id: '4',
+    created_at: new Date(Date.now() - 10800000).toISOString(), // vor 3 Stunden
+    original_text: 'Zahnarzt-Termin nächsten Dienstag um 10:30 Uhr nicht vergessen.',
+    category: 'EVENT',
+    payload: { date: '2026-05-27', time: '10:30' },
+  },
+  {
+    id: '5',
+    created_at: new Date(Date.now() - 18000000).toISOString(), // vor 5 Stunden
+    original_text: 'Einkaufsliste für das Wochenende erstellen: Reis, Gemüse, Olivenöl.',
+    category: 'TASK',
+    payload: { tags: ['Privat'] },
+  },
+  {
+    id: '6',
+    created_at: new Date(Date.now() - 86400000).toISOString(), // vor 1 Tag
+    original_text: 'Idee: Braindump als Widget auf dem Homescreen anbieten – direkt diktieren ohne App zu öffnen.',
+    category: 'NOTE',
+    payload: { tags: ['Idee', 'PWA'] },
+  },
 ];
 
 export const BrainDumpDashboard = () => {
@@ -46,7 +67,7 @@ export const BrainDumpDashboard = () => {
         >
           <h1
             className="text-center text-[20px] font-semibold tracking-[0.02em] text-white"
-            style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
+            style={{ textShadow: '0 1px 4px rgba(0,0,0,0.6), 0 2px 12px rgba(0,0,0,0.3)' }}
           >
             BrainDump
           </h1>
