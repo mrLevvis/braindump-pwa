@@ -1,5 +1,6 @@
 import type { BrainDumpEntry, EntryCategory } from '../types/BrainDump';
-import { CategoryBadge, EntryCard } from './EntryCard';
+import { CategoryBadge } from '../../../components/ui/CategoryBadge';
+import { EntryCard } from './EntryCard';
 
 /* -------------------------------------------------------------------------- */
 /*                                   Props                                    */
