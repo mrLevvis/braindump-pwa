@@ -85,7 +85,7 @@ const formatCreatedTime = (createdAtIso: string) => {
 /*                           Presentational Parts                             */
 /* -------------------------------------------------------------------------- */
 
-const CategoryBadge = ({ category }: Readonly<CategoryBadgeProps>) => {
+export const CategoryBadge = ({ category }: Readonly<CategoryBadgeProps>) => {
   const categoryColorClass = CATEGORY_COLOR_CLASS[category];
 
   return (
@@ -121,7 +121,7 @@ const EntryTags = ({ tags }: Readonly<EntryTagsProps>) => {
 
 export const EntryCard = ({ entry }: Readonly<EntryCardProps>) => {
   // Daten normalisieren, damit das Rendern unten rein deklarativ bleibt.
-  const { created_at, original_text, category, payload } = entry;
+  const { created_at, original_text, payload } = entry;
   const timeString = formatCreatedTime(created_at);
   const tags = payload.tags ?? [];
 
@@ -140,10 +140,6 @@ export const EntryCard = ({ entry }: Readonly<EntryCardProps>) => {
         >
           {timeString}
         </time>
-      </div>
-
-      <div className="mb-3">
-        <CategoryBadge category={category} />
       </div>
 
       <EntryTags tags={tags} />

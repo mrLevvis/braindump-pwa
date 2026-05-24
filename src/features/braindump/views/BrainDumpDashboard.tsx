@@ -67,7 +67,7 @@ export const BrainDumpDashboard = () => {
         >
           <h1
             className="text-center text-[20px] font-semibold tracking-[0.02em] text-white"
-            style={{ textShadow: '0 1px 4px rgba(0,0,0,0.6), 0 2px 12px rgba(0,0,0,0.3)' }}
+            style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
           >
             BrainDump
           </h1>

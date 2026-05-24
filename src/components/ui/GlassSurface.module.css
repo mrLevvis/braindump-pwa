@@ -25,13 +25,11 @@
 /* ─── Variants ───────────────────────────────────────────────────── */
 
 .chrome {
-  /* Front layer — most transparent so content behind shows through clearly */
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.06));
 }
 
 .variantContent {
-  /* Front layer (input dock) — more transparent than cards behind it */
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.07);
 }
 
 /* ─── Diagonal light streak (layer 1) ───────────────────────────── *

@@ -37,24 +37,70 @@ Regel:
 - Die Blobs bewegen sich subtil und asynchron.
 
 ## Liquid-Glass Tokens
-### Standard Glass (Chrome)
-- `background`: `linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05))`
+### Standard Glass (Chrome) — via `<GlassSurface variant="chrome">`
+- `background`: `linear-gradient(135deg, rgba(255,255,255,0.09), rgba(255,255,255,0.03))`
 - `backdrop-filter`: `blur(24px) saturate(180%)`
-- `border`: `1px solid rgba(255,255,255,0.25)`
+- `border`: `1px solid rgba(255,255,255,0.38)`
 - `border-radius`: 20-28px
-- `box-shadow`: `0 8px 32px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.1)`
-- Inner Highlight: `inset 0 1px 0 rgba(255,255,255,0.4)`
+- `box-shadow`: `0 16px 64px rgba(0,0,0,0.20), 0 6px 32px rgba(0,0,0,0.10)` + Highlight + Neon-Halo
+- Inner Highlight: `inset 0 1px 0 rgba(255,255,255,0.6)`
+- Neon-Halo: `0 0 0 1px rgba(255,255,255,0.12), 0 0 24px rgba(255,255,255,0.06)`
 
-### Dark Content Surface (lesbar, on-theme)
-- `background`: `rgba(20,20,40,0.6)`
+Kein CSS-Klassen-Equivalent — immer `<GlassSurface>` verwenden.
+
+### Content Surface (Cards, Input-Panels) — via `.glass-content` CSS-Klasse
+- `background`: `rgba(255,255,255,0.07)` — transluzent, Mesh-Blobs scheinen durch
 - `backdrop-filter`: `blur(24px) saturate(180%)`
-- identische Radius-/Border-/Shadow-Logik wie Standard Glass
+- `border`: `1px solid rgba(255,255,255,0.35)`
+- identische Shadow-/Radius-/Highlight-Logik wie Chrome
+
+Wichtig: Die Hintergrundfarbe ist absichtlich sehr transparent. Der `backdrop-filter` macht die eigentliche Arbeit — er verwischt die bunten Mesh-Blobs hinter der Flaeche. Das erzeugt den echten Glas-Look.
+
+## Shadow-Regeln
+- Ausschliesslich grosse, diffuse Blur-Radien: **Minimum 32px**, empfohlen 48-80px.
+- Kein Shadow-Layer mit Blur unter 32px — erzeugt harte Kanten.
+- Opazitaet niedrig halten (0.10-0.22 fuer Dunkel, 0.04-0.06 fuer Weiss-Halo).
+- Hover-Schatten: nur Blur und Opacity erhoehen, keine neuen engen Layer hinzufuegen.
+
+Beispiel (korrekt):
+```css
+box-shadow:
+  0 16px 64px rgba(0,0,0,0.18),
+  0 6px 32px rgba(0,0,0,0.10),
+  inset 0 1px 0 rgba(255,255,255,0.55);
+```
+
+## GlassSurface Basiskomponente
+Jede Chrome-Glass-Flaeche wird ueber `<GlassSurface>` gebaut — keine eigenen CSS-Klassen.
+
+```tsx
+<GlassSurface
+  variant="chrome" | "content"  // Pflicht-Prop
+  shine="subtle" | "prominent"  // Default: "subtle"
+  as="div" | "header" | ...     // Default: "div"
+  className="..."
+>
+  {children}
+</GlassSurface>
+```
+
+### Reflection-System (drei Ebenen)
+1. **Diagonaler Licht-Streak** (`z-index: -1` via Span) — `subtle`: statisch bei ~40% quer, opacity 0.3. `prominent`: Sweep-Animation auf Hover (0.85s).
+2. **Top-Edge-Gleam** — `inset 0 1px 0 rgba(255,255,255,0.6)` — der "nasse Meniskus" — immer aktiv.
+3. **Corner Sparkles** — nur bei `shine="prominent"` — radiale Weiss-Punkte an zwei diagonalen Ecken, 4s Pulse-Animation.
+
+### shine-Prop Einsatz
+- `shine="subtle"`: Standardwert fuer alle Flaechen.
+- `shine="prominent"`: Ausschliesslich fuer Hero-Elemente (FAB, aktives Modal, fokussierte Notiz).
+- Niemals `prominent` auf Listen-Items.
+
+### Co-located CSS
+GlassSurface nutzt `GlassSurface.module.css` fuer Pseudo-Elemente und Keyframes. Neue Komponenten, die Pseudo-Elemente benoetigen, ebenfalls als `.module.css` co-located — kein `@layer` in `index.css`.
 
 ## Glossy Reflection
-- Jede Glass-Card erhaelt einen diagonalen Shine-Layer via `::before`.
-- Verlauf von `rgba(255,255,255,0.3)` nach transparent.
-- Abdeckung nur im oberen linken Drittel.
-- Der Shine-Layer ist verpflichtend fuer den Liquid-Look.
+Siehe **GlassSurface Basiskomponente** oben — alle drei Ebenen sind dort implementiert.
+
+Fuer `.glass-content` CSS-Klasse (EntryCards): Shine via `::before` Pseudo-Element, statisch, opacity 0.6.
 
 ## Hover und Interaktion
 - Hover auf Glass-Komponenten:
@@ -74,7 +120,8 @@ Regel:
   - Body: 400
   - Headings: 600
 - Text auf Glass immer mit Legibility-Shadow:
-  - `text-shadow: 0 1px 2px rgba(0,0,0,0.2)`
+  - Chrome-Ebenen (GlassSurface): `text-shadow: 0 1px 3px rgba(0,0,0,0.45)`
+  - Content-Ebenen: `text-shadow: 0 1px 3px rgba(0,0,0,0.45)`
 
 ## Komponentenregeln
 - Glass wird nur fuer Chrome eingesetzt:
@@ -92,9 +139,8 @@ Regel:
 - Komponenten in TypeScript mit strict typing.
 - Ausschliesslich named exports.
 - Tailwind Utilities bevorzugen, inklusive Arbitrary Values (z. B. `backdrop-blur-[24px]`).
-- Custom CSS fuer Keyframes und Pseudo-Elemente entweder:
-  - ko-lokal im Component-File (Styles-Objekt), oder
-  - in `@layer`-Blocks.
+- **Pseudo-Elemente und Keyframes**: CSS-Modul (`.module.css`) co-lokal zur Komponente — kein Inline-Style-Objekt, kein `@layer` in `index.css`.
+- Jede neue Glass-Komponente composet `<GlassSurface>` — keine eigenen Glass-Styles definieren.
 - Komponenten muessen self-contained und composable sein.
 
 ## Accessibility
@@ -110,8 +156,8 @@ Regel:
   - nur statische Zustandswechsel verwenden
 
 ## Delivery-Regeln fuer Komponenten
-- Pro angeforderter Komponente genau eine `.tsx`-Datei ausgeben.
-- Styles muessen inline oder ko-lokal enthalten sein.
+- Pro angeforderter Komponente eine `.tsx`-Datei und bei Bedarf eine `.module.css` ausgeben.
+- Pseudo-Elemente und Keyframes immer in der `.module.css`, nicht inline.
 - Keine externen CSS-Dateien verwenden, ausser explizit angefordert.
 
 ## Do / Don’t
@@ -138,25 +184,34 @@ Don’t:
   --text-glass-primary: #FFFFFF;
   --text-glass-secondary: rgba(255,255,255,0.7);
 
-  --glass-bg: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
-  --glass-border: 1px solid rgba(255,255,255,0.25);
-  --glass-shadow: 0 8px 32px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.1);
-  --glass-highlight: inset 0 1px 0 rgba(255,255,255,0.4);
-  --glass-content-bg: rgba(20,20,40,0.6);
+  /* Chrome-Glass via <GlassSurface> — kein direkter Einsatz als CSS-Klasse */
+  --glass-bg: linear-gradient(135deg, rgba(255,255,255,0.09), rgba(255,255,255,0.03));
+  --glass-border: 1px solid rgba(255,255,255,0.38);
+  --glass-shadow: 0 16px 64px rgba(0,0,0,0.20), 0 6px 32px rgba(0,0,0,0.10);
+  --glass-highlight: inset 0 1px 0 rgba(255,255,255,0.6);
+
+  /* Content-Surface via .glass-content CSS-Klasse */
+  --glass-content-bg: rgba(255,255,255,0.07);
+
+  --ok: #34d399;
+  --warn: #f59e0b;
+  --err: #f87171;
 }
 ```
 
 ## Komponenten-Mapping fuer dieses Repo
-- Header: Chrome-Glass mit Shine-Layer
-- EntryList + EntryCard: Dark Content Surface
-- InputSection: Dark Content Surface + fokussierter Input-Glow
-- TextInput: Glass-Input mit verpflichtendem Focus-Ring
-- VoiceRecordButton: Primary Gradient-Button mit Gloss-Highlight
+- Header: `<GlassSurface variant="chrome" shine="subtle">` (sticky, z-20)
+- EntryList + EntryCard: `.glass-content .glass-content-hover` CSS-Klassen
+- InputSection-Panel: `<GlassSurface variant="content" shine="subtle">`
+- TextInput: Glass-Input mit verpflichtendem Focus-Ring `rgba(124,58,237,0.5)`
+- VoiceRecordButton: Primary Gradient-Button (Violet→Magenta) mit Gloss-Highlight via `::before`
 
 ## Abnahme-Checkliste
-- Ist der Mesh-Hintergrund mit 3-4 animierten Blobs umgesetzt?
-- Verwenden Chrome-Elemente die Standard-Glass-Tokens?
-- Nutzen Content-Elemente konsequent `rgba(20,20,40,0.6)`?
-- Ist Text auf allen Glass-Ebenen klar lesbar und WCAG-AA-konform?
-- Sind Reduced-Motion-Regeln korrekt aktiv?
-- Wird pro Komponenten-Request genau eine `.tsx`-Datei geliefert?
+- Ist der Mesh-Hintergrund mit 4 animierten Blobs umgesetzt (blob-drift-1 bis -4)?
+- Verwenden alle Chrome-Elemente `<GlassSurface>` statt eigener Glass-CSS?
+- Nutzen Content-Elemente `.glass-content` mit `rgba(255,255,255,0.07)`?
+- Ist backdrop-filter auf allen Glass-Flaechen aktiv (`blur(24px) saturate(180%)`)?
+- Kein Shadow-Layer mit Blur unter 32px im gesamten Codebase?
+- Ist Text auf allen Glass-Ebenen klar lesbar (text-shadow aktiv, WCAG AA)?
+- Sind Reduced-Motion-Regeln korrekt aktiv (Streak-Sweep, Sparkle-Pulse, Blob-Drift)?
+- Wird pro Komponenten-Request `.tsx` + ggf. `.module.css` geliefert?

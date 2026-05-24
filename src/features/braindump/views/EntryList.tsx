@@ -1,5 +1,5 @@
 import type { BrainDumpEntry, EntryCategory } from '../types/BrainDump';
-import { EntryCard } from './EntryCard';
+import { CategoryBadge, EntryCard } from './EntryCard';
 
 /* -------------------------------------------------------------------------- */
 /*                                   Props                                    */
@@ -11,13 +11,10 @@ interface EntryListProps {
 
 interface EntrySectionConfig {
   category: EntryCategory;
-  icon: string;
-  label: string;
 }
 
 interface EntrySectionProps {
-  icon: string;
-  label: string;
+  category: EntryCategory;
   entries: readonly BrainDumpEntry[];
 }
 
@@ -27,7 +24,7 @@ interface EntrySectionProps {
 
 const LIST_CONTAINER_CLASS = 'flex-1 overflow-y-auto px-4 pb-40 pt-2';
 const SECTION_CONTAINER_CLASS = 'mb-6';
-const SECTION_TITLE_CLASS = 'section-label mb-3 px-1';
+const SECTION_TITLE_CLASS = 'section-label mb-3 px-1 flex items-center gap-2';
 const EMPTY_STATE_CONTAINER_CLASS = [
   'mt-12',
   'flex',
@@ -49,9 +46,9 @@ const EMPTY_STATE_HINT_CLASS = [
 /* -------------------------------------------------------------------------- */
 
 const ENTRY_SECTIONS: readonly EntrySectionConfig[] = [
-  { category: 'TASK', icon: '🎯', label: 'Aufgaben' },
-  { category: 'EVENT', icon: '📅', label: 'Termine' },
-  { category: 'NOTE', icon: '📝', label: 'Notizen' },
+  { category: 'TASK' },
+  { category: 'EVENT' },
+  { category: 'NOTE' },
 ];
 
 const createEmptyGroups = (): Record<EntryCategory, BrainDumpEntry[]> => ({
@@ -82,10 +79,11 @@ const EmptyEntriesState = () => (
   </div>
 );
 
-const EntrySection = ({ icon, label, entries }: Readonly<EntrySectionProps>) => (
+const EntrySection = ({ category, entries }: Readonly<EntrySectionProps>) => (
   <div className={SECTION_CONTAINER_CLASS}>
     <h2 className={SECTION_TITLE_CLASS}>
-      {icon} {label} ({entries.length})
+      <CategoryBadge category={category} />
+      <span>({entries.length})</span>
     </h2>
     {entries.map((entry) => (
       <EntryCard key={entry.id} entry={entry} />
@@ -106,14 +104,13 @@ export const EntryList = ({ entries }: Readonly<EntryListProps>) => {
     <div className={LIST_CONTAINER_CLASS}>
       {ENTRY_SECTIONS
         .filter(({ category }) => entriesByCategory[category].length > 0)
-        .map(({ category, icon, label }) => {
+        .map(({ category }) => {
           const sectionEntries = entriesByCategory[category];
 
           return (
           <EntrySection
             key={category}
-            icon={icon}
-            label={label}
+            category={category}
             entries={sectionEntries}
           />
           );
