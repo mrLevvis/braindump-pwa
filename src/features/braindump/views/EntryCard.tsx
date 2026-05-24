@@ -130,7 +130,7 @@ export const EntryCard = ({ entry }: Readonly<EntryCardProps>) => {
       <div className="mb-2 flex items-start justify-between gap-3">
         <p
           className="text-[15px] font-medium leading-snug text-white"
-          style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}
+          style={{ textShadow: '0 1px 3px rgba(0,0,0,0.45)' }}
         >
           {original_text}
         </p>
