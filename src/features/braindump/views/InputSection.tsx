@@ -1,5 +1,6 @@
 import { TextInput } from '../../../components/ui/TextInput';
 import { VoiceRecordButton } from '../../../components/voice/VoiceRecordButton';
+import { GlassSurface } from '../../../components/ui/GlassSurface';
 
 /* -------------------------------------------------------------------------- */
 /*                                   Props                                    */
@@ -32,16 +33,7 @@ const CONTAINER_CLASS = [
   'pt-6',
 ].join(' ');
 
-const PANEL_CLASS = [
-  'glass-content',
-  'mx-auto',
-  'flex',
-  'max-w-md',
-  'items-center',
-  'gap-3',
-  'rounded-[24px]',
-  'p-2.5',
-].join(' ');
+const PANEL_GLASS_CLASS = 'mx-auto flex max-w-md items-center gap-3 rounded-[24px] p-2.5';
 
 /* -------------------------------------------------------------------------- */
 /*                              UI Component                                  */
@@ -59,7 +51,11 @@ export const InputSection = ({
 
   return (
     <div className={CONTAINER_CLASS}>
-      <div className={PANEL_CLASS}>
+      <GlassSurface
+        variant="content"
+        shine="subtle"
+        className={PANEL_GLASS_CLASS}
+      >
         <div className="flex-1">
           <TextInput
             value={textValue}
@@ -73,7 +69,7 @@ export const InputSection = ({
           onClick={onVoiceClick}
           disabled={disabled}
         />
-      </div>
+      </GlassSurface>
     </div>
   );
 };

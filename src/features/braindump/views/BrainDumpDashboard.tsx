@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { BrainDumpEntry } from '../types/BrainDump';
 import { EntryList } from './EntryList';
 import { InputSection } from './InputSection';
+import { GlassSurface } from '../../../components/ui/GlassSurface';
 
 // Statische Dummy-Daten exakt nach unserem Interface-Vertrag
 const MOCK_ENTRIES: BrainDumpEntry[] = [
@@ -37,14 +38,19 @@ export const BrainDumpDashboard = () => {
   return (
     <div className="min-h-screen relative">
       <header className="sticky top-0 z-20 px-4 pt-4">
-        <div className="glass-chrome mx-auto max-w-md rounded-[24px] px-4 py-3">
+        <GlassSurface
+          as="div"
+          shine="subtle"
+          variant="chrome"
+          className="mx-auto max-w-md rounded-[24px] px-4 py-3"
+        >
           <h1
             className="text-center text-[20px] font-semibold tracking-[0.02em] text-white"
-            style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}
+            style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
           >
             BrainDump
           </h1>
-        </div>
+        </GlassSurface>
       </header>
 
       {/* Die Liste mit unseren Dummy-Daten */}
