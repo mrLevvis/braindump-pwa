@@ -87,13 +87,13 @@ body {
 	backdrop-filter: blur(24px) saturate(180%);
 	border: 1px solid rgba(255, 255, 255, 0.35);
 	box-shadow:
-		0 8px 32px rgba(0, 0, 0, 0.26),
-		0 2px 8px rgba(0, 0, 0, 0.13),
-		/* stronger wet top-edge gleam */
+		0 16px 64px rgba(0, 0, 0, 0.18),
+		0 6px 32px rgba(0, 0, 0, 0.10),
+		/* wet top-edge gleam */
 		inset 0 1px 0 rgba(255, 255, 255, 0.55),
-		/* subtle neon halo on border */
+		/* neon halo on border */
 		0 0 0 1px rgba(255, 255, 255, 0.10),
-		0 0 16px rgba(255, 255, 255, 0.04);
+		0 0 24px rgba(255, 255, 255, 0.04);
 }
 
 /* Diagonal shine — static, low-opacity band across upper-left */
@@ -124,10 +124,11 @@ body {
 .glass-content-hover:hover {
 	transform: scale(1.02);
 	box-shadow:
-		0 16px 48px rgba(0, 0, 0, 0.34),
-		0 4px 12px rgba(0, 0, 0, 0.18),
+		0 24px 80px rgba(0, 0, 0, 0.22),
+		0 10px 48px rgba(0, 0, 0, 0.12),
 		inset 0 1px 0 rgba(255, 255, 255, 0.55),
-		0 0 0 1px rgba(255, 255, 255, 0.14);
+		0 0 0 1px rgba(255, 255, 255, 0.14),
+		0 0 36px rgba(255, 255, 255, 0.06);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -151,8 +152,8 @@ body {
 	overflow: hidden;
 	background: linear-gradient(135deg, #7c3aed, #ec4899);
 	box-shadow:
-		0 8px 32px rgba(124, 58, 237, 0.4),
-		0 2px 8px rgba(236, 72, 153, 0.2),
+		0 12px 48px rgba(124, 58, 237, 0.35),
+		0 6px 32px rgba(236, 72, 153, 0.18),
 		inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
