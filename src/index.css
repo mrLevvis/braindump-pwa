@@ -84,14 +84,19 @@ body {
 	isolation: isolate;
 	background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.06));
 	backdrop-filter: blur(24px) saturate(200%);
-	border: 1px solid rgba(255, 255, 255, 0.5);
+	border: 1px solid rgba(255, 255, 255, 0.55);
 	box-shadow:
-		0 0 18px rgba(6, 182, 212, 0.55),
-		0 0 40px rgba(6, 182, 212, 0.25),
-		0 0 70px rgba(124, 58, 237, 0.15),
-		0 8px 32px rgba(0, 0, 0, 0.3),
-		inset 0 1px 0 rgba(255, 255, 255, 0.75),
-		inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+		/* neon outer glow */
+		0 0 18px rgba(124, 58, 237, 0.55),
+		0 0 38px rgba(6, 182, 212, 0.28),
+		/* depth */
+		0 8px 32px rgba(0, 0, 0, 0.25),
+		/* bright wet top edge */
+		inset 0 1.5px 0 rgba(255, 255, 255, 0.9),
+		/* left edge shimmer */
+		inset 1px 0 0 rgba(255, 255, 255, 0.22),
+		/* inner ambient glow */
+		inset 0 0 28px rgba(255, 255, 255, 0.07);
 }
 
 /* Diagonal liquid shine — upper-left third */
@@ -102,22 +107,22 @@ body {
 	background: linear-gradient(
 		135deg,
 		rgba(255, 255, 255, 0.55) 0%,
-		rgba(255, 255, 255, 0.18) 32%,
-		transparent 55%
+		rgba(255, 255, 255, 0.15) 35%,
+		transparent 60%
 	);
 	pointer-events: none;
 	transition: opacity 200ms ease;
 }
 
 .glass-chrome:hover {
-	border-color: rgba(255, 255, 255, 0.65);
+	border-color: rgba(255, 255, 255, 0.7);
 	box-shadow:
-		0 0 24px rgba(6, 182, 212, 0.7),
-		0 0 52px rgba(6, 182, 212, 0.35),
-		0 0 90px rgba(124, 58, 237, 0.2),
-		0 16px 48px rgba(0, 0, 0, 0.35),
-		inset 0 1px 0 rgba(255, 255, 255, 0.8),
-		inset 0 -1px 0 rgba(255, 255, 255, 0.12);
+		0 0 24px rgba(124, 58, 237, 0.7),
+		0 0 50px rgba(6, 182, 212, 0.38),
+		0 16px 48px rgba(0, 0, 0, 0.3),
+		inset 0 1.5px 0 rgba(255, 255, 255, 0.95),
+		inset 1px 0 0 rgba(255, 255, 255, 0.3),
+		inset 0 0 28px rgba(255, 255, 255, 0.1);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -130,25 +135,31 @@ body {
 	isolation: isolate;
 	background: var(--glass-content-bg);
 	backdrop-filter: blur(24px) saturate(200%);
-	border: 1px solid rgba(255, 255, 255, 0.38);
+	border: 1px solid rgba(255, 255, 255, 0.45);
 	box-shadow:
-		0 0 14px rgba(124, 58, 237, 0.4),
-		0 0 32px rgba(124, 58, 237, 0.18),
-		0 8px 32px rgba(0, 0, 0, 0.28),
-		inset 0 1px 0 rgba(255, 255, 255, 0.65),
-		inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+		/* neon outer glow — softer than chrome */
+		0 0 14px rgba(236, 72, 153, 0.4),
+		0 0 30px rgba(124, 58, 237, 0.2),
+		/* depth */
+		0 8px 32px rgba(0, 0, 0, 0.25),
+		/* bright wet top edge */
+		inset 0 1.5px 0 rgba(255, 255, 255, 0.85),
+		/* left edge shimmer */
+		inset 1px 0 0 rgba(255, 255, 255, 0.18),
+		/* inner ambient */
+		inset 0 0 24px rgba(255, 255, 255, 0.05);
 }
 
-/* Diagonal shine for content surfaces */
+/* Diagonal liquid shine for content surfaces */
 .glass-content::before {
 	content: '';
 	position: absolute;
 	inset: 0;
 	background: linear-gradient(
 		135deg,
-		rgba(255, 255, 255, 0.22) 0%,
-		rgba(255, 255, 255, 0.06) 38%,
-		transparent 58%
+		rgba(255, 255, 255, 0.35) 0%,
+		rgba(255, 255, 255, 0.08) 38%,
+		transparent 60%
 	);
 	pointer-events: none;
 }
@@ -160,13 +171,14 @@ body {
 
 .glass-content-hover:hover {
 	transform: scale(1.02);
-	border-color: rgba(255, 255, 255, 0.55);
+	border-color: rgba(255, 255, 255, 0.6);
 	box-shadow:
-		0 0 20px rgba(124, 58, 237, 0.6),
-		0 0 44px rgba(236, 72, 153, 0.25),
-		0 16px 48px rgba(0, 0, 0, 0.32),
-		inset 0 1px 0 rgba(255, 255, 255, 0.75),
-		inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+		0 0 20px rgba(236, 72, 153, 0.55),
+		0 0 40px rgba(124, 58, 237, 0.28),
+		0 16px 48px rgba(0, 0, 0, 0.3),
+		inset 0 1.5px 0 rgba(255, 255, 255, 0.92),
+		inset 1px 0 0 rgba(255, 255, 255, 0.25),
+		inset 0 0 24px rgba(255, 255, 255, 0.08);
 }
 
 /* -------------------------------------------------------------------------- */
