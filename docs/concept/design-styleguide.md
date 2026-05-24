@@ -1,182 +1,162 @@
 # UI Styleguide
 
 ## Ziel
-Dieser Styleguide definiert die visuelle und interaktive Sprache fuer die Braindump-PWA.
+Dieser Styleguide definiert die visuelle und technische Umsetzung fuer eine moderne, lebendige Liquid-Glass-Aesthetik in der Braindump-PWA.
 
 Leitidee:
-- 70% ruhiges Productivity-Glass fuer Struktur, Lesbarkeit und Fokus.
-- 30% Liquid-Glass Finish fuer Tiefe, Lichtreflexe und Priorisierung.
+- Glossy und nass wirkende Materialien statt matter oder frosted Oberflaechen.
+- Hohe Lesbarkeit bleibt nicht verhandelbar, selbst bei starken Farben und Effekten.
 
 ## Designprinzipien
-- Produktivitaet vor Dekoration: Inhalte bleiben immer klar lesbar.
-- Konsistenz vor Vielfalt: gleiche Rolle = gleiches Pattern.
-- Akzente sind selten: Liquid-Effekte nur an wichtigen Aktionen.
-- Mobile First: alle Komponenten funktionieren auf kleinen Bildschirmen.
-- Performance bewusst: Blur, Schatten und Animationen sparsam einsetzen.
-- Borderless by default: keine harten 1px-Rahmen fuer Panels, stattdessen Lichtkanten und Tiefenschatten.
+- Lesbarkeit vor Effekt: Texte bleiben auf jeder Glass-Ebene eindeutig lesbar.
+- Liquid gezielt einsetzen: Glass fuer Chrome, Content auf dunkler, stabiler Surface.
+- Composable by default: Komponenten sind modular und wiederverwendbar.
+- Mobile First: dieselbe visuelle Sprache auf kleinen und grossen Viewports.
+- Motion bewusst: Atmosphaere durch langsame Bewegung, keine visuelle Unruhe.
 
 ## Farbpalette
-### Basis (Dark Ocean)
-- `--bg-0`: #06152B (App Hintergrund)
-- `--bg-1`: #0C2246 (Surface Basis)
-- `--bg-2`: #12315F (Tiefe / Gradient-Ende)
+### Vivid Mesh Farben
+- `--mesh-violet`: #7C3AED
+- `--mesh-magenta`: #EC4899
+- `--mesh-cyan`: #06B6D4
+- `--mesh-lime`: #A3E635
 
-### Text
-- `--text-0`: #EAF2FF (primaerer Text)
-- `--text-1`: #A8BDD9 (sekundaerer Text)
+### Text auf Glass
+- `--text-glass-primary`: #FFFFFF
+- `--text-glass-secondary`: rgba(255,255,255,0.7)
 
-### Akzent
-- `--accent-0`: #39C8FF (Primary CTA / Active)
-- `--accent-1`: #7BE3FF (Hover / Glow)
+Regel:
+- Niemals graue Texttoene auf Glass-Flaechen verwenden.
 
-### Status
-- `--ok`: #34D399 (Success)
-- `--warn`: #F59E0B (Warning)
-- `--err`: #F87171 (Error)
+## Hintergrund und Atmosphaere
+- Nutze einen animierten Mesh-Gradient mit 3-4 grossen radialen Blobs.
+- Jeder Blob:
+  - starker Blur (`filter: blur(120px)`)
+  - Opazitaet zwischen 0.6 und 0.9
+  - langsame Drift-Animation mit 40-60s Loop
+- Die Blobs bewegen sich subtil und asynchron.
 
-## Gradients und Hintergrund
-Empfohlener App-Hintergrund:
-- linear-gradient(145deg, var(--bg-0) 0%, var(--bg-1) 46%, var(--bg-2) 100%)
+## Liquid-Glass Tokens
+### Standard Glass (Chrome)
+- `background`: `linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05))`
+- `backdrop-filter`: `blur(24px) saturate(180%)`
+- `border`: `1px solid rgba(255,255,255,0.25)`
+- `border-radius`: 20-28px
+- `box-shadow`: `0 8px 32px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.1)`
+- Inner Highlight: `inset 0 1px 0 rgba(255,255,255,0.4)`
 
-Zusaetzlich erlaubt:
-- 1-2 radiale Lichtfelder als Atmosphaere.
-- Dezentes Raster-Overlay mit sehr niedriger Opazitaet.
+### Dark Content Surface (lesbar, on-theme)
+- `background`: `rgba(20,20,40,0.6)`
+- `backdrop-filter`: `blur(24px) saturate(180%)`
+- identische Radius-/Border-/Shadow-Logik wie Standard Glass
+
+## Glossy Reflection
+- Jede Glass-Card erhaelt einen diagonalen Shine-Layer via `::before`.
+- Verlauf von `rgba(255,255,255,0.3)` nach transparent.
+- Abdeckung nur im oberen linken Drittel.
+- Der Shine-Layer ist verpflichtend fuer den Liquid-Look.
+
+## Hover und Interaktion
+- Hover auf Glass-Komponenten:
+  - `transform: scale(1.02)`
+  - Shine-Layer verschiebt sich leicht
+  - Schatten wird tiefer
+- Inputs:
+  - Glass-Hintergrund verwenden
+  - Focus-Ring zwingend: `0 0 0 3px rgba(124,58,237,0.5)`
+- Buttons:
+  - Primary: solide Gradient-Flaeche (Violet zu Magenta) mit innerem Gloss-Highlight
+  - Secondary: Glass-Variante
 
 ## Typografie
-- Primare Schrift: Plus Jakarta Sans
-- Fallback: Segoe UI, sans-serif
+- Primare Schrift: Inter oder Geist
+- Gewichte:
+  - Body: 400
+  - Headings: 600
+- Text auf Glass immer mit Legibility-Shadow:
+  - `text-shadow: 0 1px 2px rgba(0,0,0,0.2)`
 
-Rollen:
-- H1 (Screen Title): 18-22px, semibold, leichtes Tracking
-- H2 (Section Title): 14-16px, semibold
-- Body: 14-16px, regular
-- Meta/Hint: 12-13px, medium
+## Komponentenregeln
+- Glass wird nur fuer Chrome eingesetzt:
+  - Sidebar
+  - Top Bar
+  - Modal
+  - Floating Buttons
+  - Dropdowns
+- Content-Container bleiben auf dunkler, stabiler Glass-Surface:
+  - Note Cards
+  - Input-Felder
+  - Listencontainer
 
-Regeln:
-- Keine langen Texte in ALL CAPS.
-- Zeilenlaenge in Cards kurz halten.
-- Kontrast fuer Fliesstext immer auf `--text-0` oder klar equivalent.
+## Technische Vorgaben (React + Tailwind)
+- Komponenten in TypeScript mit strict typing.
+- Ausschliesslich named exports.
+- Tailwind Utilities bevorzugen, inklusive Arbitrary Values (z. B. `backdrop-blur-[24px]`).
+- Custom CSS fuer Keyframes und Pseudo-Elemente entweder:
+  - ko-lokal im Component-File (Styles-Objekt), oder
+  - in `@layer`-Blocks.
+- Komponenten muessen self-contained und composable sein.
 
-## Radius, Schatten, Blur
-- Radius:
-  - Card/Panel: 18px
-  - Input: 14px
-  - Pill/Record-Button: 999px
+## Accessibility
+- WCAG AA (4.5:1) fuer Body-Text ist Pflicht.
+- Kontrastpruefung gegen den dunkelsten verwendeten Gradient-Stop dokumentieren.
+- Fokuszustaende visuell klar und konsistent.
+- Touch-Targets mindestens 44x44px.
 
-- Schatten:
-  - Tief (Base Token): 0 18px 42px rgba(2, 8, 23, 0.34)
-  - Soft (Base Token): 0 10px 24px rgba(2, 8, 23, 0.22)
-  - Panel-Shadow (aktuell): 0 22px 46px rgba(2, 8, 23, 0.38) + 0 6px 18px rgba(8, 41, 82, 0.28)
-  - Soft-Panel-Shadow (aktuell): 0 14px 30px rgba(2, 8, 23, 0.28) + 0 4px 12px rgba(8, 41, 82, 0.2)
+## Motion und Reduced Motion
+- Bei `prefers-reduced-motion: reduce` gilt:
+  - Gradient-Animationen deaktivieren
+  - Hover-Transforms deaktivieren
+  - nur statische Zustandswechsel verwenden
 
-- Blur:
-  - Primary Panels: blur(20px) saturate(150%)
-  - Secondary Panels: blur(16px) saturate(140%)
-  - Liquid CTA: blur(18px)
-
-## Borderless-Glass Regeln
-- Keine sichtbaren Standard-Border auf Header-, Input- und Entry-Panels.
-- Lesbare Trennung durch Layer statt Rahmen:
-  - Inner Highlight: inset 0 1px 0 rgba(255,255,255,0.18-0.24)
-  - Inner Edge Glow: inset 0 0 0 1px rgba(185,216,255,0.18)
-  - Bottom Depth: inset negative-y Shadow fuer Volumen
-- Jede Glass-Flaeche bekommt einen Sheen-Layer (diagonaler Lichtverlauf), aber mit niedriger Opazitaet.
-
-## Komponentenstil
-### App-Hintergrund
-- Dunkler Verlauf mit kuehlen cyan/tuerkis Lichtinseln.
-- Keine harten Farbwechsel.
-
-### Header (sticky)
-- Neo-Glass Panel
-- Klare Zentrierung des Titels
-- Erlaubt: subtiler Liquid-Sheen fuer Materialanmutung
-- Verboten: aggressive Glow-Animationen im Header
-
-### Entry Cards
-- Glass Soft (borderless)
-- Gut lesbare Text-Hierarchie
-- Status/Category nur als kleine Akzentmarker
-- Hover nur ueber Tiefe (leichtes Lift + Shadow), nicht ueber Rahmenfarbe
-
-### Input Dock (unten fixiert)
-- Neo-Glass als Basisflaeche
-- Input-Feld borderless mit Inset-Highlight
-- Fokus ueber Ring/Glow, nicht ueber Border-Farbwechsel
-
-### Voice Record Button
-- Primaeres Liquid-Element
-- Darf Pulse/Glow im Recording-State nutzen
-- Muss auch ohne Animation erkennbar sein
-
-## Motion und Mikrointeraktion
-Erlaubt:
-- Kurze Enter-Animationen (250-380ms)
-- Subtile Hover/Focus Uebergaenge (120-180ms)
-- Recording Pulse nur waehrend aktiver Aufnahme
-
-Vermeiden:
-- Daueranimationen auf mehreren Elementen gleichzeitig
-- Grosse Bewegung auf Listeninhalten
-- Springende Layouts bei Statuswechseln
-
-## Neo/Liquid-Verhaeltnis
-- 70% Productivity-Glass (Cards, Header, Input-Flaechen)
-- 30% Liquid-Glass (Record CTA, Reflex-Layer auf Panels, aktive Micro-Akzente)
-
-Harte Regel:
-- Gleichzeitig maximal 1-2 sichtbare Liquid-Highlights pro View.
-- Panels muessen sich auch ohne Border klar vom Hintergrund abheben.
-
-## Accessibility und Qualitaet
-- Zielkontrast fuer Texte mindestens WCAG AA.
-- Interaktive Elemente mit klar erkennbarem Focus-State.
-- Touch Targets mindestens 44x44px.
-- Motion optional reduzierbar (`prefers-reduced-motion`).
+## Delivery-Regeln fuer Komponenten
+- Pro angeforderter Komponente genau eine `.tsx`-Datei ausgeben.
+- Styles muessen inline oder ko-lokal enthalten sein.
+- Keine externen CSS-Dateien verwenden, ausser explizit angefordert.
 
 ## Do / Don’t
 Do:
-- Nutze kuehle, ruhige Farben fuer den Grundton.
-- Halte Textflaechen sauber und kontrastreich.
-- Setze Liquid nur als visuelle Priorisierung ein.
-- Nutze Tiefenschatten + Inset-Layer als Trennung von Surface und Background.
+- Nutze die vier Mesh-Farben als klares visuelles System.
+- Halte Primary/Secondary Textwerte strikt ein.
+- Trenne Chrome-Glass und Content-Surface konsequent.
+- Nutze Shine-Layer und Inner Highlights fuer den Liquid-Eindruck.
 
 Don’t:
-- Kein Liquid auf grossen Textflaechen.
-- Kein Neon-Mix mit vielen konkurrierenden Akzentfarben.
-- Keine starke Unschärfe auf leistungsschwachen Mobilgeraeten.
-- Keine Rueckkehr zu harten Panel-Bordern als primaere Trennung.
+- Kein mattes/frosted Glass als Standard einsetzen.
+- Keine grauen Texte auf Glass-Flaechen.
+- Kein permanentes starkes Motion-Noise.
+- Keine untypisierten oder default-export Komponenten liefern.
 
 ## CSS Token Startpunkt
 ```css
 :root {
-  --bg-0: #06152B;
-  --bg-1: #0C2246;
-  --bg-2: #12315F;
+  --mesh-violet: #7C3AED;
+  --mesh-magenta: #EC4899;
+  --mesh-cyan: #06B6D4;
+  --mesh-lime: #A3E635;
 
-  --text-0: #EAF2FF;
-  --text-1: #A8BDD9;
+  --text-glass-primary: #FFFFFF;
+  --text-glass-secondary: rgba(255,255,255,0.7);
 
-  --accent-0: #39C8FF;
-  --accent-1: #7BE3FF;
-
-  --ok: #34D399;
-  --warn: #F59E0B;
-  --err: #F87171;
+  --glass-bg: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
+  --glass-border: 1px solid rgba(255,255,255,0.25);
+  --glass-shadow: 0 8px 32px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.1);
+  --glass-highlight: inset 0 1px 0 rgba(255,255,255,0.4);
+  --glass-content-bg: rgba(20,20,40,0.6);
 }
 ```
 
 ## Komponenten-Mapping fuer dieses Repo
-- Header: glass-panel (borderless, strong readability shadow)
-- EntryList + EntryCard: glass-panel-soft (borderless)
-- InputSection: glass-panel (borderless)
-- TextInput: borderless Input + Focus-Ring
-- VoiceRecordButton: Liquid-Glass (Recording State intensiv)
+- Header: Chrome-Glass mit Shine-Layer
+- EntryList + EntryCard: Dark Content Surface
+- InputSection: Dark Content Surface + fokussierter Input-Glow
+- TextInput: Glass-Input mit verpflichtendem Focus-Ring
+- VoiceRecordButton: Primary Gradient-Button mit Gloss-Highlight
 
 ## Abnahme-Checkliste
-- Wirkt die UI ruhig und fokussiert?
-- Ist Text auf allen Cards klar lesbar?
-- Sind Liquid-Elemente selten und bewusst gesetzt?
-- Bleibt Scrollen auf Mobile fluessig?
-- Ist Recording visuell klar erkennbar?
-- Heben sich Panels ohne Border eindeutig vom Hintergrund ab?
+- Ist der Mesh-Hintergrund mit 3-4 animierten Blobs umgesetzt?
+- Verwenden Chrome-Elemente die Standard-Glass-Tokens?
+- Nutzen Content-Elemente konsequent `rgba(20,20,40,0.6)`?
+- Ist Text auf allen Glass-Ebenen klar lesbar und WCAG-AA-konform?
+- Sind Reduced-Motion-Regeln korrekt aktiv?
+- Wird pro Komponenten-Request genau eine `.tsx`-Datei geliefert?

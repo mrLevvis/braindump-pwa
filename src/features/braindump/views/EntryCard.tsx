@@ -29,12 +29,10 @@ interface EntryTagsProps {
 const ENTRY_CARD_CLASS = [
   'glass-panel-soft',
   'mb-3',
-  'rounded-[18px]',
+  'rounded-[24px]',
   'p-4',
   'transition-all',
-  'duration-150',
-  'hover:translate-y-[-1px]',
-  'hover:shadow-[0_12px_28px_rgba(2,8,23,0.24),inset_0_1px_0_rgba(255,255,255,0.16)]',
+  'duration-180',
 ].join(' ');
 
 const CATEGORY_COLOR_CLASS: Record<EntryCategory, string> = {
@@ -56,14 +54,14 @@ const CATEGORY_BADGE_BASE_CLASS = [
 
 const TAG_PILL_CLASS = [
   'rounded-md',
-  'bg-[rgba(168,189,217,0.1)]',
+  'bg-[rgba(255,255,255,0.1)]',
   'shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]',
   'px-2.5',
   'py-1',
   'text-[10px]',
   'font-semibold',
   'tracking-wide',
-  'text-[var(--text-1)]',
+  'text-[var(--text-glass-secondary)]',
 ].join(' ');
 
 /* -------------------------------------------------------------------------- */
@@ -131,11 +129,11 @@ export const EntryCard = ({ entry }: Readonly<EntryCardProps>) => {
   return (
     <article className={ENTRY_CARD_CLASS}>
       <div className="mb-2 flex items-start justify-between gap-3">
-        <p className="text-[15px] font-medium leading-snug text-[var(--text-0)]">
+        <p className="text-[15px] font-medium leading-snug text-[var(--text-glass-primary)] [text-shadow:0_1px_2px_rgba(0,0,0,0.2)]">
           {original_text}
         </p>
         <time
-          className="ml-2 whitespace-nowrap text-xs text-[var(--text-1)]"
+          className="ml-2 whitespace-nowrap text-xs text-[var(--text-glass-secondary)] [text-shadow:0_1px_2px_rgba(0,0,0,0.2)]"
           dateTime={created_at}
         >
           {timeString}

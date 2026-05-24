@@ -24,8 +24,8 @@ const CONTAINER_CLASS = [
   'left-0',
   'right-0',
   'bg-gradient-to-t',
-  'from-[color:rgba(6,21,43,0.95)]',
-  'via-[color:rgba(6,21,43,0.75)]',
+  'from-[color:rgba(8,6,19,0.95)]',
+  'via-[color:rgba(8,6,19,0.72)]',
   'to-transparent',
   'px-4',
   'pb-[calc(env(safe-area-inset-bottom,0px)+14px)]',
@@ -33,13 +33,13 @@ const CONTAINER_CLASS = [
 ].join(' ');
 
 const PANEL_CLASS = [
-  'glass-panel',
+  'glass-panel-soft',
   'mx-auto',
   'flex',
   'max-w-md',
   'items-center',
   'gap-3',
-  'rounded-[18px]',
+  'rounded-[24px]',
   'p-2.5',
 ].join(' ');
 

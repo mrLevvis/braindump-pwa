@@ -35,10 +35,10 @@ export const BrainDumpDashboard = () => {
   const [isRecording, setIsRecording] = useState(false);
 
   return (
-    <div className="min-h-screen relative text-[var(--text-0)]">
+    <div className="relative min-h-screen text-[var(--text-glass-primary)]">
       <header className="sticky top-0 z-20 px-4 pt-4">
-        <div className="glass-panel mx-auto max-w-md rounded-[18px] px-4 py-3">
-          <h1 className="text-center text-[20px] font-semibold tracking-[0.02em]">
+        <div className="glass-panel mx-auto max-w-md rounded-[24px] px-4 py-3">
+          <h1 className="text-center text-[20px] font-semibold tracking-[0.02em] text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.2)]">
           BrainDump
           </h1>
         </div>
