@@ -82,13 +82,16 @@ body {
 	position: relative;
 	overflow: hidden;
 	isolation: isolate;
-	background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
-	backdrop-filter: blur(24px) saturate(180%);
-	border: 1px solid rgba(255, 255, 255, 0.25);
+	background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.06));
+	backdrop-filter: blur(24px) saturate(200%);
+	border: 1px solid rgba(255, 255, 255, 0.5);
 	box-shadow:
-		0 8px 32px rgba(0, 0, 0, 0.2),
-		0 2px 8px rgba(0, 0, 0, 0.1),
-		inset 0 1px 0 rgba(255, 255, 255, 0.4);
+		0 0 18px rgba(6, 182, 212, 0.55),
+		0 0 40px rgba(6, 182, 212, 0.25),
+		0 0 70px rgba(124, 58, 237, 0.15),
+		0 8px 32px rgba(0, 0, 0, 0.3),
+		inset 0 1px 0 rgba(255, 255, 255, 0.75),
+		inset 0 -1px 0 rgba(255, 255, 255, 0.1);
 }
 
 /* Diagonal liquid shine — upper-left third */
@@ -96,16 +99,25 @@ body {
 	content: '';
 	position: absolute;
 	inset: 0;
-	background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, transparent 50%);
+	background: linear-gradient(
+		135deg,
+		rgba(255, 255, 255, 0.55) 0%,
+		rgba(255, 255, 255, 0.18) 32%,
+		transparent 55%
+	);
 	pointer-events: none;
 	transition: opacity 200ms ease;
 }
 
 .glass-chrome:hover {
+	border-color: rgba(255, 255, 255, 0.65);
 	box-shadow:
-		0 16px 48px rgba(0, 0, 0, 0.3),
-		0 4px 12px rgba(0, 0, 0, 0.15),
-		inset 0 1px 0 rgba(255, 255, 255, 0.4);
+		0 0 24px rgba(6, 182, 212, 0.7),
+		0 0 52px rgba(6, 182, 212, 0.35),
+		0 0 90px rgba(124, 58, 237, 0.2),
+		0 16px 48px rgba(0, 0, 0, 0.35),
+		inset 0 1px 0 rgba(255, 255, 255, 0.8),
+		inset 0 -1px 0 rgba(255, 255, 255, 0.12);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -117,34 +129,44 @@ body {
 	overflow: hidden;
 	isolation: isolate;
 	background: var(--glass-content-bg);
-	backdrop-filter: blur(24px) saturate(180%);
-	border: 1px solid rgba(255, 255, 255, 0.25);
+	backdrop-filter: blur(24px) saturate(200%);
+	border: 1px solid rgba(255, 255, 255, 0.38);
 	box-shadow:
-		0 8px 32px rgba(0, 0, 0, 0.2),
-		0 2px 8px rgba(0, 0, 0, 0.1),
-		inset 0 1px 0 rgba(255, 255, 255, 0.4);
+		0 0 14px rgba(124, 58, 237, 0.4),
+		0 0 32px rgba(124, 58, 237, 0.18),
+		0 8px 32px rgba(0, 0, 0, 0.28),
+		inset 0 1px 0 rgba(255, 255, 255, 0.65),
+		inset 0 -1px 0 rgba(255, 255, 255, 0.08);
 }
 
-/* Subtle shine for content surfaces */
+/* Diagonal shine for content surfaces */
 .glass-content::before {
 	content: '';
 	position: absolute;
 	inset: 0;
-	background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 45%);
+	background: linear-gradient(
+		135deg,
+		rgba(255, 255, 255, 0.22) 0%,
+		rgba(255, 255, 255, 0.06) 38%,
+		transparent 58%
+	);
 	pointer-events: none;
 }
 
 /* Hover lift for interactive content surfaces */
 .glass-content-hover {
-	transition: transform 200ms ease, box-shadow 200ms ease;
+	transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
 }
 
 .glass-content-hover:hover {
 	transform: scale(1.02);
+	border-color: rgba(255, 255, 255, 0.55);
 	box-shadow:
-		0 16px 48px rgba(0, 0, 0, 0.3),
-		0 4px 12px rgba(0, 0, 0, 0.15),
-		inset 0 1px 0 rgba(255, 255, 255, 0.4);
+		0 0 20px rgba(124, 58, 237, 0.6),
+		0 0 44px rgba(236, 72, 153, 0.25),
+		0 16px 48px rgba(0, 0, 0, 0.32),
+		inset 0 1px 0 rgba(255, 255, 255, 0.75),
+		inset 0 -1px 0 rgba(255, 255, 255, 0.1);
 }
 
 /* -------------------------------------------------------------------------- */
