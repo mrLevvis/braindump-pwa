@@ -24,8 +24,8 @@ const CONTAINER_CLASS = [
   'left-0',
   'right-0',
   'bg-gradient-to-t',
-  'from-[color:rgba(8,6,19,0.95)]',
-  'via-[color:rgba(8,6,19,0.72)]',
+  'from-[#0a0014]/95',
+  'via-[#0a0014]/60',
   'to-transparent',
   'px-4',
   'pb-[calc(env(safe-area-inset-bottom,0px)+14px)]',
@@ -33,7 +33,7 @@ const CONTAINER_CLASS = [
 ].join(' ');
 
 const PANEL_CLASS = [
-  'glass-panel-soft',
+  'glass-content',
   'mx-auto',
   'flex',
   'max-w-md',

@@ -37,11 +37,11 @@ const EMPTY_STATE_CONTAINER_CLASS = [
   'p-8',
   'text-center',
 ].join(' ');
-const EMPTY_STATE_TITLE_CLASS = 'text-sm text-[var(--text-1)]';
+const EMPTY_STATE_TITLE_CLASS = 'text-sm text-white/70';
 const EMPTY_STATE_HINT_CLASS = [
   'mt-1',
   'text-xs',
-  'text-[color:color-mix(in_srgb,var(--text-1),white_8%)]',
+  'text-white/40',
 ].join(' ');
 
 /* -------------------------------------------------------------------------- */

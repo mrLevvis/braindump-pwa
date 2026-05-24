@@ -27,12 +27,11 @@ interface EntryTagsProps {
  */
 
 const ENTRY_CARD_CLASS = [
-  'glass-panel-soft',
+  'glass-content',
+  'glass-content-hover',
   'mb-3',
   'rounded-[24px]',
   'p-4',
-  'transition-all',
-  'duration-180',
 ].join(' ');
 
 const CATEGORY_COLOR_CLASS: Record<EntryCategory, string> = {
@@ -54,14 +53,14 @@ const CATEGORY_BADGE_BASE_CLASS = [
 
 const TAG_PILL_CLASS = [
   'rounded-md',
-  'bg-[rgba(255,255,255,0.1)]',
+  'bg-white/10',
   'shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]',
   'px-2.5',
   'py-1',
   'text-[10px]',
   'font-semibold',
   'tracking-wide',
-  'text-[var(--text-glass-secondary)]',
+  'text-white/70',
 ].join(' ');
 
 /* -------------------------------------------------------------------------- */
@@ -129,11 +128,14 @@ export const EntryCard = ({ entry }: Readonly<EntryCardProps>) => {
   return (
     <article className={ENTRY_CARD_CLASS}>
       <div className="mb-2 flex items-start justify-between gap-3">
-        <p className="text-[15px] font-medium leading-snug text-[var(--text-glass-primary)] [text-shadow:0_1px_2px_rgba(0,0,0,0.2)]">
+        <p
+          className="text-[15px] font-medium leading-snug text-white"
+          style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}
+        >
           {original_text}
         </p>
         <time
-          className="ml-2 whitespace-nowrap text-xs text-[var(--text-glass-secondary)] [text-shadow:0_1px_2px_rgba(0,0,0,0.2)]"
+          className="ml-2 whitespace-nowrap text-xs text-white/60"
           dateTime={created_at}
         >
           {timeString}
