@@ -37,3 +37,23 @@ export interface BrainDumpEntry {
  * daher fehlen diese Felder hier.
  */
 export type InsertEntry = Omit<BrainDumpEntry, 'id' | 'created_at'>;
+
+
+/**
+ * Der globale Zustandstyp für das BrainDump-Feature.
+ * Definiert sowohl die State-Properties als auch die Actions (Mutations).
+ * Dieser Vertrag wird von unserem Zustand-Management (z.B. Zustand) implementiert.
+ */
+export interface BrainDumpState {
+  // State
+  entries: BrainDumpEntry[];
+  isRecording: boolean;
+  isProcessing: boolean;
+
+  // Actions (Mutations)
+  setRecording: (isRecording: boolean) => void;
+  setProcessing: (isProcessing: boolean) => void;
+  // Für Ticket 2 brauchen wir vorerst nur eine Methode, 
+  // um das Testen der UI zu ermöglichen:
+  addDummyEntry: (text: string) => void;
+}
