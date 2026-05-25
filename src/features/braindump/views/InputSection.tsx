@@ -1,5 +1,6 @@
 import TextInput from '../../../components/ui/TextInput';
 import VoiceRecordButton from '../../../components/voice/VoiceRecordButton';
+import TextSubmitButton from '../../../components/ui/TextSubmitButton';
 
 export default function InputSection({
   textValue,
@@ -35,6 +36,11 @@ export default function InputSection({
         onClick={onVoiceClick}
         disabled={disabled}
       />
+
+      <TextSubmitButton
+        onClick={onTextSubmit}
+        disabled={isTextInputDisabled}
+      /> 
     </div>
   );
 }
