@@ -16,40 +16,19 @@ interface TextInputProps {
 /*                              Styling Tokens                                */
 /* -------------------------------------------------------------------------- */
 
-const INPUT_CLASS = [
-  'w-full',
-  'rounded-[14px]',
-  'bg-white/5',
-  'shadow-[inset_0_1px_0_rgba(255,255,255,0.16)]',
-  'border',
-  'border-white/10',
-  'px-4',
-  'py-3',
-  'text-sm',
-  'text-white',
-  'placeholder-white/40',
-  'transition-all',
-  'focus:outline-none',
-  'focus:ring-[3px]',
-  'focus:ring-[#7c3aed]/50',
-  'focus:border-white/20',
-  'disabled:cursor-not-allowed',
-  'disabled:opacity-50',
-].join(' ');
-
 const DEFAULT_PLACEHOLDER = 'Schreibe einen Gedanken...';
 
 /* -------------------------------------------------------------------------- */
 /*                              UI Component                                  */
 /* -------------------------------------------------------------------------- */
 
-export const TextInput = ({
+export default function TextInput({
   value,
   onChange,
   onSubmit,
   placeholder,
   disabled = false,
-}: Readonly<TextInputProps>) => {
+}: Readonly<TextInputProps>) {
   const resolvedPlaceholder = placeholder ?? DEFAULT_PLACEHOLDER;
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -62,16 +41,13 @@ export const TextInput = ({
   };
 
   return (
-    <div className="w-full">
-      <input
-        type="text"
-        value={value}
-        onChange={(event) => handleInputChange(event.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder={resolvedPlaceholder}
-        disabled={disabled}
-        className={INPUT_CLASS}
-      />
-    </div>
+    <input
+      type="text"
+      value={value}
+      onChange={(event) => handleInputChange(event.target.value)}
+      onKeyDown={handleKeyDown}
+      placeholder={resolvedPlaceholder}
+      disabled={disabled}
+    />
   );
-};
+}

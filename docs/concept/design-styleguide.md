@@ -1,217 +1,155 @@
-# UI Styleguide
+# BrainDump UI Style Guide – Glassmorphismus (MVP-UI-Mockup-2)
 
-## Ziel
-Dieser Styleguide definiert die visuelle und technische Umsetzung fuer eine moderne, lebendige Liquid-Glass-Aesthetik in der Braindump-PWA.
+## 1. Visuelles Design-Prinzip
 
-Leitidee:
-- Glossy und nass wirkende Materialien statt matter oder frosted Oberflaechen.
-- Hohe Lesbarkeit bleibt nicht verhandelbar, selbst bei starken Farben und Effekten.
+Das definierende Prinzip ist moderner **Glassmorphismus** im **Light Mode**. Ziel: Saubere, luftige, beruhigende UI mit klarer Informationshierarchie durch Tiefe und subtile Farbakzente.
 
-## Designprinzipien
-- Lesbarkeit vor Effekt: Texte bleiben auf jeder Glass-Ebene eindeutig lesbar.
-- Liquid gezielt einsetzen: Glass fuer Chrome, Content auf dunkler, stabiler Surface.
-- Composable by default: Komponenten sind modular und wiederverwendbar.
-- Mobile First: dieselbe visuelle Sprache auf kleinen und grossen Viewports.
-- Motion bewusst: Atmosphaere durch langsame Bewegung, keine visuelle Unruhe.
+**Schlüsselkonzepte:**
 
-## Farbpalette
-### Vivid Mesh Farben
-- `--mesh-violet`: #7C3AED
-- `--mesh-magenta`: #EC4899
-- `--mesh-cyan`: #06B6D4
-- `--mesh-lime`: #A3E635
+- **Frosted Glass (Mattiert):** Karten/Eingabefelder sind mattiert, lichtdurchlässig, Hintergrund wird weichgezeichnet.
+- **Polierte Lichtkanten:** Glass-Elemente haben scharfe, helle, polierte Kanten mit Lichtreflexionen.
+- **Licht & Reflexion:** Subtile Glanzlichter und Reflexionen an Ecken/Rändern verstärken den Glass-Effekt.
 
-### Text auf Glass
-- `--text-glass-primary`: #FFFFFF
-- `--text-glass-secondary`: rgba(255,255,255,0.7)
+## 2. Farbpalette
 
-Regel:
-- Niemals graue Texttoene auf Glass-Flaechen verwenden.
+### 2.1 Hintergrund
 
-## Hintergrund und Atmosphaere
-- Nutze einen animierten Mesh-Gradient mit 3-4 grossen radialen Blobs.
-- Jeder Blob:
-  - starker Blur (`filter: blur(120px)`)
-  - Opazitaet zwischen 0.6 und 0.9
-  - langsame Drift-Animation mit 40-60s Loop
-- Die Blobs bewegen sich subtil und asynchron.
+- Sehr heller, kühler Gradient aus blassem Lichtblau und Weiß, mit subtiler, wolkenartiger oder eismarmorierter Textur für Tiefe.
 
-## Liquid-Glass Tokens
-### Standard Glass (Chrome) — via `<GlassSurface variant="chrome">`
-- `background`: `linear-gradient(135deg, rgba(255,255,255,0.09), rgba(255,255,255,0.03))`
-- `backdrop-filter`: `blur(24px) saturate(180%)`
-- `border`: `1px solid rgba(255,255,255,0.38)`
-- `border-radius`: 20-28px
-- `box-shadow`: `0 16px 64px rgba(0,0,0,0.20), 0 6px 32px rgba(0,0,0,0.10)` + Highlight + Neon-Halo
-- Inner Highlight: `inset 0 1px 0 rgba(255,255,255,0.6)`
-- Neon-Halo: `0 0 0 1px rgba(255,255,255,0.12), 0 0 24px rgba(255,255,255,0.06)`
+### 2.2 Tönungs-Farbcodes (Glass-Elemente)
 
-Kein CSS-Klassen-Equivalent — immer `<GlassSurface>` verwenden.
+Diese Farben werden als transparente Tönungen auf die Frosted-Glass-Flächen gelegt:
 
-### Content Surface (Cards, Input-Panels) — via `.glass-content` CSS-Klasse
-- `background`: `rgba(255,255,255,0.07)` — transluzent, Mesh-Blobs scheinen durch
-- `backdrop-filter`: `blur(24px) saturate(180%)`
-- `border`: `1px solid rgba(255,255,255,0.35)`
-- identische Shadow-/Radius-/Highlight-Logik wie Chrome
+- **Task:** Blassblau – `#D1E8FF` oder `#E3F2FD` (niedrige Opazität)
+- **Event:** Blassgrün – `#C8E6C9` oder `#E8F5E9`
+- **Note:** Blassviolett – `#E1BEE7` oder `#F3E5F5`
 
-Wichtig: Die Hintergrundfarbe ist absichtlich sehr transparent. Der `backdrop-filter` macht die eigentliche Arbeit — er verwischt die bunten Mesh-Blobs hinter der Flaeche. Das erzeugt den echten Glas-Look.
+### 2.3 Text- & Ikonografie-Farben
 
-## Shadow-Regeln
-- Ausschliesslich grosse, diffuse Blur-Radien: **Minimum 32px**, empfohlen 48-80px.
-- Kein Shadow-Layer mit Blur unter 32px — erzeugt harte Kanten.
-- Opazitaet niedrig halten (0.10-0.22 fuer Dunkel, 0.04-0.06 fuer Weiss-Halo).
-- Hover-Schatten: nur Blur und Opacity erhoehen, keine neuen engen Layer hinzufuegen.
+- **Haupttext:** Dunkelgrau/Anthrazit `#333333`–`#4A4A4A`
+- **Sekundärtext:** Mittelgrau `#666666`–`#757575`
+- **Platzhaltertext:** Hellgrau `#888888`
+- **Icons:** Dunkelgrau `#333333`
 
-Beispiel (korrekt):
-```css
-box-shadow:
-  0 16px 64px rgba(0,0,0,0.18),
-  0 6px 32px rgba(0,0,0,0.10),
-  inset 0 1px 0 rgba(255,255,255,0.55);
-```
+## 3. Typografie
 
-## GlassSurface Basiskomponente
-Jede Chrome-Glass-Flaeche wird ueber `<GlassSurface>` gebaut — keine eigenen CSS-Klassen.
+- Moderne, serifenlose Schrift (z.B. Inter, Geist, system-ui)
+- **Header Titel:** Groß, fett, dunkelgrau
+- **Sektionstitel:** Klein, fett, dunkelgrau, GROSSBUCHSTABEN, Zahl in Klammern
+- **Karten-Text:** Normalgröße, leicht–normal, dunkelgrau
+- **Zeitstempel:** Klein, leicht, hellgrau
+- **Tags:** Sehr klein, fett, dunkelgrau
+- **Platzhalter:** Normal, leicht, hellgrau
 
-```tsx
-<GlassSurface
-  variant="chrome" | "content"  // Pflicht-Prop
-  shine="subtle" | "prominent"  // Default: "subtle"
-  as="div" | "header" | ...     // Default: "div"
-  className="..."
->
-  {children}
-</GlassSurface>
-```
+## 4. Komponenten-Spezifikationen
 
-### Reflection-System (drei Ebenen)
-1. **Diagonaler Licht-Streak** (`z-index: -1` via Span) — `subtle`: statisch bei ~40% quer, opacity 0.3. `prominent`: Sweep-Animation auf Hover (0.85s).
-2. **Top-Edge-Gleam** — `inset 0 1px 0 rgba(255,255,255,0.6)` — der "nasse Meniskus" — immer aktiv.
-3. **Corner Sparkles** — nur bei `shine="prominent"` — radiale Weiss-Punkte an zwei diagonalen Ecken, 4s Pulse-Animation.
+### 4.1 Header-Pille
 
-### shine-Prop Einsatz
-- `shine="subtle"`: Standardwert fuer alle Flaechen.
-- `shine="prominent"`: Ausschliesslich fuer Hero-Elemente (FAB, aktives Modal, fokussierte Notiz).
-- Niemals `prominent` auf Listen-Items.
+- Breites, abgerundetes Glass-Pillen-Rechteck
+- Voll poliert, starke Lichtreflexionen an Kanten
+- Zentrierter Titel
 
-### Co-located CSS
-GlassSurface nutzt `GlassSurface.module.css` fuer Pseudo-Elemente und Keyframes. Neue Komponenten, die Pseudo-Elemente benoetigen, ebenfalls als `.module.css` co-located — kein `@layer` in `index.css`.
+### 4.2 Kategorie-Pillen (Sektionstitel)
 
-## Glossy Reflection
-Siehe **GlassSurface Basiskomponente** oben — alle drei Ebenen sind dort implementiert.
+- Kleine, abgerundete Glass-Pillen
+- Polierte Kanten, getönt nach Kategorie (blau, grün, violett)
+- Optional: Klick zum Reduzieren/Erweitern
 
-Fuer `.glass-content` CSS-Klasse (EntryCards): Shine via `::before` Pseudo-Element, statisch, opacity 0.6.
+### 4.3 Notizen-Karten
 
-## Hover und Interaktion
-- Hover auf Glass-Komponenten:
-  - `transform: scale(1.02)`
-  - Shine-Layer verschiebt sich leicht
-  - Schatten wird tiefer
-- Inputs:
-  - Glass-Hintergrund verwenden
-  - Focus-Ring zwingend: `0 0 0 3px rgba(124,58,237,0.5)`
-- Buttons:
-  - Primary: solide Gradient-Flaeche (Violet zu Magenta) mit innerem Gloss-Highlight
-  - Secondary: Glass-Variante
+- Große, abgerundete Rechtecke (Glass-Pillen)
+- Frosted-Glass, passend zur Kategorie getönt
+- Polierte, klare Lichtreflexionen an Kanten
+- Text links, Zeitstempel oben rechts
+- Variante: Zusätzliche kleine, polierte Glass-Pillen-Tags
 
-## Typografie
-- Primare Schrift: Inter oder Geist
-- Gewichte:
-  - Body: 400
-  - Headings: 600
-- Text auf Glass immer mit Legibility-Shadow:
-  - Chrome-Ebenen (GlassSurface): `text-shadow: 0 1px 3px rgba(0,0,0,0.45)`
-  - Content-Ebenen: `text-shadow: 0 1px 3px rgba(0,0,0,0.45)`
+### 4.4 Notizen-Tags
 
-## Komponentenregeln
-- Glass wird nur fuer Chrome eingesetzt:
-  - Sidebar
-  - Top Bar
-  - Modal
-  - Floating Buttons
-  - Dropdowns
-- Content-Container bleiben auf dunkler, stabiler Glass-Surface:
-  - Note Cards
-  - Input-Felder
-  - Listencontainer
+- Miniatur-Kategorie-Pillen
+- Poliert, passend zur Kategorie getönt
 
-## Technische Vorgaben (React + Tailwind)
-- Komponenten in TypeScript mit strict typing.
-- Ausschliesslich named exports.
-- Tailwind Utilities bevorzugen, inklusive Arbitrary Values (z. B. `backdrop-blur-[24px]`).
-- **Pseudo-Elemente und Keyframes**: CSS-Modul (`.module.css`) co-lokal zur Komponente — kein Inline-Style-Objekt, kein `@layer` in `index.css`.
-- Jede neue Glass-Komponente composet `<GlassSurface>` — keine eigenen Glass-Styles definieren.
-- Komponenten muessen self-contained und composable sein.
+### 4.5 Untere Eingabeleiste
 
-## Accessibility
-- WCAG AA (4.5:1) fuer Body-Text ist Pflicht.
-- Kontrastpruefung gegen den dunkelsten verwendeten Gradient-Stop dokumentieren.
-- Fokuszustaende visuell klar und konsistent.
-- Touch-Targets mindestens 44x44px.
+- Breites, abgerundetes Glass-Rechteck
+- Frosted-Glass, Platzhaltertext weichgezeichnet
+- Stark polierte Lichtreflexionen, besonders unten (schwebender, geschliffener Effekt)
+- Eingabefeld für Platzhalter
+- Mikrofon-Symbol: Separat, kreisförmig, poliert, Lichtkante, rechts vom Textfeld
 
-## Motion und Reduced Motion
-- Bei `prefers-reduced-motion: reduce` gilt:
-  - Gradient-Animationen deaktivieren
-  - Hover-Transforms deaktivieren
-  - nur statische Zustandswechsel verwenden
+## 5. Layout & Abstände
 
-## Delivery-Regeln fuer Komponenten
-- Pro angeforderter Komponente eine `.tsx`-Datei und bei Bedarf eine `.module.css` ausgeben.
-- Pseudo-Elemente und Keyframes immer in der `.module.css`, nicht inline.
-- Keine externen CSS-Dateien verwenden, ausser explizit angefordert.
+- Klare vertikale Stapelung
+- Sektionen durch Kategorie-Pillen getrennt
+- Gleichmäßige vertikale Abstände zwischen Karten
+- Untere Eingabeleiste fixiert
+- Großzügige, gleichmäßige Polsterung in Karten
 
-## Do / Don’t
-Do:
-- Nutze die vier Mesh-Farben als klares visuelles System.
-- Halte Primary/Secondary Textwerte strikt ein.
-- Trenne Chrome-Glass und Content-Surface konsequent.
-- Nutze Shine-Layer und Inner Highlights fuer den Liquid-Eindruck.
+## 6. Sprachanmerkungen & Formate
 
-Don’t:
-- Kein mattes/frosted Glass als Standard einsetzen.
-- Keine grauen Texte auf Glass-Flaechen.
-- Kein permanentes starkes Motion-Noise.
-- Keine untypisierten oder default-export Komponenten liefern.
+- Sprache: Deutsch
+- Zeitformat: HH:MM (24h)
+- Tags: Prägnant, Groß- oder gemischte Schreibweise
+- Verständlichkeit: Alle Texte leicht lesbar
 
-## CSS Token Startpunkt
+## 7. Technische Vorgaben (React + CSS/Tailwind)
+
+- Komponenten in TypeScript, strict typing, nur named exports
+- Tailwind-Utilities bevorzugen, inkl. Arbitrary Values (`backdrop-blur-[24px]`)
+- Pseudo-Elemente/Keyframes: `.module.css` co-located zur Komponente
+- Glass-Komponenten immer als eigene Komponente (z.B. `<GlassSurface>`, `<GlassPill>`, `<GlassCard>`, `<GlassInput>`)
+- Keine eigenen Glass-Styles in anderen Komponenten
+- Komponenten müssen self-contained und composable sein
+
+## 8. CSS Token Startpunkt
+
 ```css
 :root {
-  --mesh-violet: #7C3AED;
-  --mesh-magenta: #EC4899;
-  --mesh-cyan: #06B6D4;
-  --mesh-lime: #A3E635;
+  /* Hintergrund */
+  --background-gradient: linear-gradient(120deg, #fafdff 0%, #e3f2fd 100%);
 
-  --text-glass-primary: #FFFFFF;
-  --text-glass-secondary: rgba(255,255,255,0.7);
+  /* Glass-Tönungen */
+  --glass-task: rgba(209, 232, 255, 0.75); /* #D1E8FF */
+  --glass-event: rgba(200, 230, 201, 0.75); /* #C8E6C9 */
+  --glass-note: rgba(225, 190, 231, 0.75); /* #E1BEE7 */
 
-  /* Chrome-Glass via <GlassSurface> — kein direkter Einsatz als CSS-Klasse */
-  --glass-bg: linear-gradient(135deg, rgba(255,255,255,0.09), rgba(255,255,255,0.03));
-  --glass-border: 1px solid rgba(255,255,255,0.38);
-  --glass-shadow: 0 16px 64px rgba(0,0,0,0.20), 0 6px 32px rgba(0,0,0,0.10);
-  --glass-highlight: inset 0 1px 0 rgba(255,255,255,0.6);
+  /* Glass-Base */
+  --glass-bg: rgba(255, 255, 255, 0.45);
+  --glass-blur: blur(24px);
+  --glass-border: 1.5px solid rgba(255, 255, 255, 0.55);
+  --glass-radius: 24px;
+  --glass-shadow:
+    0 8px 32px rgba(31, 38, 135, 0.1), 0 1.5px 8px rgba(31, 38, 135, 0.08);
+  --glass-highlight:
+    0 0 0 2px rgba(255, 255, 255, 0.18), 0 0 24px rgba(255, 255, 255, 0.1);
 
-  /* Content-Surface via .glass-content CSS-Klasse */
-  --glass-content-bg: rgba(255,255,255,0.07);
+  /* Textfarben */
+  --text-main: #333333;
+  --text-secondary: #757575;
+  --text-placeholder: #888888;
 
+  /* Sonstiges */
   --ok: #34d399;
   --warn: #f59e0b;
   --err: #f87171;
 }
 ```
 
-## Komponenten-Mapping fuer dieses Repo
-- Header: `<GlassSurface variant="chrome" shine="subtle">` (sticky, z-20)
-- EntryList + EntryCard: `.glass-content .glass-content-hover` CSS-Klassen
-- InputSection-Panel: `<GlassSurface variant="content" shine="subtle">`
-- TextInput: Glass-Input mit verpflichtendem Focus-Ring `rgba(124,58,237,0.5)`
-- VoiceRecordButton: Primary Gradient-Button (Violet→Magenta) mit Gloss-Highlight via `::before`
+## 9. Komponenten-Mapping für dieses Repo
 
-## Abnahme-Checkliste
-- Ist der Mesh-Hintergrund mit 4 animierten Blobs umgesetzt (blob-drift-1 bis -4)?
-- Verwenden alle Chrome-Elemente `<GlassSurface>` statt eigener Glass-CSS?
-- Nutzen Content-Elemente `.glass-content` mit `rgba(255,255,255,0.07)`?
-- Ist backdrop-filter auf allen Glass-Flaechen aktiv (`blur(24px) saturate(180%)`)?
-- Kein Shadow-Layer mit Blur unter 32px im gesamten Codebase?
-- Ist Text auf allen Glass-Ebenen klar lesbar (text-shadow aktiv, WCAG AA)?
-- Sind Reduced-Motion-Regeln korrekt aktiv (Streak-Sweep, Sparkle-Pulse, Blob-Drift)?
-- Wird pro Komponenten-Request `.tsx` + ggf. `.module.css` geliefert?
+- Header: `<GlassSurface variant="header">` (sticky, z-20)
+- Kategorie-Pillen: `<GlassPill category="task|event|note">`
+- EntryCard: `<GlassCard category="task|event|note">` (mit optionalen Tags)
+- InputSection: `<GlassInput>` (mit Mikrofon-Button)
+- Tags: `<GlassPill size="small">`
+
+## 10. Abnahme-Checkliste
+
+- Hintergrund ist heller Gradient mit subtiler Textur
+- Alle Glass-Elemente sind mattiert, poliert, mit Lichtreflexionen
+- Kategorie-Tönungen werden korrekt verwendet
+- Text ist überall klar lesbar (WCAG AA)
+- Zeitformat ist HH:MM (24h)
+- Eingabeleiste ist fixiert und poliert
+- Mikrofon-Button ist poliert, abgesetzt
+- Komponentenstruktur wie oben
+- Keine eigenen Glass-Styles außerhalb der Glass-Komponenten

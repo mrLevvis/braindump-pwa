@@ -1,75 +1,40 @@
-import { TextInput } from '../../../components/ui/TextInput';
-import { VoiceRecordButton } from '../../../components/voice/VoiceRecordButton';
-import { GlassSurface } from '../../../components/ui/GlassSurface';
+import TextInput from '../../../components/ui/TextInput';
+import VoiceRecordButton from '../../../components/voice/VoiceRecordButton';
 
-/* -------------------------------------------------------------------------- */
-/*                                   Props                                    */
-/* -------------------------------------------------------------------------- */
-
-interface InputSectionProps {
-  textValue: string;
-  onTextChange: (value: string) => void;
-  onTextSubmit: () => void;
-  isRecording: boolean;
-  onVoiceClick: () => void;
-  disabled?: boolean;
-}
-
-/* -------------------------------------------------------------------------- */
-/*                              Styling Tokens                                */
-/* -------------------------------------------------------------------------- */
-
-const CONTAINER_CLASS = [
-  'fixed',
-  'bottom-0',
-  'left-0',
-  'right-0',
-  'bg-gradient-to-t',
-  'from-[#0a0014]/95',
-  'via-[#0a0014]/60',
-  'to-transparent',
-  'px-4',
-  'pb-[calc(env(safe-area-inset-bottom,0px)+14px)]',
-  'pt-6',
-].join(' ');
-
-const PANEL_GLASS_CLASS = 'mx-auto flex max-w-md items-center gap-3 rounded-[24px] p-2.5';
-
-/* -------------------------------------------------------------------------- */
-/*                              UI Component                                  */
-/* -------------------------------------------------------------------------- */
-
-export const InputSection = ({
+export default function InputSection({
   textValue,
   onTextChange,
   onTextSubmit,
   isRecording,
   onVoiceClick,
   disabled = false,
-}: Readonly<InputSectionProps>) => {
+}:
+{
+  textValue: string;
+  onTextChange: (value: string) => void;
+  onTextSubmit: () => void;
+  isRecording: boolean;
+  onVoiceClick: () => void;
+  disabled?: boolean;
+})
+
+{
   const isTextInputDisabled = disabled || isRecording;
 
   return (
-    <div className={CONTAINER_CLASS}>
-      <GlassSurface
-        variant="content"
-        shine="subtle"
-        className={PANEL_GLASS_CLASS}
-      >
-        <div className="flex-1">
-          <TextInput
-            value={textValue}
-            onChange={onTextChange}
-            onSubmit={onTextSubmit}
-            disabled={isTextInputDisabled}
-          />
-        </div>
-        <VoiceRecordButton
-          isRecording={isRecording}
-          onClick={onVoiceClick}
-          disabled={disabled}
-        />
-      </GlassSurface>
+    <div>
+      <TextInput
+        value={textValue}
+        onChange={onTextChange}
+        onSubmit={onTextSubmit}
+        disabled={isTextInputDisabled}
+      />
+      
+      <VoiceRecordButton
+        isRecording={isRecording}
+        onClick={onVoiceClick}
+        disabled={disabled}
+      />
     </div>
   );
-};
+}
