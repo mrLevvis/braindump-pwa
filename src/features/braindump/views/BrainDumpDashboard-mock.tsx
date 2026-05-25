@@ -56,19 +56,17 @@ export const BrainDumpDashboard = () => {
   const [isRecording, setIsRecording] = useState(false);
 
   return (
-    <div className="min-h-screen relative">
-      <header className="sticky top-0 z-20 px-4 pt-4">
+    <div>
+      <header>
         <div>
-          <h1
-            className="text-center text-[20px] font-semibold tracking-[0.02em] text-white dashboard-title-shadow"
-          >
+          <h1>
             BrainDump
           </h1>
         </div>
       </header>
 
       {/* Die Liste mit unseren Dummy-Daten */}
-      <main className="mx-auto max-w-md pt-4">
+      <main>
         <EntryList entries={MOCK_ENTRIES} />
       </main>
 

@@ -1,4 +1,4 @@
-import { BrainDumpDashboard } from './features/braindump/views/BrainDumpDashboard';
+import { BrainDumpDashboard } from './features/braindump/views/BrainDumpDashboard-mock';
 
 function App() {
   return (
