@@ -39,8 +39,8 @@ export default function InputSection({
 
       <TextSubmitButton
         onClick={onTextSubmit}
-        disabled={isTextInputDisabled}
-      /> 
+        disabled={isTextInputDisabled || textValue.trim() === ''}
+      />
     </div>
   );
 }

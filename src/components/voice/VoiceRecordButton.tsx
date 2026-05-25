@@ -12,7 +12,7 @@ export default function VoiceRecordButton(
 {
   return (
     <button type="button" onClick={onClick} disabled={disabled}>
-      {isRecording ? '[REC]' : '[Sprechen]'}
+      {isRecording ? '[STOP]' : '[REC]'}
     </button>
   );
 }
