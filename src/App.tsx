@@ -18,11 +18,13 @@ export const BrainDumpDashboard = () => {
   const isProcessing = useBrainDumpStore((state) => state.isProcessing);
   const setRecording = useBrainDumpStore((state) => state.setRecording);
   const addDummyEntry = useBrainDumpStore((state) => state.addDummyEntry);
+  const updateEntryList = useBrainDumpStore((state) => state.updateEntryList);
 
   const handleTextSubmit = () => {
     if (!textValue.trim()) return;
     addDummyEntry(textValue);
     setTextValue('');
+    updateEntryList();
   };
 
   return (
