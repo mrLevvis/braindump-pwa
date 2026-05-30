@@ -4,12 +4,11 @@ export default function VoiceRecordButton(
     onClick,
     disabled = false,
   }:
-  {
-    isRecording?: boolean;
-    onClick: () => void;
-    disabled?: boolean;
-  })
-{
+    {
+      isRecording?: boolean;
+      onClick: () => void;
+      disabled?: boolean;
+    }) {
   return (
     <button type="button" onClick={onClick} disabled={disabled}>
       {isRecording ? '[STOP]' : '[REC]'}
