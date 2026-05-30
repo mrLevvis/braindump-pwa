@@ -9,16 +9,14 @@ export default function InputSection({
   onVoiceClick,
   disabled = false,
 }:
-{
-  textValue: string;
-  onTextChange: (value: string) => void;
-  onTextSubmit: () => void;
-  isRecording: boolean;
-  onVoiceClick: () => void;
-  disabled?: boolean;
-})
-
-{
+  {
+    textValue: string;
+    onTextChange: (value: string) => void;
+    onTextSubmit: () => void;
+    isRecording: boolean;
+    onVoiceClick: () => void;
+    disabled?: boolean;
+  }) {
   const isTextInputDisabled = disabled || isRecording;
 
   return (
@@ -29,7 +27,7 @@ export default function InputSection({
         onSubmit={onTextSubmit}
         disabled={isTextInputDisabled}
       />
-      
+
       <VoiceRecordButton
         isRecording={isRecording}
         onClick={onVoiceClick}
