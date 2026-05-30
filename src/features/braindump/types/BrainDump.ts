@@ -1,7 +1,25 @@
+import type { RecordingSlice } from './Recording';
+
 /**
  * src/features/braindump/types/BrainDump.ts
  * * Domänen-Modelle & Interfaces für das BrainDump Feature.
  */
+
+
+/**
+ * Der globale Zustandstyp für das BrainDump-Feature.
+ * Definiert sowohl die State-Properties als auch die Actions (Mutations).
+ * Dieser Vertrag wird von unserem Zustand-Management (z.B. Zustand) implementiert.
+ */
+export interface BrainDumpState extends RecordingSlice {
+  entries: BrainDumpEntry[];
+  isRecording: boolean;
+  isProcessing: boolean;
+  setRecording: (status: boolean) => void;
+  setProcessing: (status: boolean) => void;
+  addDummyEntry: (text: string) => void;
+  updateEntryList: () => void;
+}
 
 /**
  * Das strikte Enum für die Kern-Kategorien (SRP & KISS Prinzip)
@@ -54,8 +72,7 @@ export interface BrainDumpState {
   // Actions (Mutations)
   setRecording: (isRecording: boolean) => void;
   setProcessing: (isProcessing: boolean) => void;
-  // Für Ticket 2 brauchen wir vorerst nur eine Methode, 
-  // um das Testen der UI zu ermöglichen:
+  // Vorerst eine Methode, um das Testen der UI zu ermöglichen
   addDummyEntry: (text: string) => void;
   updateEntryList: () => void; // Neue Methode zum Aktualisieren der Einträge
 }

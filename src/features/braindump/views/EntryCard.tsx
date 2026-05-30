@@ -18,7 +18,7 @@ export default function EntryCard({ entry }: { entry: BrainDumpEntry }) {
         {tags.length > 0 && (
           <span>{tags.join(', ')}  </span>
         )}
-      </div> 
+      </div>
       <div>.</div>
     </div>
   );

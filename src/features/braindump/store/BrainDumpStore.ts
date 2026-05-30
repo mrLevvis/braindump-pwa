@@ -1,26 +1,30 @@
 import { create } from "zustand";
 import type { BrainDumpState, BrainDumpEntry } from "../types";
-import { fetchEntries, insertEntry } from "../services/ApiClient";
 
-// Initialisierung des Stores
-export const useBrainDumpStore = create<BrainDumpState>((set) => {
+import { fetchEntries, insertEntry } from "../services";
+import { createRecordingSlice } from "./recordingSliceStore";
+
+/**
+ * Erstellt den Zustandsslice für den BrainDump, einschließlich der Einträge und der Funktionen zum Aktualisieren dieser Einträge.
+ * Dieser Slice wird in unserem Zustand-Management (z.B. Zustand) verwendet, um die BrainDump-Funktionalität zu kapseln.
+ * @param set Die Funktion zum Aktualisieren des Zustands.
+ * @returns Ein Objekt, das den Zustandsslice für den BrainDump enthält.
+ */
+
+export const useBrainDumpStore = create<BrainDumpState>()((...a) => ({
     // --- INITIAL STATE ---
-    const initialState = {
-        entries: [], // Startet leer, wird asynchron geladen
-        isRecording: false,
-        isProcessing: false,
-    };
+    entries: [],
+    isRecording: false,
+    isProcessing: false,
 
-    // --- ACTIONS ---
-    const setRecording = (status: boolean) => {
-        set(() => ({ isRecording: status }));
-    };
-
-    const setProcessing = (status: boolean) => {
-        set(() => ({ isProcessing: status }));
-    };
-
-    const addDummyEntry = (text: string) => {
+    // --- ACTIONS (MUTATIONS) ---
+    setRecording: (status: boolean) => {
+        a[0](() => ({ isRecording: status }));
+    },
+    setProcessing: (status: boolean) => {
+        a[0](() => ({ isProcessing: status }));
+    },
+    addDummyEntry: (text: string) => {
         const newEntry: BrainDumpEntry = {
             id: crypto.randomUUID(),
             created_at: new Date().toISOString(),
@@ -29,24 +33,16 @@ export const useBrainDumpStore = create<BrainDumpState>((set) => {
             category: 'NOTE',
             payload: {},
         };
-        // set((state) => ({ entries: [newEntry, ...state.entries] }));
         insertEntry(newEntry);
-    };
-
-    const updateEntryList = () => {
+    },
+    updateEntryList: () => {
         fetchEntries().then((data) => {
-            if (data) set(() => ({ entries: data }));
+            if (data) a[0](() => ({ entries: data }));
         });
-    };
+    },
+    // --- AUDIO RECORDING SLICE ---
+    ...createRecordingSlice(...a),
+}));
 
-    // Einträge asynchron laden, sobald der Store initialisiert wird
-    updateEntryList();
-
-    return {
-        ...initialState,
-        setRecording,
-        setProcessing,
-        addDummyEntry,
-        updateEntryList,
-    };
-});
+// Initiales Laden der Einträge (außerhalb des Factory-Objekts, damit es nur einmal passiert)
+useBrainDumpStore.getState().updateEntryList();

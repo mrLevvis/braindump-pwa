@@ -50,12 +50,12 @@ export const DASHBOARD_MOCK_ENTRIES: BrainDumpEntry[] = [
         payload: { tags: ['Idee', 'PWA'] },
     },
     {
-    id: '7',
-    created_at: new Date(Date.now() - 12600000).toISOString(), // vor 3,5 Stunden
-    title: 'Buchempfehlung von Max',
-    original_text: 'Max hat "Atomic Habits" empfohlen – unbedingt lesen.',
-    category: 'NOTE',
-    payload: { tags: ['Lesen', 'Empfehlung'] },
+        id: '7',
+        created_at: new Date(Date.now() - 12600000).toISOString(), // vor 3,5 Stunden
+        title: 'Buchempfehlung von Max',
+        original_text: 'Max hat "Atomic Habits" empfohlen – unbedingt lesen.',
+        category: 'NOTE',
+        payload: { tags: ['Lesen', 'Empfehlung'] },
     },
     {
         id: '8',

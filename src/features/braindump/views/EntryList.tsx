@@ -13,7 +13,7 @@ export default function EntryList({ entries }: { entries: readonly BrainDumpEntr
 
   // Chronologisch sortieren (älteste unten, neueste oben)
   const sortedEntries = [...entries].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  
+
   return (
     <ul>
       {sortedEntries.map((entry) => (

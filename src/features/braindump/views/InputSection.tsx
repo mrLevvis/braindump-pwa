@@ -1,23 +1,22 @@
 import { TextInput, TextSubmitButton } from '../../../components/ui';
-import { VoiceRecordButton } from '../../../components/voice';
+import VoiceRecordButton from '../../../components/voice/VoiceRecordButton';
 
 export default function InputSection({
   textValue,
   onTextChange,
   onTextSubmit,
-  isRecording,
+  status,
   onVoiceClick,
   disabled = false,
-}:
-  {
+} : {
     textValue: string;
     onTextChange: (value: string) => void;
     onTextSubmit: () => void;
-    isRecording: boolean;
+    status: import('../../../features/braindump/types').RecorderStatus;
     onVoiceClick: () => void;
     disabled?: boolean;
   }) {
-  const isTextInputDisabled = disabled || isRecording;
+  const isTextInputDisabled = disabled || status === 'recording' || status === 'requesting';
 
   return (
     <div>
@@ -29,9 +28,8 @@ export default function InputSection({
       />
 
       <VoiceRecordButton
-        isRecording={isRecording}
+        status={status}
         onClick={onVoiceClick}
-        disabled={disabled}
       />
 
       <TextSubmitButton
