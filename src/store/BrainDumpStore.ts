@@ -12,17 +12,24 @@ export const useBrainDumpStore = create<BrainDumpState>((set) => ({
     isProcessing: false,
 
     // --- ACTIONS ---
+
     setRecording: (status) => {
-        // TODO: Zustand-State aktualisieren
+        set(() => ({ isRecording: status }));
     },
 
+
     setProcessing: (status) => {
-        // TODO: Zustand-State aktualisieren
+        set(() => ({ isProcessing: status }));
     },
 
     addDummyEntry: (text) => {
-        // TODO: Erstelle ein neues BrainDumpEntry-Objekt (mit einer zufälligen ID, z.B. crypto.randomUUID(), 
-        // dem aktuellen Zeitstempel, der Kategorie 'NOTE' und leerem payload).
-        // TODO: Füge dieses neue Objekt dem bestehenden entries-Array im State hinzu.
+        const newEntry: import("../features/braindump/types/BrainDump").BrainDumpEntry = {
+            id: crypto.randomUUID(),
+            created_at: new Date().toISOString(),
+            original_text: text,
+            category: 'NOTE', // explizit als EntryCategory
+            payload: {},
+        };
+        set((state) => ({ entries: [newEntry, ...state.entries] }));
     }
 }));
