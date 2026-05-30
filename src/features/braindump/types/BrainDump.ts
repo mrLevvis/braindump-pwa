@@ -26,6 +26,7 @@ export interface EntryPayload {
 export interface BrainDumpEntry {
   id: string;               // UUID aus Supabase (PRIMARY KEY)
   created_at: string;       // TIMESTAMP WITH TIME ZONE als ISO-String
+  title?: string;           // Optionaler Titel, falls von der KI extrahiert
   original_text: string;    // Der Rohtext, den der Nutzer eingegeben hat
   category: EntryCategory;  // Das strikte Enum
   payload: EntryPayload;    // Das strukturierte JSON-Objekt
@@ -56,4 +57,5 @@ export interface BrainDumpState {
   // Für Ticket 2 brauchen wir vorerst nur eine Methode, 
   // um das Testen der UI zu ermöglichen:
   addDummyEntry: (text: string) => void;
+  updateEntryList: () => void; // Neue Methode zum Aktualisieren der Einträge
 }
