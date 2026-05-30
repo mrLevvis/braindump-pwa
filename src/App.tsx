@@ -1,47 +1,49 @@
 import { useState } from 'react';
 import { EntryList, InputSection } from './features/braindump/views';
-import { DASHBOARD_MOCK_ENTRIES } from './features/braindump/mock-entries';
-
+import { useBrainDumpStore } from './features/braindump/store';
 
 function App() {
   return (
-      <BrainDumpDashboard />
+    <BrainDumpDashboard />
   );
 }
 
 export default App;
 
 export const BrainDumpDashboard = () => {
-  // Temporäre lokale States, nur damit das Textfeld und der Button bedienbar sind.
-  // In Ticket 2 wandert das in den globalen Zustand-Store.
   const [textValue, setTextValue] = useState('');
-  const [isRecording, setIsRecording] = useState(false);
+
+  const entries = useBrainDumpStore((state) => state.entries);
+  const isRecording = useBrainDumpStore((state) => state.isRecording);
+  const isProcessing = useBrainDumpStore((state) => state.isProcessing);
+  const setRecording = useBrainDumpStore((state) => state.setRecording);
+  const addDummyEntry = useBrainDumpStore((state) => state.addDummyEntry);
+
+  const handleTextSubmit = () => {
+    if (!textValue.trim()) return;
+    addDummyEntry(textValue);
+    setTextValue('');
+  };
 
   return (
     <div>
       <header>
         <div>
-          <h1>
-            BrainDump
-          </h1>
+          <h1>BrainDump</h1>
         </div>
       </header>
 
-      {/* Die Liste mit den Dummy-Daten */}
       <main>
-        <EntryList entries={DASHBOARD_MOCK_ENTRIES} />
+        <EntryList entries={entries} />
       </main>
 
-      {/* Die Eingabeschicht */}
       <InputSection
         textValue={textValue}
         onTextChange={setTextValue}
-        onTextSubmit={() => {
-          console.log('Dummy-Submit:', textValue);
-          setTextValue(''); // Feld nach Enter leeren
-        }}
+        onTextSubmit={handleTextSubmit}
         isRecording={isRecording}
-        onVoiceClick={() => setIsRecording(!isRecording)}
+        onVoiceClick={() => setRecording(!isRecording)}
+        disabled={isProcessing}
       />
     </div>
   );

@@ -11,8 +11,8 @@ const EmptyEntriesState = () => (
 export default function EntryList({ entries }: { entries: readonly BrainDumpEntry[] }) {
   if (!entries || entries.length === 0) return <EmptyEntriesState />;
 
-  // Chronologisch sortieren (älteste oben, neueste unten)
-  const sortedEntries = [...entries].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+  // Chronologisch sortieren (älteste unten, neueste oben)
+  const sortedEntries = [...entries].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   
   return (
     <ul>

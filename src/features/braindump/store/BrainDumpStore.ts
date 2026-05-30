@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import type { BrainDumpState } from "../types/BrainDump";
-import { DASHBOARD_MOCK_ENTRIES } from "../mock-entries/dashboard-mock-entries";
+import type { BrainDumpState, BrainDumpEntry } from "../types";
+import { DASHBOARD_MOCK_ENTRIES } from "../mock";
 
 // Initialisierung des Stores
 export const useBrainDumpStore = create<BrainDumpState>((set) => ({
@@ -21,7 +21,7 @@ export const useBrainDumpStore = create<BrainDumpState>((set) => ({
     },
 
     addDummyEntry: (text) => {
-        const newEntry: import("../types/BrainDump").BrainDumpEntry = {
+        const newEntry: BrainDumpEntry = {
             id: crypto.randomUUID(),
             created_at: new Date().toISOString(),
             original_text: text,
