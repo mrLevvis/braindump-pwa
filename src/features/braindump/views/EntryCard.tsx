@@ -1,5 +1,5 @@
-import type { BrainDumpEntry } from '../types/BrainDump';
-import { formatCreatedTime } from '../utils/formatTime';
+import type { BrainDumpEntry } from '../types';
+import { formatCreatedTime } from '../utils';
 
 export default function EntryCard({ entry }: { entry: BrainDumpEntry }) {
   const tags = entry.payload?.tags ?? [];

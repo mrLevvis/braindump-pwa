@@ -1,5 +1,5 @@
-import type { BrainDumpEntry } from '../types/BrainDump';
-import EntryCard from './EntryCard';
+import type { BrainDumpEntry } from '../types';
+import { EntryCard } from './';
 
 const EmptyEntriesState = () => (
   <div>

@@ -1,6 +1,5 @@
-import TextInput from '../../../components/ui/TextInput';
-import VoiceRecordButton from '../../../components/voice/VoiceRecordButton';
-import TextSubmitButton from '../../../components/ui/TextSubmitButton';
+import { TextInput, TextSubmitButton } from '../../../components/ui';
+import { VoiceRecordButton } from '../../../components/voice';
 
 export default function InputSection({
   textValue,

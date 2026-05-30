@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import EntryList from './features/braindump/views/EntryList';
-import InputSection from './features/braindump/views/InputSection';
-import { DASHBOARD_MOCK_ENTRIES } from './features/braindump/mock-entries/dashboard-mock-entries';
+import { EntryList, InputSection } from './features/braindump/views';
+import { DASHBOARD_MOCK_ENTRIES } from './features/braindump/mock-entries';
 
 
 function App() {
