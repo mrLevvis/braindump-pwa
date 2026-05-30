@@ -1,7 +1,6 @@
 import { create } from "zustand";
-import type { BrainDumpState } from "../features/braindump/types/BrainDump";
-import { DASHBOARD_MOCK_ENTRIES } from "../features/braindump/mock-entries/dashboard-mock-entries";
-
+import type { BrainDumpState } from "../types/BrainDump";
+import { DASHBOARD_MOCK_ENTRIES } from "../mock-entries/dashboard-mock-entries";
 
 // Initialisierung des Stores
 export const useBrainDumpStore = create<BrainDumpState>((set) => ({
@@ -17,13 +16,12 @@ export const useBrainDumpStore = create<BrainDumpState>((set) => ({
         set(() => ({ isRecording: status }));
     },
 
-
     setProcessing: (status) => {
         set(() => ({ isProcessing: status }));
     },
 
     addDummyEntry: (text) => {
-        const newEntry: import("../features/braindump/types/BrainDump").BrainDumpEntry = {
+        const newEntry: import("../types/BrainDump").BrainDumpEntry = {
             id: crypto.randomUUID(),
             created_at: new Date().toISOString(),
             original_text: text,
