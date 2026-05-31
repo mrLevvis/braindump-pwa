@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import type { BrainDumpState, BrainDumpEntry } from "../types";
-
 import { fetchEntries, insertEntry } from "../services";
 import { createRecordingSlice } from "./recordingSliceStore";
+import { processText } from "../services/processBrainDump";
 
 /**
  * Erstellt den Zustandsslice für den BrainDump, einschließlich der Einträge und der Funktionen zum Aktualisieren dieser Einträge.
@@ -21,9 +21,11 @@ export const useBrainDumpStore = create<BrainDumpState>()((...a) => ({
     setRecording: (status: boolean) => {
         a[0](() => ({ isRecording: status }));
     },
+
     setProcessing: (status: boolean) => {
         a[0](() => ({ isProcessing: status }));
     },
+
     addDummyEntry: (text: string) => {
         const newEntry: BrainDumpEntry = {
             id: crypto.randomUUID(),
@@ -35,11 +37,26 @@ export const useBrainDumpStore = create<BrainDumpState>()((...a) => ({
         };
         insertEntry(newEntry);
     },
+
     updateEntryList: () => {
         fetchEntries().then((data) => {
             if (data) a[0](() => ({ entries: data }));
         });
     },
+
+    submitText: async (text: string) => {
+        a[0](() => ({ isProcessing: true }));
+        try {
+            const entry = await processText(text);
+            // TODO: entry + original_text in einen InsertEntry packen, insertEntry(...) aufrufen
+            // TODO: updateEntryList() aufrufen, damit die Liste den neuen Eintrag zeigt
+        } catch (e) {
+            // TODO: Fehler behandeln (z.B. console.error oder ein error-State)
+        } finally {
+            a[0](() => ({ isProcessing: false }));   // egal ob Erfolg/Fehler: Spinner aus
+        }
+    },
+
     // --- AUDIO RECORDING SLICE ---
     ...createRecordingSlice(...a),
 }));

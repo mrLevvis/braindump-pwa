@@ -1,41 +1,27 @@
-import type { RecorderStatus } from '../../features/braindump/types';
-
-export interface VoiceRecordButtonProps {
-  status: RecorderStatus;
-  onClick: () => void;
-}
+import type { VoiceRecordButtonProps } from '../../features/braindump/types';
+import './VoiceRecordButton.css';
 
 export default function VoiceRecordButton({ status, onClick }: VoiceRecordButtonProps) {
-  const isDisabled = status === 'requesting';
+  // Button ist gesperrt, solange auf Mikrofon-Freigabe oder auf die KI gewartet wird.
+  const isDisabled = status === 'requesting' || status === 'processing';
+
   let label = '[REC]';
-  let style: React.CSSProperties = {};
+  let buttonClass = 'voice-record-btn';
+
   if (status === 'requesting') {
     label = '...';
-    style = { background: '#eee', color: '#888', cursor: 'wait' };
+    buttonClass += ' voice-record-btn--requesting';
   } else if (status === 'recording') {
     label = '[STOP]';
-    style = { background: 'red', color: 'white' };
+    buttonClass += ' voice-record-btn--recording';
+  } else if (status === 'processing') {
+    label = 'KI analysiert...';
+    buttonClass += ' voice-record-btn--processing';
   }
+
   return (
-    <button type="button" onClick={onClick} disabled={isDisabled} style={style}>
+    <button type="button" onClick={onClick} disabled={isDisabled} className={buttonClass}>
       {label}
     </button>
   );
 }
-
-
-/**
- * export function VoiceRecordButton({ status, onClick }: VoiceRecordButtonProps) {
-  // TODO: status === 'requesting' → disabled + Spinner/Pending-Optik
-  // TODO: status === 'recording'  → aktive/rote Optik
-  // TODO: status === 'idle'       → Default-Optik
-  const isDisabled = status === 'requesting';
-
-  return (
-    <button onClick={onClick} disabled={isDisabled}>
-      {/* TODO: Icon/Label je status}
-    </button>
-  );
-}
-*/
-

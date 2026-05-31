@@ -19,6 +19,7 @@ export interface BrainDumpState extends RecordingSlice {
   setProcessing: (status: boolean) => void;
   addDummyEntry: (text: string) => void;
   updateEntryList: () => void;
+  submitText: (text: string) => Promise<void>;
 }
 
 /**
@@ -57,22 +58,14 @@ export interface BrainDumpEntry {
  */
 export type InsertEntry = Omit<BrainDumpEntry, 'id' | 'created_at'>;
 
-
 /**
- * Der globale Zustandstyp für das BrainDump-Feature.
- * Definiert sowohl die State-Properties als auch die Actions (Mutations).
- * Dieser Vertrag wird von unserem Zustand-Management (z.B. Zustand) implementiert.
+ * Der strukturierte Eintrag, den wir von der KI zurückbekommen.
+ * Dieser Vertrag definiert die Daten, die unsere Edge Function nach der Verarbeitung des Textes oder Audios zurückgibt.
+ * Er entspricht unserem KI-Vertrag und wird in unserem Zustand-Management verwendet, um die Einträge zu aktualisieren.
+ * In zukünftigen Iterationen könnte dieser Vertrag erweitert werden, wenn die KI mehr Informationen extrahieren kann.
  */
-export interface BrainDumpState {
-  // State
-  entries: BrainDumpEntry[];
-  isRecording: boolean;
-  isProcessing: boolean;
-
-  // Actions (Mutations)
-  setRecording: (isRecording: boolean) => void;
-  setProcessing: (isProcessing: boolean) => void;
-  // Vorerst eine Methode, um das Testen der UI zu ermöglichen
-  addDummyEntry: (text: string) => void;
-  updateEntryList: () => void; // Neue Methode zum Aktualisieren der Einträge
+export interface StructuredEntry {
+  category: EntryCategory;
+  title: string;
+  payload: EntryPayload;
 }
