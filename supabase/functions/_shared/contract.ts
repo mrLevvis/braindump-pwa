@@ -5,15 +5,20 @@
  */
 
 
-export type EntryCategory = "TASK" | "EVENT" | "NOTE";
+/** Die erlaubten Kategorien als Array (= die eine Wahrheit, zur Laufzeit nutzbar). */
+export const ENTRY_CATEGORIES = ["TASK", "EVENT", "NOTE"] as const;
 
+/** Der Typ wird aus dem Array ABGELEITET – ändert sich das Array, ändert sich der Typ automatisch. */
+export type EntryCategory = typeof ENTRY_CATEGORIES[number];
+
+/** Die Nutzlast eines Eintrags. */
 export interface EntryPayload {
   date?: string;   // YYYY-MM-DD
   time?: string;   // HH:MM
   tags?: string[];
 }
 
-// Exakt das, was die KI zurückgeben MUSS (= was das Frontend erwartet).
+/** Ein strukturierter Eintrag, wie ihn die KI zurückgibt. */
 export interface StructuredEntry {
   category: EntryCategory;
   title: string;
