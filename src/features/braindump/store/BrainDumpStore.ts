@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { BrainDumpState, BrainDumpEntry } from "../types";
+import type { BrainDumpState, BrainDumpEntry, InsertEntry } from "../types";
 import { fetchEntries, insertEntry } from "../services";
 import { createRecordingSlice } from "./recordingSliceStore";
 import { processText } from "../services/processBrainDump";
@@ -47,13 +47,26 @@ export const useBrainDumpStore = create<BrainDumpState>()((...a) => ({
     submitText: async (text: string) => {
         a[0](() => ({ isProcessing: true }));
         try {
-            const entry = await processText(text);
-            // TODO: entry + original_text in einen InsertEntry packen, insertEntry(...) aufrufen
-            // TODO: updateEntryList() aufrufen, damit die Liste den neuen Eintrag zeigt
+            // 1. Text von der KI strukturieren lassen.
+            const structured = await processText(text);
+
+            // 2. Den Eintrag für die DB zusammenbauen (id/created_at macht Supabase).
+            const newEntry: InsertEntry = {
+                title: structured.title,
+                original_text: text,
+                category: structured.category,
+                payload: structured.payload,
+            };
+
+            // 3. Speichern, dann Liste neu laden, damit der Eintrag erscheint.
+            await insertEntry(newEntry);
+            const data = await fetchEntries();
+            if (data) a[0](() => ({ entries: data }));
         } catch (e) {
-            // TODO: Fehler behandeln (z.B. console.error oder ein error-State)
+            console.error('submitText failed:', e);
+            // TODO später: Fehler im State halten und dem Nutzer zeigen
         } finally {
-            a[0](() => ({ isProcessing: false }));   // egal ob Erfolg/Fehler: Spinner aus
+            a[0](() => ({ isProcessing: false }));
         }
     },
 

@@ -38,17 +38,9 @@ export function useSetRecording() {
 }
 
 /**
- * Ein React-Hook, der die Funktion zum Hinzufügen eines Dummy-Eintrags aus dem BrainDump-Store abruft.
- * @returns Eine Funktion zum Hinzufügen eines Dummy-Eintrags.
+ * Ein React-Hook, der die Funktion zum Einreichen von Text aus dem BrainDump-Store abruft.
+ * @returns Eine Funktion zum Einreichen von Text.
  */
-export function useAddDummyEntry() {
-    return useBrainDumpStore((s) => s.addDummyEntry);
-}
-
-/**
- * Ein React-Hook, der die Funktion zum Aktualisieren der Eintragsliste aus dem BrainDump-Store abruft.
- * @returns Eine Funktion zum Aktualisieren der Eintragsliste.
- */
-export function useUpdateEntryList() {
-    return useBrainDumpStore((s) => s.updateEntryList);
+export function useSubmitText() {
+    return useBrainDumpStore((s) => s.submitText);
 }

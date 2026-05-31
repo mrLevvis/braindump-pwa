@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { EntryList, InputSection } from '../features/braindump/views';
-import { useEntries, useIsProcessing, useAddDummyEntry, useUpdateEntryList } from '../hooks/braindumpSelectors';
+import { useEntries, useIsProcessing, useSubmitText } from '../hooks/braindumpSelectors';
 import { useVoiceRecording } from '../hooks/useVoiceRecording';
 import { useSetAudioBlob } from '../hooks';
 
@@ -22,18 +22,17 @@ export const BrainDumpDashboard = () => {
     );
     const isProcessing = useIsProcessing();
     const buttonStatus = isProcessing ? 'processing' : status;
-    const addDummyEntry = useAddDummyEntry();
-    const updateEntryList = useUpdateEntryList();
+    const submitText = useSubmitText();
+
 
     /** 
      * handleTextSubmit ist die Funktion, die aufgerufen wird, wenn der Benutzer den Text eingibt und die Eingabetaste drückt.
      * Sie überprüft, ob der Text nicht leer ist, fügt einen Dummy-Eintrag hinzu, setzt den Textwert zurück und aktualisiert die Eintragsliste.
      */
     const handleTextSubmit = () => {
-        if (!textValue.trim()) return;
-        addDummyEntry(textValue);
-        setTextValue('');
-        updateEntryList();
+    if (!textValue.trim()) return;
+    submitText(textValue);
+    setTextValue('');
     };
 
     /**

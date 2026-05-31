@@ -17,9 +17,8 @@ export interface BrainDumpState extends RecordingSlice {
   isProcessing: boolean;
   setRecording: (status: boolean) => void;
   setProcessing: (status: boolean) => void;
-  addDummyEntry: (text: string) => void;
-  updateEntryList: () => void;
   submitText: (text: string) => Promise<void>;
+  updateEntryList: () => void;
 }
 
 /**
