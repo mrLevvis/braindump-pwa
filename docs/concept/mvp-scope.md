@@ -37,12 +37,21 @@ Wir fokussieren uns nur auf den Kernprozess.
 
 ## KI-Input-Output-Vertrag
 
-Die Kommunikation mit OpenAI folgt einem strikten Vertrag (Contract). Die KI darf niemals Freitext antworten, sondern muss ein typsicheres JSON-Objekt zurückliefern, das direkt in die Supabase-Datenbank geschrieben werden kann.
+Die Kommunikation mit dem KI-Anbieter folgt einem strikten Vertrag (Contract). Die KI darf niemals Freitext antworten, sondern muss ein typsicheres JSON-Objekt zurückliefern, das direkt in die Supabase-Datenbank geschrieben werden kann.
+
+Der Anbieter ist über eine Edge Function (sicheres BFF) gekapselt und dadurch austauschbar. Für die MVP-Version nutzen wir **Groq** (kostenloser Free-Tier, OpenAI-kompatibel): Whisper für die Transkription, ein Llama-Modell für die Strukturierung. Der API-Key liegt ausschließlich in den Supabase Secrets und verlässt nie die Cloud.
+
+### Ablauf (Pipeline)
+
+1. **Audio-Input:** Browser-Aufnahme → Whisper (`/audio/transcriptions`) → reiner Text.
+2. **Text-Input:** überspringt Schritt 1 und geht direkt weiter.
+3. **Strukturierung:** reiner Text → Llama (JSON-Mode) → JSON-Objekt.
+4. **Validierung:** Die Edge Function prüft das JSON gegen den Vertrag, *bevor* es zurückgeht. (JSON-Mode garantiert gültiges JSON, aber nicht unsere Felder.)
 
 ### 1. Input (Was die KI bekommt)
 
 - **System-Prompt:** Eine unveränderliche Anweisung, die das JSON-Ausgabeformat und die Evaluierungsregeln strikt vorschreibt.
-- **User-Payload:** Der Rohtext des Nutzers (Tastatur-Eingabe oder Transkript).
+- **User-Payload:** Der Rohtext des Nutzers (Tastatur-Eingabe oder Whisper-Transkript).
 
 ### 2. Die 3 Kern-Kategorien (Das strikte Enum)
 
@@ -54,10 +63,10 @@ Die Kommunikation mit OpenAI folgt einem strikten Vertrag (Contract). Die KI dar
 
 ### 3. Output (Der TypeScript-Vertrag)
 
-Spezifische Kontexte (wie Einkäufe) werden flexibel über das `tags`-Array abgebildet, um das Haupt-Enum schlank zu halten (KISS-Prinzip).
+Spezifische Kontexte (wie Einkäufe) werden flexibel über das `tags`-Array abgebildet, um das Haupt-Enum schlank zu halten (KISS-Prinzip). Dieser Typ lebt geteilt unter `supabase/functions/_shared/contract.ts`.
 
 ```typescript
-interface BrainDumpResponse {
+interface StructuredEntry {
   category: "TASK" | "EVENT" | "NOTE";
   title: string; // Kurz zusammengefasster Titel (max. 5 Wörter)
   payload: {
