@@ -3,7 +3,7 @@
  * * Eine Aufgabe: reinen Text über Groqs Llama in den StructuredEntry-Vertrag übersetzen.
  */
 
-import { SYSTEM_PROMPT } from "./systemPrompt.ts";
+import { buildSystemPrompt } from "./systemPrompt.ts";   // war: SYSTEM_PROMPT
 import type { StructuredEntry } from "../_shared/contract.ts";
 
 const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
@@ -25,7 +25,7 @@ export async function structureText(
     body: JSON.stringify({
       model: TEXT_MODEL,
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: buildSystemPrompt(getTodayIso()) },
         { role: "user", content: rawText },
       ],
       response_format: { type: "json_object" }, // zwingt Groq zu reinem JSON
@@ -61,4 +61,17 @@ export async function structureText(
   // 5. Das Objekt zurückgeben.
   //    KEINE Vertrags-Validierung hier – die macht index.ts (Schritt 5 dort).
   return entry;
+}
+
+
+/**------------------------------------------------------------------------------ 
+ * --- INTERNAL HELPER FUNCTIONS ---
+ * ------------------------------------------------------------------------------*/
+
+/**
+ * Gibt das heutige Datum im ISO-Format (YYYY-MM-DD) zurück.
+ * @returns {string} Das heutige Datum im ISO-Format.
+ */
+function getTodayIso(): string {
+  return new Date().toISOString().split("T")[0];
 }

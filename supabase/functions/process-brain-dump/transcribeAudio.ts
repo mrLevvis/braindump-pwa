@@ -10,13 +10,38 @@ export async function transcribeAudio(
   audioFile: File,
   groqApiKey: string,
 ): Promise<string> {
-  // TODO: FormData bauen -> file (audioFile) + model (WHISPER_MODEL)
-  // TODO: POST an GROQ_TRANSCRIPTION_URL
-  //       Header: Authorization: `Bearer ${groqApiKey}`
-  //       (kein Content-Type setzen – FormData setzt den Boundary selbst!)
-  // TODO: Antwort als JSON lesen und das Feld `text` zurückgeben
 
-  // ⚠️ MIME-Type-Falle: der audioFile MUSS einen Namen mit echter Endung
-  //    tragen (z. B. "audio.webm"), sonst lehnt Whisper ab. Siehe Notiz.
-  return ""; // Platzhalter
+  // 1. FormData bauen: die Audio-Datei + das gewünschte Modell.
+  const formData = new FormData();
+  formData.append("file", audioFile);
+  formData.append("model", WHISPER_MODEL);
+
+  // 2. An Groqs Whisper schicken.
+  //    WICHTIG: KEIN "Content-Type"-Header! Bei FormData setzt fetch den
+  //    multipart-Boundary selbst – manuell gesetzt zerstört es den Upload.
+  const response = await fetch(GROQ_TRANSCRIPTION_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${groqApiKey}`,
+    },
+    body: formData,
+  });
+
+  // 3. Hat Whisper erfolgreich geantwortet?
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Groq transcription failed: ${response.status} ${response.statusText} - ${errorBody}`);
+  }
+
+  // 4. Antwort auspacken. Whisper liefert { "text": "..." }.
+  const data = await response.json();
+  const transcribedText = data.text;
+
+  // 5. Sicherstellen, dass wirklich Text da ist.
+  if (!transcribedText || typeof transcribedText !== "string" || !transcribedText.trim()) {
+    throw new Error("Empty transcription from Groq");
+  }
+
+  // 6. Den reinen Text zurückgeben (das Strukturieren macht structureText).
+  return transcribedText;
 }

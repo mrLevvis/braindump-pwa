@@ -10,7 +10,7 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { structureText } from "./structureText.ts";
 import type { StructuredEntry } from "../_shared/contract.ts";
 import { ENTRY_CATEGORIES } from "../_shared/contract.ts";
-// import { transcribeAudio } from "./transcribeAudio.ts"; // kommt im Audio-Schritt dazu
+import { transcribeAudio } from "./transcribeAudio.ts";
 
 
 Deno.serve(async (request) => {
@@ -33,22 +33,49 @@ Deno.serve(async (request) => {
   }
 
 
-  // 3. Nur Text-Pfad (Audio kommt später):
-  //    Wir erwarten JSON mit einem Feld "text".
-  let body: Record<string, unknown>;
-  try {
-    body = await request.json();
-  } catch (_e) {
-    return new Response(
-      JSON.stringify({ error: "Invalid JSON body" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
+  // 3. Input-Typ erkennen und in EINEN String "rawText" verwandeln.
+  //    - multipart/form-data -> Audio -> erst transkribieren
+  //    - application/json     -> Text  -> direkt nehmen
+  const contentType = request.headers.get("content-type") ?? "";
+  let rawText: string;
 
-  const rawText = body?.text;
-  if (!rawText || typeof rawText !== "string" || !rawText.trim()) {
+  try {
+    if (contentType.includes("multipart/form-data")) {
+      // --- Audio-Pfad ---
+      const formData = await request.formData();
+      const audioInput = formData.get("file");
+
+      // Sicherstellen, dass wirklich eine Datei kam (nicht nur Text/leer).
+      if (!(audioInput instanceof File)) {
+        return new Response(
+          JSON.stringify({ error: "Missing audio file" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // MIME-FALLE: Whisper erkennt das Format am Dateinamen. Hat die Datei
+      // keine (oder keine brauchbare) Endung, packen wir sie sicherheitshalber
+      // in eine neue File mit passendem Namen um.
+      const safeAudioFile = ensureFileName(audioInput);
+
+      rawText = await transcribeAudio(safeAudioFile, groqApiKey);
+
+    } else {
+      // --- Text-Pfad (wie bisher) ---
+      const body = await request.json();
+      const text = body?.text;
+      if (!text || typeof text !== "string" || !text.trim()) {
+        return new Response(
+          JSON.stringify({ error: "Missing text" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      rawText = text;
+    }
+  } catch (e) {
+    const details = e instanceof Error ? e.message : String(e);
     return new Response(
-      JSON.stringify({ error: "Missing text" }),
+      JSON.stringify({ error: "Could not read input", details }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -84,3 +111,24 @@ Deno.serve(async (request) => {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 });
+
+
+/**------------------------------------------------------------------------------ 
+ * --- INTERNAL HELPER FUNCTIONS ---
+ * ------------------------------------------------------------------------------*/
+
+/**
+ * Stellt sicher, dass die Datei einen gültigen Namen hat.
+ * Wenn nicht, wird eine neue Datei mit einer Standard-Endung erstellt.
+ * @param file Die ursprüngliche Datei.
+ * @returns Eine Datei mit gültigem Namen.
+ */
+function ensureFileName(file: File): File {
+  const hasExtension = file.name && file.name.includes(".");
+  if (hasExtension) {
+    return file; // Name passt schon, nichts zu tun.
+  }
+  // Kein/komischer Name -> neu verpacken mit Standard-Endung.
+  // webm ist das, was Browser-MediaRecorder meist liefert.
+  return new File([file], "audio.webm", { type: file.type || "audio/webm" });
+}
