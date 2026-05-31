@@ -4,8 +4,9 @@
  * * Reine Infrastruktur, frei von Geschäftslogik.
  */
 
-
 export const corsHeaders = {
-  "Access-Control-Allow-Origin": "*", // TODO: später auf echte Domain einschränken
-  "Access-Control-Allow-Headers": "authorization, content-type",
+  // SECURITY TODO (vor Produktion): "*" durch die echte Frontend-Domain ersetzen,
+  // z.B. "https://meine-app.vercel.app". Sonst darf jede Website die Function aufrufen.
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, content-type, apikey",
 };
