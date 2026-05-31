@@ -26,8 +26,9 @@ export const BrainDumpDashboard = () => {
 
 
     /** 
-     * handleTextSubmit ist die Funktion, die aufgerufen wird, wenn der Benutzer den Text eingibt und die Eingabetaste drückt.
-     * Sie überprüft, ob der Text nicht leer ist, fügt einen Dummy-Eintrag hinzu, setzt den Textwert zurück und aktualisiert die Eintragsliste.
+     * Die Funktion handleTextSubmit wird aufgerufen, wenn der Benutzer den Text eingibt und auf den Submit-Button klickt.
+     * Sie überprüft, ob der eingegebene Text nicht leer ist, und ruft dann die submitText-Funktion aus dem BrainDump-Store auf, um den Text zu verarbeiten.
+     * Nach dem Einreichen des Textes wird das Eingabefeld geleert, indem der textValue-Zustand zurückgesetzt wird.
      */
     const handleTextSubmit = () => {
     if (!textValue.trim()) return;
