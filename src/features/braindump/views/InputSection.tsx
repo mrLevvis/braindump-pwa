@@ -12,7 +12,7 @@ export default function InputSection({
     textValue: string;
     onTextChange: (value: string) => void;
     onTextSubmit: () => void;
-    status: import('../../../features/braindump/types').RecorderStatus;
+    status: import('../../../features/braindump/types').VoiceButtonStatus;
     onVoiceClick: () => void;
     disabled?: boolean;
   }) {

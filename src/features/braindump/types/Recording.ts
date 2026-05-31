@@ -58,6 +58,16 @@ export interface UseMediaRecorderResult {
  * und die Aufnahme zu starten oder zu stoppen, wenn der Button geklickt wird.
  */
 export interface VoiceRecordButtonProps {
-  status: RecorderStatus;
+  status: VoiceButtonStatus;
   onClick: () => void;
 }
+
+/**
+ * Der Typ für den Status der VoiceRecordButton-Komponente, der die verschiedenen Phasen der Aufnahme repräsentiert.
+ * 'idle' bedeutet, dass keine Aufnahme stattfindet.
+ * 'requesting' bedeutet, dass die Berechtigung für die Aufnahme angefordert wird.
+ * 'recording' bedeutet, dass die Aufnahme aktiv ist.
+ * 'processing' bedeutet, dass die Aufnahme abgeschlossen ist und die KI die Daten verarbeitet.
+ * Dieser Typ ermöglicht es der Komponente, ihren Zustand und ihr Verhalten basierend auf dem aktuellen Status zu steuern.
+ */
+export type VoiceButtonStatus = 'idle' | 'requesting' | 'recording' | 'processing';

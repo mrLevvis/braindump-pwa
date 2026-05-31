@@ -21,6 +21,7 @@ export const BrainDumpDashboard = () => {
         }
     );
     const isProcessing = useIsProcessing();
+    const buttonStatus = isProcessing ? 'processing' : status;
     const addDummyEntry = useAddDummyEntry();
     const updateEntryList = useUpdateEntryList();
 
@@ -55,7 +56,7 @@ export const BrainDumpDashboard = () => {
                 textValue={textValue}
                 onTextChange={setTextValue}
                 onTextSubmit={handleTextSubmit}
-                status={status}
+                status={buttonStatus}
                 onVoiceClick={toggleRecording}
                 disabled={isProcessing}
             />
