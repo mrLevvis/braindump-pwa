@@ -1,4 +1,4 @@
-import { VoiceRecorderControl } from './components/voice/VoiceRecorderControl';
+import { VoiceRecorderControl } from './components/voice';
 import { BrainDumpDashboard } from './components/BrainDumpDashboard';
 
 function App() {
