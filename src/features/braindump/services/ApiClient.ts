@@ -1,8 +1,8 @@
 import { createClient, PostgrestError } from '@supabase/supabase-js';
 import type { BrainDumpEntry, InsertEntry } from '../types';
 
-const BRAINDUMP_ENTRIES = 'braindump_entries';
-const BRAINDUMP_ENTRIES__MOCK = 'braindump_entries__mock';
+//const BRAINDUMP_ENTRIES = 'braindump_entries';
+//const BRAINDUMP_ENTRIES__MOCK = 'braindump_entries__mock';
 const BRAINDUMP_ENTRIES__TEST = 'braindump_entries__test';
 const BRAINDUMP_ENTRIES_DB = BRAINDUMP_ENTRIES__TEST
 

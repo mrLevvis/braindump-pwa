@@ -1,5 +1,5 @@
 import type { VoiceRecordButtonProps } from '../../features/braindump/types';
-import './VoiceRecordButton.css';
+//import './VoiceRecordButton.css';
 
 export default function VoiceRecordButton({ status, onClick }: VoiceRecordButtonProps) {
   // Button ist gesperrt, solange auf Mikrofon-Freigabe oder auf die KI gewartet wird.
