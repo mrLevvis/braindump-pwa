@@ -249,3 +249,27 @@ bleibt unberührt.
   - Bei **JSON** (Text-Pfad): `Content-Type: application/json` setzen.
   - Bei **FormData** (Audio-Pfad): `Content-Type` **NICHT** von Hand setzen!
     (Der multipart-Boundary wird sonst zerstört → Upload kaputt.)
+
+---
+
+## 12. Offene Punkte ("später"-Liste)
+
+Bewusst aufgeschobene Dinge – kein Versäumnis, sondern korrekt nach hinten priorisiert.
+
+- [ ] **CORS einschränken (vor Produktion):** In `_shared/cors.ts` steht
+  `Access-Control-Allow-Origin: "*"` (jede Website darf zugreifen). Vor dem
+  Live-Gang durch die echte Frontend-Domain ersetzen, z.B.
+  `"https://meine-app.vercel.app"`.
+
+- [ ] **Zeitzone beim Datum:** `structureText.ts` berechnet "heute" via
+  `new Date().toISOString()` = **UTC**. Spätabends deutscher Zeit kann das einen
+  Tag daneben liegen. Sobald der Planner ernst wird: Datum in Europe/Berlin
+  berechnen.
+
+- [ ] **Audio-Pfad testen:** Der Audio-Zweig (`transcribeAudio.ts` + Routing in
+  `index.ts`) ist deployed, aber erst mit echtem Frontend-Audio testbar
+  (PowerShell reicht dafür nicht – braucht eine echte Audio-Datei als Upload).
+
+- [ ] **Dateiname-Verantwortung fürs Audio:** Die MIME-Falle ist server-seitig
+  über `ensureFileName` abgesichert. Der saubere Ort bleibt aber das **Frontend**:
+  die Aufnahme schon dort als `audio.webm` benennen (näher an der Quelle).
