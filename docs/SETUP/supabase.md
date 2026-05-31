@@ -47,12 +47,3 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 ```
-
-### 5. Versionierung
-Änderungen speichern und committen:
-```bash
-git add .
-git commit -m "feat: setup supabase client and database schema"
-git push
-```
-**Erledigt:** Ticket auf "Done" schieben.
