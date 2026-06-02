@@ -1,5 +1,3 @@
-import type { RecordingSlice } from './Recording';
-
 /**
  * src/features/braindump/types/BrainDump.ts
  * * Domänen-Modelle & Interfaces für das BrainDump Feature.
@@ -11,7 +9,7 @@ import type { RecordingSlice } from './Recording';
  * Definiert sowohl die State-Properties als auch die Actions (Mutations).
  * Dieser Vertrag wird von unserem Zustand-Management (z.B. Zustand) implementiert.
  */
-export interface BrainDumpState extends RecordingSlice {
+export interface BrainDumpState {
   entries: BrainDumpEntry[];
   isRecording: boolean;
   isProcessing: boolean;

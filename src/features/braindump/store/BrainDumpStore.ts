@@ -1,14 +1,13 @@
 import { create } from "zustand";
 import type { BrainDumpState, InsertEntry } from "../types";
 import { fetchEntries, insertEntry } from "../services";
-import { createRecordingSlice } from "./recordingSliceStore";
 import { processText } from "../services/processBrainDump";
 
 /**
  * Globaler Zustand-Store für das BrainDump-Feature.
- * Hält Einträge + Statusflags und mischt den Audio-Recording-Slice dazu.
+ * Hält Einträge + Statusflags.
  */
-export const useBrainDumpStore = create<BrainDumpState>()((set, get, store) => ({
+export const useBrainDumpStore = create<BrainDumpState>()((set) => ({
     // --- INITIAL STATE ---
     entries: [],
     isRecording: false,
@@ -54,9 +53,6 @@ export const useBrainDumpStore = create<BrainDumpState>()((set, get, store) => (
             set(() => ({ isProcessing: false }));
         }
     },
-
-    // --- AUDIO RECORDING SLICE ---
-    ...createRecordingSlice(set, get, store),
 }));
 
 // Initiales Laden der Einträge (außerhalb des Factory-Objekts, damit es nur einmal passiert)
