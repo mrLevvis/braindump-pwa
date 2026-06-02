@@ -160,13 +160,13 @@ sichtbar (zeigt das `details`-Feld mit dem echten Fehler).
 
 ```powershell
 $headers = @{
-  "apikey" = "DEIN_ANON_KEY"                         # aus Schritt 3c
+  "apikey" = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvdWJhemZvanR6c2ZweHJ0eHFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1MjY4OTIsImV4cCI6MjA5NTEwMjg5Mn0.0EdzBvgPFdEBr3U8f5aP95jiqFGxsXoU2Ko2JRhBojY"
   "Content-Type" = "application/json"
 }
 $body = '{"text": "Ich muss morgen um 15 Uhr Brot kaufen"}'
 
 try {
-  Invoke-RestMethod -Uri "https://DEINE_PROJECT_REF.supabase.co/functions/v1/process-brain-dump" -Method Post -Headers $headers -Body $body
+  Invoke-RestMethod -Uri "https://woubazfojtzsfpxrtxqa.supabase.co/functions/v1/process-brain-dump" -Method Post -Headers $headers -Body $body
 } catch {
   $stream = $_.Exception.Response.GetResponseStream()
   $reader = New-Object System.IO.StreamReader($stream)
