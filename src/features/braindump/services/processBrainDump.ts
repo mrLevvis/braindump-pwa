@@ -7,8 +7,28 @@
 
 import type { StructuredEntry } from '../types';
 
-const FUNCTION_URL = import.meta.env.VITE_BRAINDUMP_FUNCTION_URL;
 const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+function resolveFunctionUrl(): string {
+    const directFunctionUrl = import.meta.env.VITE_BRAINDUMP_FUNCTION_URL?.trim();
+    if (directFunctionUrl) return directFunctionUrl;
+
+    const functionsUrl = import.meta.env.VITE_SUPABASE_FUNCTIONS_URL?.trim();
+    if (functionsUrl) return functionsUrl;
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
+    if (!supabaseUrl) {
+        throw new Error('Missing function URL. Set VITE_BRAINDUMP_FUNCTION_URL or VITE_SUPABASE_FUNCTIONS_URL (or VITE_SUPABASE_URL).');
+    }
+
+    return `${supabaseUrl}/functions/v1/process-brain-dump`;
+}
+
+const FUNCTION_URL = resolveFunctionUrl();
+
+if (!ANON_KEY) {
+    throw new Error('Missing VITE_SUPABASE_ANON_KEY.');
+}
 
 /**
  * Schickt einen Text an die Edge Function und gibt den strukturierten Eintrag zurück. Der Vertrag ist in ../_shared/contract.ts definiert.
