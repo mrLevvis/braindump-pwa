@@ -2,12 +2,16 @@ import type { BrainDumpEntry } from '../types';
 import { EntryCard } from './';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
+const EMPTY_STATE_CARD_CLASS_NAME = ['rounded-2xl', 'border-dashed', 'bg-muted/20'].join(' ');
+const EMPTY_STATE_HEADER_CLASS_NAME = ['px-4', 'pb-0', 'pt-4', 'text-center'].join(' ');
+const EMPTY_STATE_CONTENT_CLASS_NAME = ['px-4', 'pb-4', 'pt-2', 'text-center', 'text-sm', 'text-muted-foreground'].join(' ');
+
 const EmptyEntriesState = () => (
-  <Card size="sm" className="rounded-2xl py-4">
-    <CardHeader className="px-4 pb-0">
+  <Card size="sm" className={EMPTY_STATE_CARD_CLASS_NAME}>
+    <CardHeader className={EMPTY_STATE_HEADER_CLASS_NAME}>
       <CardTitle>Noch keine Gedanken sortiert.</CardTitle>
     </CardHeader>
-    <CardContent className="px-4 pt-2 text-sm text-muted-foreground">
+    <CardContent className={EMPTY_STATE_CONTENT_CLASS_NAME}>
       <p>Sprich oder schreibe deinen ersten Gedanken auf.</p>
     </CardContent>
   </Card>

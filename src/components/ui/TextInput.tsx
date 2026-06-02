@@ -1,4 +1,5 @@
 import type { KeyboardEvent } from 'react';
+import { Input } from './input';
 
 /* -------------------------------------------------------------------------- */
 /*                                   Props                                    */
@@ -17,12 +18,13 @@ interface TextInputProps {
 /* -------------------------------------------------------------------------- */
 
 const DEFAULT_PLACEHOLDER = 'Schreibe einen Gedanken...';
+const TEXT_INPUT_CLASS_NAME = ['min-w-0', 'flex-1'].join(' ');
 
 /* -------------------------------------------------------------------------- */
 /*                              UI Component                                  */
 /* -------------------------------------------------------------------------- */
 
-export default function TextInput({
+export function TextInput({
   value,
   onChange,
   onSubmit,
@@ -41,13 +43,16 @@ export default function TextInput({
   };
 
   return (
-    <input
+    <Input
       type="text"
       value={value}
       onChange={(event) => handleInputChange(event.target.value)}
       onKeyDown={handleKeyDown}
       placeholder={resolvedPlaceholder}
       disabled={disabled}
+      className={TEXT_INPUT_CLASS_NAME}
     />
   );
 }
+
+export default TextInput;

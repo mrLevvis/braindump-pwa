@@ -1,4 +1,3 @@
-import React from 'react';
 import VoiceRecordButton from './VoiceRecordButton';
 import { useVoiceRecording } from '../../hooks/useVoiceRecording';
 
@@ -8,16 +7,18 @@ interface VoiceRecorderControlProps {
   disabled?: boolean;
 }
 
-export const VoiceRecorderControl: React.FC<VoiceRecorderControlProps> = ({
+const VOICE_RECORDER_ERROR_CLASS_NAME = ['mt-2', 'text-sm', 'text-destructive'].join(' ');
+
+export const VoiceRecorderControl = ({
   onRecordingComplete,
   onError,
-}) => {
+}: Readonly<VoiceRecorderControlProps>) => {
   const { status, toggleRecording, error } = useVoiceRecording(onRecordingComplete, onError);
 
-    return (
-      <div>
-        <VoiceRecordButton status={status} onClick={toggleRecording} />
-      {error && <div style={{ color: 'red', marginTop: 8 }}>{error.message}</div>}
+  return (
+    <div>
+      <VoiceRecordButton status={status} onClick={toggleRecording} />
+      {error && <div className={VOICE_RECORDER_ERROR_CLASS_NAME}>{error.message}</div>}
     </div>
   );
 };
