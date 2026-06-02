@@ -16,6 +16,7 @@ export interface BrainDumpState {
   setRecording: (status: boolean) => void;
   setProcessing: (status: boolean) => void;
   submitText: (text: string) => Promise<void>;
+  deleteEntry: (id: string) => Promise<void>;
   updateEntryList: () => void;
 }
 

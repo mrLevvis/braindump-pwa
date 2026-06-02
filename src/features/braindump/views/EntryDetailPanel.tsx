@@ -1,5 +1,18 @@
+import { useState } from 'react';
+import { useDeleteEntry, useSuccessToast } from '@/hooks';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { BrainDumpEntry, EntryCategory } from '../types';
 
 const ENTRY_DATE_FORMATTER = new Intl.DateTimeFormat('de-DE', {
@@ -47,6 +60,8 @@ const TIME_ROW_CLASS_NAME = ['grid', 'gap-1'].join(' ');
 const TIME_LABEL_CLASS_NAME = ['text-xs', 'font-medium', 'uppercase', 'tracking-wide', 'text-muted-foreground'].join(' ');
 const TIME_VALUE_CLASS_NAME = ['text-sm', 'font-medium', 'text-foreground'].join(' ');
 const APPOINTMENT_LABEL_CLASS_NAME = ['inline-flex', 'w-fit', 'rounded-md', 'bg-primary/10', 'px-2', 'py-1', 'text-xs', 'font-medium', 'text-primary'].join(' ');
+const DELETE_ACTION_ROW_CLASS_NAME = ['flex', 'justify-end', 'pt-2'].join(' ');
+const DELETE_BUTTON_CLASS_NAME = ['min-w-28'].join(' ');
 
 const formatCreatedDateTime = (createdAtIso: string): string => {
   const createdAt = new Date(createdAtIso);
@@ -126,11 +141,32 @@ const EntryTimingDetails = ({ date, entryTime, createdAt }: Readonly<{ date?: st
 };
 
 export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{ entry: BrainDumpEntry; open: boolean; onOpenChange: (open: boolean) => void }>) {
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const deleteEntry = useDeleteEntry();
+  const showSuccessToast = useSuccessToast();
   const title = entry.title?.trim() || 'Untitled';
   const tags = entry.payload?.tags ?? [];
   const date = entry.payload?.date;
   const entryTime = entry.payload?.time;
   const hasTags = tags.length > 0;
+
+  const handleDeleteConfirm = async () => {
+    if (isDeleting) return;
+
+    setIsDeleting(true);
+
+    try {
+      await deleteEntry(entry.id);
+      setIsDeleteDialogOpen(false);
+      onOpenChange(false);
+      showSuccessToast('Eintrag wurde erfolgreich geloescht.');
+    } catch {
+      // Fehler-Toast wird bereits im Service ueber handlePostgrestError gezeigt.
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -156,8 +192,29 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{ entry
               <TagBadgeList tags={tags} />
             </section>
           ) : null}
+
+          <div className={DELETE_ACTION_ROW_CLASS_NAME}>
+            <Button type="button" variant="destructive" className={DELETE_BUTTON_CLASS_NAME} onClick={() => setIsDeleteDialogOpen(true)}>
+              Loeschen
+            </Button>
+          </div>
         </div>
       </DialogContent>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eintrag wirklich loeschen?</AlertDialogTitle>
+            <AlertDialogDescription>Diese Aktion kann nicht rueckgaengig gemacht werden.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleDeleteConfirm} disabled={isDeleting}>
+              {isDeleting ? 'Loesche...' : 'Loeschen'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

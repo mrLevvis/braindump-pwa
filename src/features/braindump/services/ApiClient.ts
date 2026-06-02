@@ -71,3 +71,17 @@ export async function insertEntry(entry: InsertEntry): Promise<InsertEntry | nul
         .insert([entry]);
     return handlePostgrestError<InsertEntry>('Error inserting entry:', error, data);
 }
+
+/**
+ * Loescht einen bestehenden Eintrag per ID aus der Datenbank.
+ * @param id Die UUID des Eintrags.
+ * @returns true bei Erfolg, sonst null.
+ */
+export async function deleteEntry(id: string): Promise<true | null> {
+    const { error } = await supabase
+        .from(BRAINDUMP_ENTRIES_DB)
+        .delete()
+        .eq('id', id);
+
+    return handlePostgrestError<true>('Error deleting entry:', error, true);
+}

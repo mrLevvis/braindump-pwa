@@ -46,6 +46,14 @@ export function useSubmitText() {
 }
 
 /**
+ * Ein React-Hook, der die Loesch-Funktion fuer Eintraege aus dem BrainDump-Store abruft.
+ * @returns Eine Funktion zum Loeschen eines Eintrags per ID.
+ */
+export function useDeleteEntry() {
+    return useBrainDumpStore((s) => s.deleteEntry);
+}
+
+/**
  * Ein React-Hook, der die Funktion zum Setzen des Verarbeitungs-Status abruft.
  * @returns Eine Funktion zum Setzen von isProcessing.
  */
