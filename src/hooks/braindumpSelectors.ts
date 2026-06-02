@@ -44,3 +44,11 @@ export function useSetRecording() {
 export function useSubmitText() {
     return useBrainDumpStore((s) => s.submitText);
 }
+
+/**
+ * Ein React-Hook, der die Funktion zum Setzen des Verarbeitungs-Status abruft.
+ * @returns Eine Funktion zum Setzen von isProcessing.
+ */
+export function useSetProcessing() {
+    return useBrainDumpStore((s) => s.setProcessing);
+}

@@ -3,22 +3,26 @@ import { formatCreatedTime } from '../utils';
 
 export default function EntryCard({ entry }: { entry: BrainDumpEntry }) {
   const createdTime = formatCreatedTime(entry.created_at);
+  const title = entry.title;
   const originalText = entry.original_text;
   const category = entry.category;
   const tags = entry.payload?.tags ?? [];
 
   return (
     <div>
-      <span>{createdTime}  </span>
-      <span>{originalText}  </span>
+      <div>====================================================</div>
+      <h2>|  {title}</h2>
+      <span>| {originalText}  </span>
 
       <div>
-        <span>{category}  </span>
+        <span>| {createdTime}  </span>
+        <span>| {category}  </span>
 
         {tags.length > 0 && (
-          <span>{tags.join(', ')}  </span>
+          <span>| {tags.join(', ')}  </span>
         )}
       </div>
+      <div>====================================================</div>
       <div>.</div>
     </div>
   );

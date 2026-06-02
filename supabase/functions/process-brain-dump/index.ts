@@ -58,7 +58,14 @@ Deno.serve(async (request) => {
       // in eine neue File mit passendem Namen um.
       const safeAudioFile = ensureFileName(audioInput);
 
-      rawText = await transcribeAudio(safeAudioFile, groqApiKey);
+      // Audio-Pfad endet HIER: nur transkribieren, NICHT strukturieren.
+      // Der Nutzer prüft das Transkript erst im Textfeld, schickt es dann
+      // über den Text-Pfad (application/json) erneut zur Strukturierung.
+      const transcript = await transcribeAudio(safeAudioFile, groqApiKey);
+      return new Response(
+        JSON.stringify({ text: transcript }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
 
     } else {
       // --- Text-Pfad (wie bisher) ---

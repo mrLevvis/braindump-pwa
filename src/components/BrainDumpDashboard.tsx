@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { EntryList, InputSection } from '../features/braindump/views';
-import { useEntries, useIsProcessing, useSubmitText } from '../hooks/braindumpSelectors';
+import { useEntries, useIsProcessing, useSetProcessing, useSubmitText } from '../hooks/braindumpSelectors';
 import { useVoiceRecording } from '../hooks/useVoiceRecording';
-import { useSetAudioBlob } from '../hooks';
+import { transcribeAudio } from '../features/braindump/services/processBrainDump';
 
 
 export const BrainDumpDashboard = () => {
@@ -14,27 +14,48 @@ export const BrainDumpDashboard = () => {
      */
     const [textValue, setTextValue] = useState('');
     const entries = useEntries();
-    const setAudioBlob = useSetAudioBlob();
     const { status, toggleRecording } = useVoiceRecording(
         (blob) => {
-            setAudioBlob(blob);
+            handleTranscription(blob);
         }
     );
     const isProcessing = useIsProcessing();
     const buttonStatus = isProcessing ? 'processing' : status;
     const submitText = useSubmitText();
+    const setProcessing = useSetProcessing();
 
 
-    /** 
-     * Die Funktion handleTextSubmit wird aufgerufen, wenn der Benutzer den Text eingibt und auf den Submit-Button klickt.
-     * Sie überprüft, ob der eingegebene Text nicht leer ist, und ruft dann die submitText-Funktion aus dem BrainDump-Store auf, um den Text zu verarbeiten.
-     * Nach dem Einreichen des Textes wird das Eingabefeld geleert, indem der textValue-Zustand zurückgesetzt wird.
+    /**
+     * Wird aufgerufen, wenn der Benutzer den Text über die Eingabesection einreicht.
+     * Er überprüft, ob der Text nicht leer ist, schickt ihn dann zur Strukturierung an
+     * die Edge Function und leert schließlich das Textfeld.
+     * @returns void
      */
     const handleTextSubmit = () => {
     if (!textValue.trim()) return;
     submitText(textValue);
     setTextValue('');
     };
+
+
+    /**
+     * Wird aufgerufen, wenn eine Sprachaufnahme abgeschlossen ist.
+     * Schickt den Blob zur Transkription und schreibt das Ergebnis editierbar ins Textfeld.
+     * @param blob Die Audiodatei als Blob.
+     * @returns void
+     */
+    const handleTranscription = async (blob: Blob) => {
+        setProcessing(true);
+        try {
+            const transcript = await transcribeAudio(blob);
+            setTextValue(transcript);
+        } catch (e) {
+            console.error('transcription failed:', e);
+        } finally {
+            setProcessing(false);
+        }
+    };
+
 
     /**
      * Der Rückgabewert des BrainDumpDashboard-Komponents, der die Hauptansicht unserer Anwendung darstellt.
