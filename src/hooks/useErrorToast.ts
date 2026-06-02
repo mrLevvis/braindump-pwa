@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { toast } from 'sonner';
 
 /**------------------------------------------------------------------------------ 
  * --- HOOK: useErrorToast ---
@@ -11,8 +12,7 @@ import { useCallback } from 'react';
 export function useErrorToast() {
   return useCallback((error: unknown) => {
     const message = error instanceof Error ? error.message : String(error);
-    // Hier könnte ein echtes Toast-System integriert werden
-    alert(message);
+    toast.error(message);
   }, []);
 }
 
