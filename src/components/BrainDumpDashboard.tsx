@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { EntryList, InputSection } from '../features/braindump/views';
 import { useEntries, useIsProcessing, useSetProcessing, useSubmitText } from '../hooks/braindumpSelectors';
+import { useErrorToast, useSuccessToast } from '../hooks/useErrorToast';
 import { useVoiceRecording } from '../hooks/useVoiceRecording';
 import { transcribeAudio } from '../features/braindump/services/processBrainDump';
 
@@ -23,6 +24,8 @@ export const BrainDumpDashboard = () => {
     const buttonStatus = isProcessing ? 'processing' : status;
     const submitText = useSubmitText();
     const setProcessing = useSetProcessing();
+    const showErrorToast = useErrorToast();
+    const showSuccessToast = useSuccessToast();
 
 
     /**
@@ -31,10 +34,15 @@ export const BrainDumpDashboard = () => {
      * die Edge Function und leert schließlich das Textfeld.
      * @returns void
      */
-    const handleTextSubmit = () => {
+    const handleTextSubmit = async () => {
     if (!textValue.trim()) return;
-    submitText(textValue);
-    setTextValue('');
+    try {
+        await submitText(textValue);
+        setTextValue('');
+        showSuccessToast('Eintrag erfolgreich strukturiert und gespeichert.');
+    } catch {
+        showErrorToast('Beim Strukturieren ist etwas schiefgelaufen. Bitte versuche es gleich erneut.');
+    }
     };
 
 
@@ -49,8 +57,9 @@ export const BrainDumpDashboard = () => {
         try {
             const transcript = await transcribeAudio(blob);
             setTextValue(transcript);
+            showSuccessToast('Transkription erfolgreich erstellt.');
         } catch (e) {
-            console.error('transcription failed:', e);
+            showErrorToast(e);
         } finally {
             setProcessing(false);
         }

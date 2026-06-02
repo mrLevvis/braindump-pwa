@@ -1,5 +1,6 @@
 import { createClient, PostgrestError } from '@supabase/supabase-js';
 import type { BrainDumpEntry, InsertEntry } from '../types';
+import { showErrorToast } from '../../../hooks/useErrorToast';
 
 //const BRAINDUMP_ENTRIES = 'braindump_entries';
 //const BRAINDUMP_ENTRIES__MOCK = 'braindump_entries__mock';
@@ -36,7 +37,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
  */
 function handlePostgrestError<T>(message: string, error: PostgrestError | null, data: T | null): T | null {
     if (error) {
-        console.error(message, error);
+        showErrorToast(`${message} ${error.message}`);
         return null as T | null;
     }
     return data;

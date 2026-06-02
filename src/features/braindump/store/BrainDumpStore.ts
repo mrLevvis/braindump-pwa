@@ -47,8 +47,7 @@ export const useBrainDumpStore = create<BrainDumpState>()((set) => ({
             const data = await fetchEntries();
             if (data) set(() => ({ entries: data }));
         } catch (e) {
-            console.error('submitText failed:', e);
-            // TODO später: Fehler im State halten und dem Nutzer zeigen
+            throw e;
         } finally {
             set(() => ({ isProcessing: false }));
         }
