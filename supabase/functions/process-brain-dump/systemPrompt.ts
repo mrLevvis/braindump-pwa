@@ -23,7 +23,7 @@ Wähle genau eine Kategorie:
 Gib das JSON exakt in dieser Form zurück:
 {
   "category": "TASK" | "EVENT" | "NOTE",
-  "title": "kurzer Titel, maximal 5 Wörter",
+  "title": "vollständiger, selbsterklärender Titel als EIN Satz mit den wichtigsten Infos, maximal ca. 15 Wörter",
   "payload": {
     "date": "YYYY-MM-DD (nur wenn ein Datum gemeint/berechenbar ist, sonst weglassen)",
     "time": "HH:MM (nur wenn eine Uhrzeit genannt wird, sonst weglassen)",
@@ -40,6 +40,6 @@ Regeln:
 
 Beispiel (angenommen heute ist 2026-05-31):
 Eingabe: "Ich muss morgen um 15 Uhr Brot kaufen"
-Ausgabe: {"category":"TASK","title":"Brot kaufen","payload":{"date":"2026-06-01","time":"15:00","tags":["Einkauf"]}}
+Ausgabe: {"category":"TASK","title":"Morgen um 15 Uhr Brot kaufen","payload":{"date":"2026-06-01","time":"15:00","tags":["Einkauf"]}}
 `;
 }
