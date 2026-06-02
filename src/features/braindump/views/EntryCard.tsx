@@ -4,6 +4,12 @@ import type { BrainDumpEntry } from '../types';
 import { formatCreatedTime } from '../utils';
 import { CategoryBadge, EntryDetailPanel, TagBadgeList } from './EntryDetailPanel.tsx';
 
+const ENTRY_DATE_FORMATTER = new Intl.DateTimeFormat('de-DE', {
+  weekday: 'short',
+  month: '2-digit',
+  day: '2-digit',
+});
+
 const CARD_BUTTON_CLASS_NAME = [
   'w-full',
   'rounded-2xl',
@@ -19,14 +25,36 @@ const CARD_HEADER_CLASS_NAME = ['flex', 'flex-row', 'items-start', 'justify-betw
 const CARD_CONTENT_CLASS_NAME = ['space-y-2.5', 'px-4', 'pt-0'].join(' ');
 const CARD_FOOTER_CLASS_NAME = ['px-4', 'pt-0', 'text-xs', 'text-muted-foreground'].join(' ');
 const PAYLOAD_TIME_BLOCK_CLASS_NAME = ['flex', 'flex-wrap', 'items-center', 'gap-x-3', 'gap-y-1', 'text-sm', 'font-semibold', 'text-foreground'].join(' ');
+const PAYLOAD_TIME_LABEL_CLASS_NAME = ['inline-flex', 'w-fit', 'rounded-md', 'bg-primary/10', 'px-2', 'py-0.5', 'text-[11px]', 'font-medium', 'text-primary'].join(' ');
+
+const formatEntryDate = (entryDateIso?: string): string | null => {
+  if (!entryDateIso) return null;
+
+  const parsedDate = new Date(`${entryDateIso}T00:00:00`);
+
+  if (Number.isNaN(parsedDate.getTime())) return entryDateIso;
+
+  return ENTRY_DATE_FORMATTER.format(parsedDate);
+};
+
+const formatEntryTime = (entryTime?: string): string | null => {
+  if (!entryTime) return null;
+
+  return `${entryTime} Uhr`;
+};
 
 const EntryPayloadTime = ({ date, entryTime }: Readonly<{ date?: string; entryTime?: string }>) => {
   if (!date && !entryTime) return null;
 
+  const formattedDate = formatEntryDate(date);
+  const formattedTime = formatEntryTime(entryTime);
+
   return (
     <div className={PAYLOAD_TIME_BLOCK_CLASS_NAME}>
-      {date ? <time dateTime={date}>{date}</time> : null}
-      {entryTime ? <time dateTime={date ? `${date}T${entryTime}` : entryTime}>{entryTime}</time> : null}
+      <span className={PAYLOAD_TIME_LABEL_CLASS_NAME}>Termin</span>
+      {formattedDate ? <time dateTime={date}>{formattedDate}</time> : null}
+      {formattedDate && formattedTime ? <span aria-hidden="true">um</span> : null}
+      {formattedTime ? <time dateTime={date ? `${date}T${entryTime}` : entryTime}>{formattedTime}</time> : null}
     </div>
   );
 };

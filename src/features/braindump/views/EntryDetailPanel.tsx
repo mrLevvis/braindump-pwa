@@ -1,6 +1,13 @@
 import { Badge } from '@/components/ui/badge';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { BrainDumpEntry, EntryCategory } from '../types';
+
+const ENTRY_DATE_FORMATTER = new Intl.DateTimeFormat('de-DE', {
+  weekday: 'short',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
 
 const CREATED_AT_FORMATTER = new Intl.DateTimeFormat(undefined, {
   year: 'numeric',
@@ -39,6 +46,7 @@ const TIME_BLOCK_CLASS_NAME = ['space-y-3', 'rounded-lg', 'border', 'bg-muted/20
 const TIME_ROW_CLASS_NAME = ['grid', 'gap-1'].join(' ');
 const TIME_LABEL_CLASS_NAME = ['text-xs', 'font-medium', 'uppercase', 'tracking-wide', 'text-muted-foreground'].join(' ');
 const TIME_VALUE_CLASS_NAME = ['text-sm', 'font-medium', 'text-foreground'].join(' ');
+const APPOINTMENT_LABEL_CLASS_NAME = ['inline-flex', 'w-fit', 'rounded-md', 'bg-primary/10', 'px-2', 'py-1', 'text-xs', 'font-medium', 'text-primary'].join(' ');
 
 const formatCreatedDateTime = (createdAtIso: string): string => {
   const createdAt = new Date(createdAtIso);
@@ -46,6 +54,22 @@ const formatCreatedDateTime = (createdAtIso: string): string => {
   if (Number.isNaN(createdAt.getTime())) return '--';
 
   return CREATED_AT_FORMATTER.format(createdAt);
+};
+
+const formatEntryDate = (entryDateIso?: string): string | null => {
+  if (!entryDateIso) return null;
+
+  const parsedDate = new Date(`${entryDateIso}T00:00:00`);
+
+  if (Number.isNaN(parsedDate.getTime())) return entryDateIso;
+
+  return ENTRY_DATE_FORMATTER.format(parsedDate);
+};
+
+const formatEntryTime = (entryTime?: string): string | null => {
+  if (!entryTime) return null;
+
+  return `${entryTime} Uhr`;
 };
 
 export const CategoryBadge = ({ category }: Readonly<{ category: EntryCategory }>) => {
@@ -74,6 +98,8 @@ export const TagBadgeList = ({ tags }: Readonly<{ tags: readonly string[] }>) =>
 
 const EntryTimingDetails = ({ date, entryTime, createdAt }: Readonly<{ date?: string; entryTime?: string; createdAt: string }>) => {
   const hasEntryDateOrTime = Boolean(date || entryTime);
+  const formattedDate = formatEntryDate(date);
+  const formattedTime = formatEntryTime(entryTime);
 
   return (
     <section className={TIME_BLOCK_CLASS_NAME} aria-label="Eintragszeiten">
@@ -81,9 +107,10 @@ const EntryTimingDetails = ({ date, entryTime, createdAt }: Readonly<{ date?: st
         <div className={TIME_ROW_CLASS_NAME}>
           <p className={TIME_LABEL_CLASS_NAME}>Termin/Faellig</p>
           <div className={TIME_VALUE_CLASS_NAME}>
-            {date ? <time dateTime={date}>{date}</time> : null}
-            {date && entryTime ? ' ' : null}
-            {entryTime ? <time dateTime={date ? `${date}T${entryTime}` : entryTime}>{entryTime}</time> : null}
+            <span className={APPOINTMENT_LABEL_CLASS_NAME}>Geplanter Termin</span>
+            {formattedDate ? <time dateTime={date}>{formattedDate}</time> : null}
+            {formattedDate && formattedTime ? ' um ' : null}
+            {formattedTime ? <time dateTime={date ? `${date}T${entryTime}` : entryTime}>{formattedTime}</time> : null}
           </div>
         </div>
       ) : null}
@@ -106,15 +133,14 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{ entry
   const hasTags = tags.length > 0;
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className={PANEL_CONTENT_CLASS_NAME}>
-        <SheetHeader>
-          <SheetTitle>{title}</SheetTitle>
-          <SheetDescription>Vollstaendige Detailansicht des Eintrags</SheetDescription>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className={PANEL_CONTENT_CLASS_NAME}>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
           <div className={META_ROW_CLASS_NAME}>
             <CategoryBadge category={entry.category} />
           </div>
-        </SheetHeader>
+        </DialogHeader>
 
         <div className={PANEL_BODY_CLASS_NAME}>
           <EntryTimingDetails date={date} entryTime={entryTime} createdAt={entry.created_at} />
@@ -131,7 +157,7 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{ entry
             </section>
           ) : null}
         </div>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
