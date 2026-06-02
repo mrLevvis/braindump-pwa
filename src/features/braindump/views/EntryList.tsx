@@ -1,11 +1,16 @@
 import type { BrainDumpEntry } from '../types';
 import { EntryCard } from './';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const EmptyEntriesState = () => (
-  <div>
-    <p>Noch keine Gedanken sortiert.</p>
-    <p>Sprich oder schreibe deinen ersten Gedanken auf.</p>
-  </div>
+  <Card size="sm" className="rounded-2xl py-4">
+    <CardHeader className="px-4 pb-0">
+      <CardTitle>Noch keine Gedanken sortiert.</CardTitle>
+    </CardHeader>
+    <CardContent className="px-4 pt-2 text-sm text-muted-foreground">
+      <p>Sprich oder schreibe deinen ersten Gedanken auf.</p>
+    </CardContent>
+  </Card>
 );
 
 export default function EntryList({ entries }: { entries: readonly BrainDumpEntry[] }) {
@@ -15,7 +20,7 @@ export default function EntryList({ entries }: { entries: readonly BrainDumpEntr
   const sortedEntries = [...entries].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   return (
-    <ul>
+    <ul className="space-y-3">
       {sortedEntries.map((entry) => (
         <li key={entry.id}>
           <EntryCard entry={entry} />
