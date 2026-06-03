@@ -32,7 +32,8 @@ flowchart TD
     end
 
     %% Netzwerkkonnektivität
-    Services -- "3. HTTP-Request" --> Edge
+    Services -- "3a. CRUD direkt (fetch/insert/delete)" --> DB
+    Services -- "3b. HTTP-Request (processText)" --> Edge
     Edge -- "4. Request mit API-Key" --> KI
     KI -. "Rohes JSON" .-> Edge
     Edge -- "5. Speichert validierte Daten" --> DB

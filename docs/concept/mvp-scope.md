@@ -87,5 +87,5 @@ Um Feature Creep zu verhindern und den Fokus auf die Kernfunktionalität (Chaos 
 > | **User-Accounts & Login (Auth)** | Verursacht massiven Overhead im UI (Registrierung, Passwort-Reset). Die PWA läuft vorerst als reine Single-User-Anwendung. |
 > | **Kalender-Synchronisation** | Erfordert komplexe OAuth-Flows und API-Fehlerbehandlung. Termine verbleiben vorerst isoliert im PWA-Dashboard. |
 > | **Push-Benachrichtigungen** | Zuverlässige Benachrichtigungen erfordern komplexe Service-Worker-Logik und Browser-Permissions. |
-> | **Nachträgliches Editieren** | Erfordert UI-Modals und aufwendiges State-Management (Laden, Speichern, Fehler). Im MVP gilt: Nur Erstellen und Lesen (Löschen optional). |
+> | **Nachträgliches Editieren** | Erfordert UI-Modals und aufwendiges State-Management (Laden, Speichern, Fehler). Im MVP gilt: Erstellen, Lesen und Löschen. |
 > | **Komplexe Filter & Suche** | Reines "Nice-to-have". Eine einfache chronologische Liste reicht zur MVP-Validierung völlig aus. |

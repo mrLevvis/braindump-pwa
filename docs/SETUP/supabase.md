@@ -10,17 +10,22 @@
 ### 2. Datenbank initialisieren (SQL)
 Im Supabase **SQL Editor** dieses Skript ausführen, um die Tabelle anzulegen:
 ```sql
-CREATE TABLE public.brain_dumps (
+CREATE TABLE public.braindump_entries (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    title TEXT,
     original_text TEXT NOT NULL,
     category VARCHAR(50) NOT NULL,
     payload JSONB DEFAULT '{}'::jsonb NOT NULL
 );
 
-ALTER TABLE public.brain_dumps ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow public read/write access" ON public.brain_dumps FOR ALL USING (true);
+ALTER TABLE public.braindump_entries ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read/write access" ON public.braindump_entries FOR ALL USING (true);
 ```
+
+> [!IMPORTANT]
+> `FOR ALL USING (true)` deckt alle Commands (SELECT, INSERT, UPDATE, **DELETE**) ab.
+> Wenn du für Tests separate Policies anlegst (z. B. „Allow all inserts for test", „Allow all selects for test"), musst du zwingend auch eine **DELETE-Policy** anlegen — sonst blockt RLS DELETE-Anfragen still ohne Fehlermeldung (`count: 0` statt `error`).
 
 ### 3. Dependencies & Environment
 1. Im Terminal installieren: 

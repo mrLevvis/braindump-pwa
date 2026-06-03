@@ -57,13 +57,11 @@ const store = useBrainDumpStore((state) => state);
 | `entries` | `BrainDumpEntry[]` | Liste aller Einträge im Dashboard |
 | `isRecording` | `boolean` | Ist die Sprachaufnahme gerade aktiv? |
 | `isProcessing` | `boolean` | Wird ein Eintrag gerade von der KI verarbeitet? |
-| `audioBlob` | `Blob \| null` | Zuletzt aufgenommenes Audio (aus dem Recording-Slice) |
 | `setRecording(bool)` | Action | Setzt `isRecording` auf true/false |
 | `setProcessing(bool)` | Action | Setzt `isProcessing` auf true/false |
-| `setAudioBlob(blob)` | Action | Speichert den aufgenommenen Audio-Blob |
 | `submitText(text)` | Action (async) | Schickt den Text an die Edge Function, speichert das strukturierte Ergebnis in der DB und lädt die Liste neu. Steuert dabei `isProcessing`. |
+| `deleteEntry(id)` | Action (async) → `Promise<DeleteResult>` | Löscht einen Eintrag per UUID. Gibt eine diskriminierte Union zurück: `{ status: 'deleted' \| 'not_found' \| 'error' }`. Lädt die Einträge nur bei `deleted` neu. |
 | `updateEntryList()` | Action (async) | Lädt alle Einträge frisch aus der DB in `entries` |
-| `addDummyEntry(text)` | Action | **Nur zum UI-Testen** — legt einen Roh-Eintrag ohne KI an. Wird durch `submitText` abgelöst. |
 
 ---
 
@@ -160,11 +158,9 @@ Der Store wird über `create(...)` aufgebaut. Die Factory bekommt drei Argumente
 mit — wir benennen sie explizit, damit der Code lesbar bleibt:
 
 ```typescript
-export const useBrainDumpStore = create<BrainDumpState>()((set, get, store) => ({
+export const useBrainDumpStore = create<BrainDumpState>()((set) => ({
   setProcessing: (status) => { set(() => ({ isProcessing: status })); },
   // ...
-  // Den Recording-Slice mit denselben drei Argumenten dazumischen:
-  ...createRecordingSlice(set, get, store),
 }));
 ```
 
