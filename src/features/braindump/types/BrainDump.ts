@@ -16,7 +16,7 @@ export interface BrainDumpState {
   setRecording: (status: boolean) => void;
   setProcessing: (status: boolean) => void;
   submitText: (text: string) => Promise<void>;
-  deleteEntry: (id: string) => Promise<void>;
+  deleteEntry: (id: string) => Promise<DeleteResult>;
   updateEntryList: () => void;
 }
 
@@ -55,6 +55,15 @@ export interface BrainDumpEntry {
  * daher fehlen diese Felder hier.
  */
 export type InsertEntry = Omit<BrainDumpEntry, 'id' | 'created_at'>;
+
+/**
+ * Diskriminierte Union für das Ergebnis eines DELETE-Calls.
+ * not_found: Filter traf 0 Zeilen (kein Fehler, aber auch nichts gelöscht).
+ */
+export type DeleteResult =
+  | { status: 'deleted' }
+  | { status: 'not_found' }
+  | { status: 'error'; message: string };
 
 /**
  * Der strukturierte Eintrag, den wir von der KI zurückbekommen.

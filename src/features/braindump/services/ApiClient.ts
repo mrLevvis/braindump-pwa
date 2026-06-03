@@ -1,5 +1,5 @@
 import { createClient, PostgrestError } from '@supabase/supabase-js';
-import type { BrainDumpEntry, InsertEntry } from '../types';
+import type { BrainDumpEntry, DeleteResult, InsertEntry } from '../types';
 import { showErrorToast } from '../../../hooks/useErrorToast';
 
 //const BRAINDUMP_ENTRIES = 'braindump_entries';
@@ -37,7 +37,9 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
  */
 function handlePostgrestError<T>(message: string, error: PostgrestError | null, data: T | null): T | null {
     if (error) {
-        showErrorToast(`${message} ${error.message}`);
+        const details = [error.code, error.details, error.hint].filter(Boolean).join(' | ');
+        const fullMessage = details ? `${message} ${error.message} (${details})` : `${message} ${error.message}`;
+        showErrorToast(fullMessage);
         return null as T | null;
     }
     return data;
@@ -75,13 +77,15 @@ export async function insertEntry(entry: InsertEntry): Promise<InsertEntry | nul
 /**
  * Loescht einen bestehenden Eintrag per ID aus der Datenbank.
  * @param id Die UUID des Eintrags.
- * @returns true bei Erfolg, sonst null.
+ * @returns DeleteResult: 'deleted' | 'not_found' | 'error'
  */
-export async function deleteEntry(id: string): Promise<true | null> {
-    const { error } = await supabase
+export async function deleteEntry(id: string): Promise<DeleteResult> {
+    const { error, count } = await supabase
         .from(BRAINDUMP_ENTRIES_DB)
-        .delete()
+        .delete({ count: 'exact' })
         .eq('id', id);
 
-    return handlePostgrestError<true>('Error deleting entry:', error, true);
+if (error) return { status: 'error', message: error.message };
+    if (count === 0) return { status: 'not_found' };
+    return { status: 'deleted' };
 }

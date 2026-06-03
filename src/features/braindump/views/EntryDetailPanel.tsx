@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useDeleteEntry, useSuccessToast } from '@/hooks';
+import { useDeleteEntry, useErrorToast, useSuccessToast } from '@/hooks';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,7 +13,13 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import type { BrainDumpEntry, EntryCategory } from '../types';
+import type { BrainDumpEntry, DeleteResult, EntryCategory } from '../types';
+
+const DELETE_FEEDBACK: Record<DeleteResult['status'], string> = {
+  deleted: 'Eintrag gelöscht.',
+  not_found: 'Kein passender Eintrag gefunden.',
+  error: 'Löschen fehlgeschlagen.',
+};
 
 const ENTRY_DATE_FORMATTER = new Intl.DateTimeFormat('de-DE', {
   weekday: 'short',
@@ -145,6 +151,7 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{ entry
   const [isDeleting, setIsDeleting] = useState(false);
   const deleteEntry = useDeleteEntry();
   const showSuccessToast = useSuccessToast();
+  const showErrorToast = useErrorToast();
   const title = entry.title?.trim() || 'Untitled';
   const tags = entry.payload?.tags ?? [];
   const date = entry.payload?.date;
@@ -157,12 +164,14 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{ entry
     setIsDeleting(true);
 
     try {
-      await deleteEntry(entry.id);
+      const result = await deleteEntry(entry.id);
       setIsDeleteDialogOpen(false);
-      onOpenChange(false);
-      showSuccessToast('Eintrag wurde erfolgreich geloescht.');
-    } catch {
-      // Fehler-Toast wird bereits im Service ueber handlePostgrestError gezeigt.
+      if (result.status === 'deleted') {
+        onOpenChange(false);
+        showSuccessToast(DELETE_FEEDBACK.deleted);
+      } else {
+        showErrorToast(result.status === 'error' ? result.message : DELETE_FEEDBACK.not_found);
+      }
     } finally {
       setIsDeleting(false);
     }

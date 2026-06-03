@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { BrainDumpState, InsertEntry } from "../types";
+import type { BrainDumpState, DeleteResult, InsertEntry } from "../types";
 import { deleteEntry as deleteEntryFromApi, fetchEntries, insertEntry } from "../services";
 import { processText } from "../services/processBrainDump";
 
@@ -53,14 +53,15 @@ export const useBrainDumpStore = create<BrainDumpState>()((set) => ({
         }
     },
 
-    deleteEntry: async (id: string) => {
-        const deleted = await deleteEntryFromApi(id);
-        if (!deleted) throw new Error('Deleting entry failed.');
+    deleteEntry: async (id: string): Promise<DeleteResult> => {
+        const result = await deleteEntryFromApi(id);
 
-        const data = await fetchEntries();
-        if (!data) throw new Error('Refreshing entries after delete failed.');
+        if (result.status === 'deleted') {
+            const data = await fetchEntries();
+            if (data) set(() => ({ entries: data }));
+        }
 
-        set(() => ({ entries: data }));
+        return result;
     },
 }));
 
