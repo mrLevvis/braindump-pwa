@@ -5,7 +5,7 @@ export interface TimelineDayGroup {
   readonly entries: readonly BrainDumpEntry[];
 }
 
-export interface GroupedTimeline {
-  readonly days: readonly TimelineDayGroup[];
+export interface TimelineData {
+  readonly byDate: ReadonlyMap<string, readonly BrainDumpEntry[]>;
   readonly untimed: readonly BrainDumpEntry[];
 }

@@ -35,7 +35,7 @@ interface Props {
 }
 
 export function TimelineView({ onBack }: Readonly<Props>) {
-  const { days, untimed } = useTimelineBuckets();
+  const { byDate, untimed } = useTimelineBuckets();
 
   return (
     <div className={VIEW}>
@@ -58,13 +58,13 @@ export function TimelineView({ onBack }: Readonly<Props>) {
 
       <main className={MAIN}>
         <div className={MAIN_INNER}>
-          {days.length === 0 ? (
+          {byDate.size === 0 ? (
             <p className={EMPTY}>
               {EMPTY_TEXT[untimed.length > 0 ? 'timedEmpty' : 'allEmpty']}
             </p>
           ) : (
-            days.map(day => (
-              <TimelineDaySection key={day.date} day={day} />
+            Array.from(byDate.entries(), ([date, entries]) => (
+              <TimelineDaySection key={date} day={{ date, entries }} />
             ))
           )}
         </div>
