@@ -1,4 +1,9 @@
-import type { BrainDumpEntry } from '../../braindump/types';
+import type { BrainDumpEntry, EntryPayload } from '../../braindump/types';
+
+function buildDateTimeAttr(payload: EntryPayload): string | undefined {
+  if (!payload.date) return undefined;
+  return payload.time ? `${payload.date}T${payload.time}` : payload.date;
+}
 
 const ITEM = ['grid', 'grid-cols-[3rem_1.5rem_1fr]', 'gap-x-2'].join(' ');
 const TIME_CELL = [
@@ -18,11 +23,7 @@ interface Props {
 
 export function TimelineItem({ entry, isLast }: Readonly<Props>) {
   const displayTime = entry.payload.time ?? '--:--';
-  const dateTimeAttr = entry.payload.date
-    ? entry.payload.time
-      ? `${entry.payload.date}T${entry.payload.time}`
-      : entry.payload.date
-    : undefined;
+  const dateTimeAttr = buildDateTimeAttr(entry.payload);
 
   return (
     <div className={ITEM}>
