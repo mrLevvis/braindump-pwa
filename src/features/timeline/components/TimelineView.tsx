@@ -25,6 +25,11 @@ const EMPTY = [
   'text-sm', 'text-muted-foreground',
 ].join(' ');
 
+const EMPTY_TEXT = {
+  daysOnly: 'Keine geplanten Termine.',
+  both:     'Keine geplanten Termine oder zu erledigenden Tasks.',
+} as const;
+
 interface Props {
   onBack: () => void;
 }
@@ -54,7 +59,9 @@ export function TimelineView({ onBack }: Readonly<Props>) {
       <main className={MAIN}>
         <div className={MAIN_INNER}>
           {days.length === 0 ? (
-            <p className={EMPTY}>Keine geplanten Termine.</p>
+            <p className={EMPTY}>
+              {EMPTY_TEXT[untimed.length > 0 ? 'daysOnly' : 'both']}
+            </p>
           ) : (
             days.map(day => (
               <TimelineDaySection key={day.date} day={day} />
