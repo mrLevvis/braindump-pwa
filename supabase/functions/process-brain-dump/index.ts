@@ -9,7 +9,7 @@ import "@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { structureText } from "./structureText.ts";
 import type { StructuredEntry } from "../_shared/contract.ts";
-import { ENTRY_CATEGORIES } from "../_shared/contract.ts";
+import { ENTRY_CATEGORIES, normalizeEntryContract } from "../_shared/contract.ts";
 import { transcribeAudio } from "./transcribeAudio.ts";
 
 
@@ -113,7 +113,10 @@ Deno.serve(async (request) => {
     );
   }
 
-  // 6. Alles gut -> den validierten Eintrag als JSON zurückgeben.
+  // 6. Zeitbezug-Vertrag normalisieren (EVENT ohne Datum → TASK; NOTE mit Datum → Strip).
+  entry = normalizeEntryContract(entry);
+
+  // 7. Alles gut -> den normalisierten Eintrag als JSON zurückgeben.
   return new Response(JSON.stringify(entry), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });

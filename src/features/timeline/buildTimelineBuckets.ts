@@ -13,7 +13,8 @@ function byDateThenTime(a: BrainDumpEntry, b: BrainDumpEntry): number {
 export function buildTimelineBuckets(entries: readonly BrainDumpEntry[]): GroupedTimeline {
   const normalized = entries ?? [];
 
-  // Only undated TASKs go here — EVENTs and NOTEs without a date are not shown in the timeline view
+  // Guaranteed by ingest contract: only TASKs can be undated (EVENTs without date are
+  // normalized to TASK at the API boundary; NOTEs are always timeless and excluded here).
   const untimed = normalized.filter(e => e.payload.date == null && e.category === 'TASK');
 
   const timed = normalized
