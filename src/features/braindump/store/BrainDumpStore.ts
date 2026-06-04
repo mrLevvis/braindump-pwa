@@ -64,6 +64,3 @@ export const useBrainDumpStore = create<BrainDumpState>()((set) => ({
         return result;
     },
 }));
-
-// Initiales Laden der Einträge (außerhalb des Factory-Objekts, damit es nur einmal passiert)
-useBrainDumpStore.getState().updateEntryList();
