@@ -1,8 +1,12 @@
+import { useState } from 'react';
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import type { BrainDumpEntry } from '../../braindump/types';
+import { EntryDetailPanel } from '../../braindump/views';
 import {
   useGoToNextDay, useGoToPreviousDay, useGoToToday,
   useSelectedDate, useSelectedDayEntries, useTimelineBuckets,
 } from '../../../hooks/timelineSelectors';
+import { getTemporalStatus } from '../getTemporalStatus';
 import { TimelineItem } from './TimelineItem';
 import { UntimedSection } from './UntimedSection';
 
@@ -65,63 +69,83 @@ export function TimelineView({ onBack }: Readonly<Props>) {
   const goToNextDay = useGoToNextDay();
   const goToToday = useGoToToday();
 
+  const [selectedEntry, setSelectedEntry] = useState<BrainDumpEntry | null>(null);
+
+  const now = new Date();
   const isToday = selectedDate === todayLocal();
+  const dateLabel = isToday ? 'Heute' : formatNavDate(selectedDate);
 
   return (
-    <div className={VIEW}>
-      <header className={HEADER}>
-        <div className={HEADER_INNER}>
-          <button
-            type="button"
-            className={ICON_BTN}
-            onClick={onBack}
-            aria-label="Zurück zur Übersicht"
-          >
-            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          </button>
-
-          <nav className={NAV} aria-label="Tagesnavigation">
+    <>
+      <div className={VIEW}>
+        <header className={HEADER}>
+          <div className={HEADER_INNER}>
             <button
               type="button"
               className={ICON_BTN}
-              onClick={goToPreviousDay}
-              aria-label="Vorheriger Tag"
+              onClick={onBack}
+              aria-label="Zurück zur Übersicht"
             >
-              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             </button>
-            <span className={DATE_LABEL}>
-              {isToday ? 'Heute' : formatNavDate(selectedDate)}
-            </span>
-            {!isToday && (
-              <button type="button" className={TODAY_BTN} onClick={goToToday}>
-                Heute
+
+            <nav className={NAV} aria-label="Tagesnavigation">
+              <button
+                type="button"
+                className={ICON_BTN}
+                onClick={goToPreviousDay}
+                aria-label="Vorheriger Tag"
+              >
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
               </button>
+              <span className={DATE_LABEL}>
+                {dateLabel}
+              </span>
+              {!isToday && (
+                <button type="button" className={TODAY_BTN} onClick={goToToday}>
+                  Heute
+                </button>
+              )}
+              <button
+                type="button"
+                className={ICON_BTN}
+                onClick={goToNextDay}
+                aria-label="Nächster Tag"
+              >
+                <ChevronRight className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </nav>
+
+            <UntimedSection entries={untimed} />
+          </div>
+        </header>
+
+        <main className={MAIN}>
+          <div className={MAIN_INNER}>
+            {entries.length === 0 ? (
+              <p className={EMPTY}>Keine Einträge für diesen Tag.</p>
+            ) : (
+              entries.map((entry, i) => (
+                <TimelineItem
+                  key={entry.id}
+                  entry={entry}
+                  isLast={i === entries.length - 1}
+                  status={getTemporalStatus(entry.payload.date!, entry.payload.time, now)}
+                  onSelect={setSelectedEntry}
+                />
+              ))
             )}
-            <button
-              type="button"
-              className={ICON_BTN}
-              onClick={goToNextDay}
-              aria-label="Nächster Tag"
-            >
-              <ChevronRight className="h-4 w-4" aria-hidden="true" />
-            </button>
-          </nav>
+          </div>
+        </main>
+      </div>
 
-          <UntimedSection entries={untimed} />
-        </div>
-      </header>
-
-      <main className={MAIN}>
-        <div className={MAIN_INNER}>
-          {entries.length === 0 ? (
-            <p className={EMPTY}>Keine Einträge für diesen Tag.</p>
-          ) : (
-            entries.map((entry, i) => (
-              <TimelineItem key={entry.id} entry={entry} isLast={i === entries.length - 1} />
-            ))
-          )}
-        </div>
-      </main>
-    </div>
+      {selectedEntry && (
+        <EntryDetailPanel
+          entry={selectedEntry}
+          open
+          onOpenChange={(open) => { if (!open) setSelectedEntry(null); }}
+        />
+      )}
+    </>
   );
 }
