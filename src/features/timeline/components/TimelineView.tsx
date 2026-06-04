@@ -26,8 +26,8 @@ const EMPTY = [
 ].join(' ');
 
 const EMPTY_TEXT = {
-  daysOnly: 'Keine geplanten Termine.',
-  both:     'Keine geplanten Termine oder zu erledigenden Tasks.',
+  timedEmpty: 'Keine geplanten Termine.',
+  allEmpty:   'Keine geplanten Termine oder zu erledigenden Tasks.',
 } as const;
 
 interface Props {
@@ -60,7 +60,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
         <div className={MAIN_INNER}>
           {days.length === 0 ? (
             <p className={EMPTY}>
-              {EMPTY_TEXT[untimed.length > 0 ? 'daysOnly' : 'both']}
+              {EMPTY_TEXT[untimed.length > 0 ? 'timedEmpty' : 'allEmpty']}
             </p>
           ) : (
             days.map(day => (
