@@ -7,6 +7,10 @@
 // Baut den Prompt mit dem heutigen Datum, damit die KI relative Angaben
 // wie "morgen" in echte Daten (YYYY-MM-DD) umrechnen kann.
 export function buildSystemPrompt(todayIso: string): string {
+  const d = new Date(`${todayIso}T00:00:00`);
+  d.setDate(d.getDate() + 1);
+  const tomorrowIso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
   return `
 Du bist ein Parser. Du verwandelst den Gedanken eines Nutzers in EIN JSON-Objekt.
 Antworte AUSSCHLIESSLICH mit gültigem JSON. Niemals Freitext, keine Erklärungen.
@@ -25,9 +29,9 @@ Gib das JSON exakt in dieser Form zurück:
   "category": "TASK" | "EVENT" | "NOTE",
   "title": "vollständiger, selbsterklärender Titel als EIN Satz mit den wichtigsten Infos, maximal ca. 15 Wörter",
   "payload": {
-    "date": "YYYY-MM-DD (nur wenn ein Datum gemeint/berechenbar ist, sonst weglassen)",
+    "date": "YYYY-MM-DD (wenn startTime gesetzt und kein anderes Datum genannt: immer ${todayIso}; sonst nur wenn Datum gemeint/berechenbar)",
     "startTime": "HH:MM (Beginn, nur wenn eine Uhrzeit genannt wird, sonst weglassen)",
-    "endTime": "HH:MM (Ende, nur wenn eine Zeitspanne genannt wird z.B. 'von 9 bis 11', sonst weglassen)",
+    "endTime": "HH:MM (Ende — immer setzen wenn startTime vorhanden: explizit falls genannt, sonst EVENT +60 Min., TASK +30 Min.)",
     "tags": ["optionaler Kontext, z.B. \\"Einkauf\\", \\"Arbeit\\""]
   }
 }
@@ -36,15 +40,24 @@ Regeln:
 - "category" ist IMMER exakt einer der drei Großbuchstaben-Werte.
 - Felder in "payload", die nicht im Text vorkommen, lässt du komplett weg.
 - "date" immer als echtes Datum im Format YYYY-MM-DD, niemals als Wort wie "morgen".
-- Wenn kein Datum gemeint oder berechenbar ist, lässt du "date" komplett weg.
-- "startTime" ist der Beginn (HH:MM). "endTime" nur setzen, wenn ein Ende explizit genannt wird und nach dem Beginn liegt.
+- Ist "startTime" gesetzt und kein anderes Datum genannt, setze "date" auf heute: ${todayIso}.
+- Ist "startTime" gesetzt, setze immer auch "endTime": explizit falls genannt, sonst EVENT → +60 Min., TASK → +30 Min.
 - "tags" immer auf Deutsch, kurz und großgeschrieben (z.B. "Einkauf", "Arbeit", "Privat").
 
-Beispiele (angenommen heute ist 2026-05-31):
+Beispiele (heute ist ${todayIso}):
 Eingabe: "Meeting von 9 bis 11"
-Ausgabe: {"category":"EVENT","title":"Meeting von 9 bis 11 Uhr","payload":{"date":"2026-05-31","startTime":"09:00","endTime":"11:00"}}
+Ausgabe: {"category":"EVENT","title":"Meeting von 9 bis 11 Uhr","payload":{"date":"${todayIso}","startTime":"09:00","endTime":"11:00"}}
+
+Eingabe: "Zahnarzt um 10"
+Ausgabe: {"category":"EVENT","title":"Zahnarzttermin um 10 Uhr","payload":{"date":"${todayIso}","startTime":"10:00","endTime":"11:00"}}
 
 Eingabe: "Ich muss morgen um 15 Uhr Brot kaufen"
-Ausgabe: {"category":"TASK","title":"Morgen um 15 Uhr Brot kaufen","payload":{"date":"2026-06-01","startTime":"15:00","tags":["Einkauf"]}}
+Ausgabe: {"category":"TASK","title":"Morgen um 15 Uhr Brot kaufen","payload":{"date":"${tomorrowIso}","startTime":"15:00","endTime":"15:30","tags":["Einkauf"]}}
+
+Eingabe: "Milch kaufen nicht vergessen"
+Ausgabe: {"category":"TASK","title":"Milch kaufen","payload":{"tags":["Einkauf"]}}
+
+Eingabe: "Interessanter Artikel über KI-Agenten"
+Ausgabe: {"category":"NOTE","title":"Interessanter Artikel über KI-Agenten","payload":{}}
 `;
 }

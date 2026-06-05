@@ -127,7 +127,6 @@ export function TimelineView({ onBack }: Readonly<Props>) {
           </div>
 
           <UntimedSection
-            datedTimeless={datedTimeless}
             undated={undated}
             onSelect={(e) => setSelectedEntryId(e.id)}
             onToggle={toggleTaskCompleted}
@@ -140,6 +139,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
           <DayGrid
             date={selectedDate}
             entries={dayEntries}
+            allDay={datedTimeless}
             isToday={isToday}
             now={now}
             onSelect={(e) => setSelectedEntryId(e.id)}

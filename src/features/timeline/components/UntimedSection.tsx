@@ -134,9 +134,7 @@ function EntrySection({ label, entries, onSelect, onToggle }: Readonly<EntrySect
 // ─── UntimedSection ───────────────────────────────────────────────────────────
 
 interface Props {
-  /** Dated entries for the selected day that have no startTime (off-grid). */
-  datedTimeless: readonly BrainDumpEntry[];
-  /** Tasks with no date at all — visible across all days. */
+  /** Entries with no date at all — shown across all days. */
   undated: readonly BrainDumpEntry[];
   /** Opens the detail panel in the parent; keeps the panel outside the Sheet. */
   onSelect: (entry: BrainDumpEntry) => void;
@@ -144,33 +142,26 @@ interface Props {
   onToggle: (id: string, completed: boolean) => void;
 }
 
-export function UntimedSection({ datedTimeless, undated, onSelect, onToggle }: Readonly<Props>) {
-  const total = datedTimeless.length + undated.length;
-  if (total === 0) return null;
+export function UntimedSection({ undated, onSelect, onToggle }: Readonly<Props>) {
+  if (undated.length === 0) return null;
 
   return (
     <Sheet>
       <SheetTrigger
         className={TRIGGER}
-        aria-label={`Aufgaben ohne Uhrzeit (${total})`}
+        aria-label={`Einträge ohne Datum (${undated.length})`}
       >
         <ListTodo className="h-4 w-4" aria-hidden="true" />
-        <span className={COUNT_BADGE} aria-hidden="true">{total}</span>
+        <span className={COUNT_BADGE} aria-hidden="true">{undated.length}</span>
       </SheetTrigger>
 
       <SheetContent side="right">
         <div className={SHEET_BODY}>
           <SheetHeader>
-            <SheetTitle>Aufgaben</SheetTitle>
+            <SheetTitle>Ohne Datum</SheetTitle>
           </SheetHeader>
 
           <div className={SCROLL_AREA}>
-            <EntrySection
-              label="Heute, ohne Uhrzeit"
-              entries={datedTimeless}
-              onSelect={onSelect}
-              onToggle={onToggle}
-            />
             <EntrySection
               label="Ohne Datum"
               entries={undated}
