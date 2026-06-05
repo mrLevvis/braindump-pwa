@@ -4,3 +4,4 @@ export * from './useErrorToast';
 export * from './braindumpSelectors';
 export * from './useEntriesBootstrap';
 export * from './useNow';
+export * from './useRouteSync';

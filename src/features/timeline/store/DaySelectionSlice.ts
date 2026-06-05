@@ -20,8 +20,15 @@ function shiftDate(dateStr: string, delta: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+// Reads the date segment from /timeline/YYYY-MM-DD on first page load so the
+// store is primed from the URL before the first render (avoids a flash).
+function parseInitialDate(): string {
+  const m = /^\/timeline\/(\d{4}-\d{2}-\d{2})/.exec(window.location.pathname);
+  return m ? m[1] : todayLocal();
+}
+
 export const useDaySelectionStore = create<DaySelectionSlice>()((set) => ({
-  selectedDate: todayLocal(),
+  selectedDate: parseInitialDate(),
   goToPreviousDay: () => set((s) => ({ selectedDate: shiftDate(s.selectedDate, -1) })),
   goToNextDay:     () => set((s) => ({ selectedDate: shiftDate(s.selectedDate, 1) })),
   goToToday:       () => set({ selectedDate: todayLocal() }),
