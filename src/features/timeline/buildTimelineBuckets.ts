@@ -7,7 +7,7 @@ const TIME_END_OF_DAY = '99:99';
 function byDateThenTime(a: BrainDumpEntry, b: BrainDumpEntry): number {
   const dateCmp = a.payload.date!.localeCompare(b.payload.date!);
   if (dateCmp !== 0) return dateCmp;
-  return (a.payload.time ?? TIME_END_OF_DAY).localeCompare(b.payload.time ?? TIME_END_OF_DAY);
+  return (a.payload.startTime ?? TIME_END_OF_DAY).localeCompare(b.payload.startTime ?? TIME_END_OF_DAY);
 }
 
 export function buildTimelineBuckets(entries: readonly BrainDumpEntry[]): TimelineData {

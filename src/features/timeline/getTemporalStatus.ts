@@ -11,12 +11,12 @@ function toLocalTimeStr(d: Date): string {
 // `now` is injected so the function stays pure and testable without mocking Date
 export function getTemporalStatus(
   date: string,
-  time: string | undefined,
+  startTime: string | undefined,
   now: Date,
 ): TemporalStatus {
   const todayStr = toLocalDateStr(now);
   if (date < todayStr) return 'past';
   if (date > todayStr) return 'future';
-  if (time == null) return 'today';
-  return time < toLocalTimeStr(now) ? 'past' : 'today';
+  if (startTime == null) return 'today';
+  return startTime < toLocalTimeStr(now) ? 'past' : 'today';
 }

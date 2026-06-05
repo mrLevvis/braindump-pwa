@@ -87,10 +87,9 @@ const formatEntryDate = (entryDateIso?: string): string | null => {
   return ENTRY_DATE_FORMATTER.format(parsedDate);
 };
 
-const formatEntryTime = (entryTime?: string): string | null => {
-  if (!entryTime) return null;
-
-  return `${entryTime} Uhr`;
+const formatEntryTime = (startTime?: string, endTime?: string): string | null => {
+  if (!startTime) return null;
+  return endTime ? `${startTime}–${endTime} Uhr` : `${startTime} Uhr`;
 };
 
 export const CategoryBadge = ({ category }: Readonly<{ category: EntryCategory }>) => {
@@ -117,10 +116,10 @@ export const TagBadgeList = ({ tags }: Readonly<{ tags: readonly string[] }>) =>
   );
 };
 
-const EntryTimingDetails = ({ date, entryTime, createdAt }: Readonly<{ date?: string; entryTime?: string; createdAt: string }>) => {
+const EntryTimingDetails = ({ date, entryTime, entryEndTime, createdAt }: Readonly<{ date?: string; entryTime?: string; entryEndTime?: string; createdAt: string }>) => {
   const hasEntryDateOrTime = Boolean(date || entryTime);
   const formattedDate = formatEntryDate(date);
-  const formattedTime = formatEntryTime(entryTime);
+  const formattedTime = formatEntryTime(entryTime, entryEndTime);
 
   return (
     <section className={TIME_BLOCK_CLASS_NAME} aria-label="Eintragszeiten">
@@ -155,7 +154,8 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{ entry
   const title = entry.title?.trim() || 'Untitled';
   const tags = entry.payload?.tags ?? [];
   const date = entry.payload?.date;
-  const entryTime = entry.payload?.time;
+  const entryTime = entry.payload?.startTime;
+  const entryEndTime = entry.payload?.endTime;
   const hasTags = tags.length > 0;
 
   const handleDeleteConfirm = async () => {
@@ -188,7 +188,7 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{ entry
         </DialogHeader>
 
         <div className={PANEL_BODY_CLASS_NAME}>
-          <EntryTimingDetails date={date} entryTime={entryTime} createdAt={entry.created_at} />
+          <EntryTimingDetails date={date} entryTime={entryTime} entryEndTime={entryEndTime} createdAt={entry.created_at} />
 
           <section className={ORIGINAL_TEXT_SECTION_CLASS_NAME} aria-label="Originaltext">
             <p className={TIME_LABEL_CLASS_NAME}>Originaltext</p>

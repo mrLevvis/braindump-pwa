@@ -37,24 +37,23 @@ const formatEntryDate = (entryDateIso?: string): string | null => {
   return ENTRY_DATE_FORMATTER.format(parsedDate);
 };
 
-const formatEntryTime = (entryTime?: string): string | null => {
-  if (!entryTime) return null;
-
-  return `${entryTime} Uhr`;
+const formatEntryTime = (startTime?: string, endTime?: string): string | null => {
+  if (!startTime) return null;
+  return endTime ? `${startTime}–${endTime} Uhr` : `${startTime} Uhr`;
 };
 
-const EntryPayloadTime = ({ date, entryTime }: Readonly<{ date?: string; entryTime?: string }>) => {
-  if (!date && !entryTime) return null;
+const EntryPayloadTime = ({ date, startTime, endTime }: Readonly<{ date?: string; startTime?: string; endTime?: string }>) => {
+  if (!date && !startTime) return null;
 
   const formattedDate = formatEntryDate(date);
-  const formattedTime = formatEntryTime(entryTime);
+  const formattedTime = formatEntryTime(startTime, endTime);
 
   return (
     <div className={PAYLOAD_TIME_BLOCK_CLASS_NAME}>
       <span className={PAYLOAD_TIME_LABEL_CLASS_NAME}>Termin</span>
       {formattedDate ? <time dateTime={date}>{formattedDate}</time> : null}
       {formattedDate && formattedTime ? <span aria-hidden="true">um</span> : null}
-      {formattedTime ? <time dateTime={date ? `${date}T${entryTime}` : entryTime}>{formattedTime}</time> : null}
+      {formattedTime ? <time dateTime={date ? `${date}T${startTime}` : startTime}>{formattedTime}</time> : null}
     </div>
   );
 };
@@ -65,7 +64,8 @@ export function EntryCard({ entry }: Readonly<{ entry: BrainDumpEntry }>) {
   const title = entry.title?.trim() || 'Untitled';
   const tags = entry.payload?.tags ?? [];
   const date = entry.payload?.date;
-  const entryTime = entry.payload?.time;
+  const entryTime = entry.payload?.startTime;
+  const entryEndTime = entry.payload?.endTime;
 
   return (
     <>
@@ -77,7 +77,7 @@ export function EntryCard({ entry }: Readonly<{ entry: BrainDumpEntry }>) {
           </CardHeader>
 
           <CardContent className={CARD_CONTENT_CLASS_NAME}>
-            <EntryPayloadTime date={date} entryTime={entryTime} />
+            <EntryPayloadTime date={date} startTime={entryTime} endTime={entryEndTime} />
             <TagBadgeList tags={tags} />
           </CardContent>
 

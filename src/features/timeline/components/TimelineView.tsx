@@ -120,7 +120,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
   // -1    → all entries are past (marker goes at the end)
   // >= 0  → marker goes before that entry
   const nowBoundaryIndex: number | null = isToday
-    ? dayEntries.findIndex(e => getTemporalStatus(e.payload.date!, e.payload.time, now) !== 'past')
+    ? dayEntries.findIndex(e => getTemporalStatus(e.payload.date!, e.payload.startTime, now) !== 'past')
     : null;
 
   return (
@@ -181,7 +181,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
                   {nowBoundaryIndex === i && <NowMarker now={now} />}
                   <TimelineItem
                     entry={entry}
-                    status={getTemporalStatus(entry.payload.date!, entry.payload.time, now)}
+                    status={getTemporalStatus(entry.payload.date!, entry.payload.startTime, now)}
                     isLast={i === dayEntries.length - 1}
                     onSelect={setSelectedEntry}
                   />

@@ -5,7 +5,7 @@ import type { TemporalStatus } from '../getTemporalStatus';
 
 function buildDateTimeAttr(payload: EntryPayload): string | undefined {
   if (!payload.date) return undefined;
-  return payload.time ? `${payload.date}T${payload.time}` : payload.date;
+  return payload.startTime ? `${payload.date}T${payload.startTime}` : payload.date;
 }
 
 // ─── Layout ───────────────────────────────────────────────────────────────────
@@ -67,7 +67,10 @@ interface Props {
 }
 
 export function TimelineItem({ entry, status, isLast, onSelect }: Readonly<Props>) {
-  const displayTime = entry.payload.time ?? '--:--';
+  const { startTime, endTime } = entry.payload;
+  const displayTime = startTime
+    ? endTime ? `${startTime}–${endTime}` : startTime
+    : '--:--';
   const dateTimeAttr = buildDateTimeAttr(entry.payload);
   const tags = entry.payload.tags ?? [];
 

@@ -26,8 +26,9 @@ export type EntryCategory = typeof ENTRY_CATEGORIES[number];
 
 /** Die Nutzlast eines Eintrags. */
 export interface EntryPayload {
-  date?: string;   // YYYY-MM-DD
-  time?: string;   // HH:MM
+  date?: string;       // YYYY-MM-DD
+  startTime?: string;  // HH:MM (Beginn)
+  endTime?: string;    // HH:MM (Ende, nur wenn Zeitspanne, > startTime)
   tags?: string[];
 }
 
@@ -49,9 +50,21 @@ export function normalizeEntryContract(entry: StructuredEntry): StructuredEntry 
   }
 
   // NOTE mit Datum/Uhrzeit: Zeitfelder strippen, Kategorie bleibt NOTE.
-  if (entry.category === 'NOTE' && (entry.payload.date || entry.payload.time)) {
-    const { date: _date, time: _time, ...stripped } = entry.payload;
+  if (entry.category === 'NOTE' && (entry.payload.date || entry.payload.startTime || entry.payload.endTime)) {
+    const { date: _d, startTime: _s, endTime: _e, ...stripped } = entry.payload;
     return { ...entry, payload: stripped };
+  }
+
+  // endTime muss gültiges HH:MM sein und strikt nach startTime liegen.
+  // Ungültiges oder über-Mitternacht-endTime wird verworfen; Eintrag bleibt Punkt-Termin.
+  if (entry.payload.endTime != null) {
+    const { startTime, endTime } = entry.payload;
+    const validFormat = /^\d{2}:\d{2}$/.test(endTime);
+    const afterStart = startTime != null && endTime > startTime;
+    if (!validFormat || !afterStart) {
+      const { endTime: _e, ...withoutEnd } = entry.payload;
+      return { ...entry, payload: withoutEnd };
+    }
   }
 
   return entry;

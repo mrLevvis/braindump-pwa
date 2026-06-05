@@ -30,9 +30,10 @@ export type EntryCategory = 'TASK' | 'EVENT' | 'NOTE';
  * Entspricht exakt unserem KI-Vertrag im MVP-Scope.
  */
 export interface EntryPayload {
-  date?: string;   // ISO Datum (YYYY-MM-DD), falls im Text impliziert/erwähnt
-  time?: string;   // Uhrzeit (HH:MM), falls im Text erwähnt
-  tags?: string[]; // Flexibler Kontext (z.B. ["Einkauf"])
+  date?: string;       // ISO Datum (YYYY-MM-DD), falls im Text impliziert/erwähnt
+  startTime?: string;  // HH:MM (Beginn), falls im Text erwähnt
+  endTime?: string;    // HH:MM (Ende), nur wenn Zeitspanne und > startTime
+  tags?: string[];     // Flexibler Kontext (z.B. ["Einkauf"])
 }
 
 /**

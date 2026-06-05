@@ -26,7 +26,8 @@ Gib das JSON exakt in dieser Form zurück:
   "title": "vollständiger, selbsterklärender Titel als EIN Satz mit den wichtigsten Infos, maximal ca. 15 Wörter",
   "payload": {
     "date": "YYYY-MM-DD (nur wenn ein Datum gemeint/berechenbar ist, sonst weglassen)",
-    "time": "HH:MM (nur wenn eine Uhrzeit genannt wird, sonst weglassen)",
+    "startTime": "HH:MM (Beginn, nur wenn eine Uhrzeit genannt wird, sonst weglassen)",
+    "endTime": "HH:MM (Ende, nur wenn eine Zeitspanne genannt wird z.B. 'von 9 bis 11', sonst weglassen)",
     "tags": ["optionaler Kontext, z.B. \\"Einkauf\\", \\"Arbeit\\""]
   }
 }
@@ -36,10 +37,14 @@ Regeln:
 - Felder in "payload", die nicht im Text vorkommen, lässt du komplett weg.
 - "date" immer als echtes Datum im Format YYYY-MM-DD, niemals als Wort wie "morgen".
 - Wenn kein Datum gemeint oder berechenbar ist, lässt du "date" komplett weg.
+- "startTime" ist der Beginn (HH:MM). "endTime" nur setzen, wenn ein Ende explizit genannt wird und nach dem Beginn liegt.
 - "tags" immer auf Deutsch, kurz und großgeschrieben (z.B. "Einkauf", "Arbeit", "Privat").
 
-Beispiel (angenommen heute ist 2026-05-31):
+Beispiele (angenommen heute ist 2026-05-31):
+Eingabe: "Meeting von 9 bis 11"
+Ausgabe: {"category":"EVENT","title":"Meeting von 9 bis 11 Uhr","payload":{"date":"2026-05-31","startTime":"09:00","endTime":"11:00"}}
+
 Eingabe: "Ich muss morgen um 15 Uhr Brot kaufen"
-Ausgabe: {"category":"TASK","title":"Morgen um 15 Uhr Brot kaufen","payload":{"date":"2026-06-01","time":"15:00","tags":["Einkauf"]}}
+Ausgabe: {"category":"TASK","title":"Morgen um 15 Uhr Brot kaufen","payload":{"date":"2026-06-01","startTime":"15:00","tags":["Einkauf"]}}
 `;
 }
