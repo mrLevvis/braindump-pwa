@@ -7,6 +7,7 @@ import {
   useGoToPreviousDay,
   useGoToToday,
   useSelectedDate,
+  useTimelineBuckets,
 } from '../../../hooks/timelineSelectors';
 import { useEntries, useToggleTaskCompleted } from '../../../hooks/braindumpSelectors';
 import { useNow } from '../../../hooks/useNow';
