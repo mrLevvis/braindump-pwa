@@ -9,6 +9,7 @@ import {
   useSelectedDate,
   useTimelineBuckets,
 } from '../../../hooks/timelineSelectors';
+import { useNow } from '../../../hooks/useNow';
 import { DayGrid } from './DayGrid';
 import { UntimedSection } from './UntimedSection';
 
@@ -68,7 +69,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
   const goToNextDay = useGoToNextDay();
   const goToToday = useGoToToday();
 
-  const now = new Date();
+  const now = useNow();
   const todayStr = todayLocal();
   const isToday = selectedDate === todayStr;
   const dayEntries = byDate.get(selectedDate) ?? [];

@@ -3,3 +3,4 @@ export * from './useMediaRecorder';
 export * from './useErrorToast';
 export * from './braindumpSelectors';
 export * from './useEntriesBootstrap';
+export * from './useNow';
