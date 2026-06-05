@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import type { BrainDumpState, DeleteResult, InsertEntry } from "../types";
-import { deleteEntry as deleteEntryFromApi, fetchEntries, insertEntry } from "../services";
+import type { BrainDumpState, DeleteResult, InsertEntry, ToggleResult } from "../types";
+import { deleteEntry as deleteEntryFromApi, fetchEntries, insertEntry, toggleTaskCompleted as toggleApi } from "../services";
 import { processText } from "../services/processBrainDump";
 
 /**
@@ -59,6 +59,24 @@ export const useBrainDumpStore = create<BrainDumpState>()((set) => ({
         if (result.status === 'deleted') {
             const data = await fetchEntries();
             if (data) set(() => ({ entries: data }));
+        }
+
+        return result;
+    },
+
+    toggleTaskCompleted: async (id: string, completed: boolean): Promise<ToggleResult> => {
+        // Optimistic update — flip the flag immediately for instant UI feedback.
+        set(s => ({
+            entries: s.entries.map(e => e.id === id ? { ...e, completed } : e),
+        }));
+
+        const result = await toggleApi(id, completed);
+
+        if (result.status !== 'toggled') {
+            // Revert on any failure to keep UI consistent with DB state.
+            set(s => ({
+                entries: s.entries.map(e => e.id === id ? { ...e, completed: !completed } : e),
+            }));
         }
 
         return result;

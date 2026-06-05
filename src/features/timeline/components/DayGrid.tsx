@@ -29,9 +29,10 @@ interface Props {
   isToday: boolean;
   now: Date;
   onSelect: (entry: BrainDumpEntry) => void;
+  onToggle: (id: string, completed: boolean) => void;
 }
 
-export function DayGrid({ date, entries, isToday, now, onSelect }: Readonly<Props>) {
+export function DayGrid({ date, entries, isToday, now, onSelect, onToggle }: Readonly<Props>) {
   // Off-grid: entries without startTime are excluded (see A12).
   const timedEntries = entries.filter(e => e.payload.startTime != null);
 
@@ -80,6 +81,7 @@ export function DayGrid({ date, entries, isToday, now, onSelect }: Readonly<Prop
               topPx={topMinutes}
               heightPx={heightMinutes}
               onSelect={onSelect}
+              onToggle={onToggle}
             />
           );
         })}

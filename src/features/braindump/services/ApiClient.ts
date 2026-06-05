@@ -1,5 +1,5 @@
 import { createClient, PostgrestError } from '@supabase/supabase-js';
-import type { BrainDumpEntry, DeleteResult, InsertEntry } from '../types';
+import type { BrainDumpEntry, DeleteResult, InsertEntry, ToggleResult } from '../types';
 import { showErrorToast } from '../../../hooks/useErrorToast';
 
 //const BRAINDUMP_ENTRIES = 'braindump_entries';
@@ -85,7 +85,24 @@ export async function deleteEntry(id: string): Promise<DeleteResult> {
         .delete({ count: 'exact' })
         .eq('id', id);
 
-if (error) return { status: 'error', message: error.message };
+    if (error) return { status: 'error', message: error.message };
     if (count === 0) return { status: 'not_found' };
     return { status: 'deleted' };
+}
+
+/**
+ * Setzt den completed-Status eines Eintrags in der Datenbank.
+ * @param id Die UUID des Eintrags.
+ * @param completed Der neue completed-Status.
+ * @returns ToggleResult: 'toggled' | 'not_found' | 'error'
+ */
+export async function toggleTaskCompleted(id: string, completed: boolean): Promise<ToggleResult> {
+    const { error, count } = await supabase
+        .from(BRAINDUMP_ENTRIES_DB)
+        .update({ completed }, { count: 'exact' })
+        .eq('id', id);
+
+    if (error) return { status: 'error', message: error.message };
+    if (count === 0) return { status: 'not_found' };
+    return { status: 'toggled', completed };
 }

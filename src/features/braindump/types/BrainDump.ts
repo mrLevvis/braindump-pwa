@@ -17,6 +17,7 @@ export interface BrainDumpState {
   setProcessing: (status: boolean) => void;
   submitText: (text: string) => Promise<void>;
   deleteEntry: (id: string) => Promise<DeleteResult>;
+  toggleTaskCompleted: (id: string, completed: boolean) => Promise<ToggleResult>;
   updateEntryList: () => void;
 }
 
@@ -48,14 +49,14 @@ export interface BrainDumpEntry {
   original_text: string;    // Der Rohtext, den der Nutzer eingegeben hat
   category: EntryCategory;  // Das strikte Enum
   payload: EntryPayload;    // Das strukturierte JSON-Objekt
+  completed: boolean;       // Mutabler Status — unabhängig vom unveränderlichen Dump-Inhalt
 }
 
 /**
  * Hilfs-Typ für das Erstellen eines neuen Eintrags (INSERT).
- * IDs und Zeitstempel werden von der Datenbank (Supabase) generiert,
- * daher fehlen diese Felder hier.
+ * IDs, Zeitstempel und completed werden von der Datenbank generiert/defaulted.
  */
-export type InsertEntry = Omit<BrainDumpEntry, 'id' | 'created_at'>;
+export type InsertEntry = Omit<BrainDumpEntry, 'id' | 'created_at' | 'completed'>;
 
 /**
  * Diskriminierte Union für das Ergebnis eines DELETE-Calls.
@@ -63,6 +64,15 @@ export type InsertEntry = Omit<BrainDumpEntry, 'id' | 'created_at'>;
  */
 export type DeleteResult =
   | { status: 'deleted' }
+  | { status: 'not_found' }
+  | { status: 'error'; message: string };
+
+/**
+ * Diskriminierte Union für das Ergebnis eines TOGGLE-Calls.
+ * Analog zu DeleteResult — typsicheres Ergebnis für den completed-Toggle.
+ */
+export type ToggleResult =
+  | { status: 'toggled'; completed: boolean }
   | { status: 'not_found' }
   | { status: 'error'; message: string };
 

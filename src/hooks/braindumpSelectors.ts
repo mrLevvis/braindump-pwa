@@ -54,6 +54,14 @@ export function useDeleteEntry() {
 }
 
 /**
+ * Ein React-Hook, der die Toggle-Funktion fuer den completed-Status abruft.
+ * @returns Eine Funktion zum Toggeln des completed-Status eines Tasks.
+ */
+export function useToggleTaskCompleted() {
+    return useBrainDumpStore((s) => s.toggleTaskCompleted);
+}
+
+/**
  * Ein React-Hook, der die Funktion zum Setzen des Verarbeitungs-Status abruft.
  * @returns Eine Funktion zum Setzen von isProcessing.
  */

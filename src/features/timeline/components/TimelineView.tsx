@@ -9,6 +9,7 @@ import {
   useSelectedDate,
   useTimelineBuckets,
 } from '../../../hooks/timelineSelectors';
+import { useToggleTaskCompleted } from '../../../hooks/braindumpSelectors';
 import { useNow } from '../../../hooks/useNow';
 import { DayGrid } from './DayGrid';
 import { UntimedSection } from './UntimedSection';
@@ -64,6 +65,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
   const [selectedEntry, setSelectedEntry] = useState<BrainDumpEntry | null>(null);
 
   const { byDate, undated } = useTimelineBuckets();
+  const toggleTaskCompleted = useToggleTaskCompleted();
   const selectedDate = useSelectedDate();
   const goToPreviousDay = useGoToPreviousDay();
   const goToNextDay = useGoToNextDay();
@@ -124,6 +126,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
             datedTimeless={datedTimeless}
             undated={undated}
             onSelect={setSelectedEntry}
+            onToggle={toggleTaskCompleted}
           />
         </div>
       </header>
@@ -136,6 +139,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
             isToday={isToday}
             now={now}
             onSelect={setSelectedEntry}
+            onToggle={toggleTaskCompleted}
           />
         </div>
       </main>

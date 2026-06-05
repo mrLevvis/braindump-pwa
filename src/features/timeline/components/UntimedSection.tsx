@@ -1,4 +1,4 @@
-import { ListTodo } from 'lucide-react';
+import { Circle, CircleCheck, ListTodo } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -50,45 +50,81 @@ const ENTRY_BADGES = ['flex', 'flex-wrap', 'gap-1'].join(' ');
 
 // ─── Inner card ───────────────────────────────────────────────────────────────
 
-function EntryCard({
-  entry,
-  onSelect,
-}: Readonly<{ entry: BrainDumpEntry; onSelect: (e: BrainDumpEntry) => void }>) {
+const CHECKBOX_BTN = [
+  'absolute left-0 top-1/2 -translate-y-1/2',
+  'flex items-center justify-center h-9 w-9',
+  'text-muted-foreground hover:text-foreground transition-colors',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded',
+].join(' ');
+
+interface EntryCardProps {
+  entry: BrainDumpEntry;
+  onSelect: (e: BrainDumpEntry) => void;
+  onToggle: (id: string, completed: boolean) => void;
+}
+
+function EntryCard({ entry, onSelect, onToggle }: Readonly<EntryCardProps>) {
   const tags = entry.payload.tags ?? [];
+  const isTask = entry.category === 'TASK';
+
   return (
-    <button
-      type="button"
-      className={ENTRY_BTN}
-      onClick={() => onSelect(entry)}
-      aria-label={`Eintrag öffnen: ${entry.title ?? entry.original_text}`}
-    >
-      <Card size="sm" className={ENTRY_CARD}>
-        <CardContent className="px-3">
-          <p className={ENTRY_TITLE}>{entry.title ?? entry.original_text}</p>
-          <div className={ENTRY_BADGES}>
-            <CategoryBadge category={entry.category} />
-            {tags.length > 0 && <TagBadgeList tags={tags} />}
-          </div>
-        </CardContent>
-      </Card>
-    </button>
+    // Outer div: contains two sibling buttons — valid HTML, no nesting
+    <div className="relative">
+      {/* Checkbox — only for TASKs, separate tap target on the left */}
+      {isTask && (
+        <button
+          type="button"
+          className={CHECKBOX_BTN}
+          onClick={() => onToggle(entry.id, !entry.completed)}
+          aria-label={entry.completed ? 'Als unerledigt markieren' : 'Als erledigt markieren'}
+          aria-pressed={entry.completed}
+        >
+          {entry.completed
+            ? <CircleCheck className="h-4 w-4 text-primary" aria-hidden="true" />
+            : <Circle className="h-4 w-4" aria-hidden="true" />}
+        </button>
+      )}
+
+      {/* Card body — opens detail panel */}
+      <button
+        type="button"
+        className={[ENTRY_BTN, isTask ? 'pl-9' : ''].join(' ')}
+        onClick={() => onSelect(entry)}
+        aria-label={`Eintrag öffnen: ${entry.title ?? entry.original_text}`}
+      >
+        <Card size="sm" className={[ENTRY_CARD, entry.completed ? 'opacity-60' : ''].join(' ')}>
+          <CardContent className="px-3">
+            <p className={[ENTRY_TITLE, entry.completed ? 'line-through text-muted-foreground' : ''].join(' ')}>
+              {entry.title ?? entry.original_text}
+            </p>
+            <div className={ENTRY_BADGES}>
+              <CategoryBadge category={entry.category} />
+              {tags.length > 0 && <TagBadgeList tags={tags} />}
+            </div>
+          </CardContent>
+        </Card>
+      </button>
+    </div>
   );
 }
 
 // ─── Section ─────────────────────────────────────────────────────────────────
 
-function EntrySection({
-  label,
-  entries,
-  onSelect,
-}: Readonly<{ label: string; entries: readonly BrainDumpEntry[]; onSelect: (e: BrainDumpEntry) => void }>) {
+interface EntrySectionProps {
+  label: string;
+  entries: readonly BrainDumpEntry[];
+  onSelect: (e: BrainDumpEntry) => void;
+  onToggle: (id: string, completed: boolean) => void;
+}
+
+function EntrySection({ label, entries, onSelect, onToggle }: Readonly<EntrySectionProps>) {
   if (entries.length === 0) return null;
   return (
     <section>
       <p className={SECTION_LABEL}>{label}</p>
       <div className={SECTION_LIST}>
         {entries.map(entry => (
-          <EntryCard key={entry.id} entry={entry} onSelect={onSelect} />
+          <EntryCard key={entry.id} entry={entry} onSelect={onSelect} onToggle={onToggle} />
         ))}
       </div>
     </section>
@@ -104,9 +140,11 @@ interface Props {
   undated: readonly BrainDumpEntry[];
   /** Opens the detail panel in the parent; keeps the panel outside the Sheet. */
   onSelect: (entry: BrainDumpEntry) => void;
+  /** Toggles the completed flag; kept outside the Sheet for the same reason as onSelect. */
+  onToggle: (id: string, completed: boolean) => void;
 }
 
-export function UntimedSection({ datedTimeless, undated, onSelect }: Readonly<Props>) {
+export function UntimedSection({ datedTimeless, undated, onSelect, onToggle }: Readonly<Props>) {
   const total = datedTimeless.length + undated.length;
   if (total === 0) return null;
 
@@ -131,11 +169,13 @@ export function UntimedSection({ datedTimeless, undated, onSelect }: Readonly<Pr
               label="Heute, ohne Uhrzeit"
               entries={datedTimeless}
               onSelect={onSelect}
+              onToggle={onToggle}
             />
             <EntrySection
               label="Ohne Datum"
               entries={undated}
               onSelect={onSelect}
+              onToggle={onToggle}
             />
           </div>
         </div>
