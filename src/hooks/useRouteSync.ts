@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 export type AppView = 'dashboard' | 'timeline';
 
@@ -33,12 +33,19 @@ export function useRouteSync(
   selectedDate: string,
   onPop: (view: AppView, date: string | null) => void,
 ): void {
-  // Store → URL
+  const prevViewRef = useRef<AppView>(view);
+
+  // Store → URL: push on view change, replace on day-only change.
   useEffect(() => {
     const path = buildPath(view, selectedDate);
     if (window.location.pathname !== path) {
-      window.history.pushState(null, '', path);
+      if (prevViewRef.current !== view) {
+        window.history.pushState(null, '', path);
+      } else {
+        window.history.replaceState(null, '', path);
+      }
     }
+    prevViewRef.current = view;
   }, [view, selectedDate]);
 
   // URL → Store (Back / Forward)

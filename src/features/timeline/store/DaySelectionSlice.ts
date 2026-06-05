@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { todayLocal, shiftDate } from '../../../lib/dateUtils';
+import { parseAppRoute } from '../../../hooks/useRouteSync';
 
 export interface DaySelectionSlice {
   selectedDate: string;
@@ -8,23 +10,10 @@ export interface DaySelectionSlice {
   setSelectedDate: (date: string) => void;
 }
 
-function todayLocal(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-// Uses T00:00:00 to avoid UTC-midnight timezone shift (same convention as formatDay)
-function shiftDate(dateStr: string, delta: number): string {
-  const d = new Date(`${dateStr}T00:00:00`);
-  d.setDate(d.getDate() + delta);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-// Reads the date segment from /timeline/YYYY-MM-DD on first page load so the
-// store is primed from the URL before the first render (avoids a flash).
+// Primes the store from the URL before the first render (avoids a flash).
 function parseInitialDate(): string {
-  const m = /^\/timeline\/(\d{4}-\d{2}-\d{2})/.exec(window.location.pathname);
-  return m ? m[1] : todayLocal();
+  const { date } = parseAppRoute();
+  return date ?? todayLocal();
 }
 
 export const useDaySelectionStore = create<DaySelectionSlice>()((set) => ({

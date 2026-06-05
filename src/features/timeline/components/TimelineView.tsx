@@ -2,23 +2,17 @@ import { useState } from 'react';
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { EntryDetailPanel } from '../../braindump/views/EntryDetailPanel';
 import {
+  useDatedTimelessEntries,
   useGoToNextDay,
   useGoToPreviousDay,
   useGoToToday,
   useSelectedDate,
-  useTimelineBuckets,
 } from '../../../hooks/timelineSelectors';
 import { useEntries, useToggleTaskCompleted } from '../../../hooks/braindumpSelectors';
 import { useNow } from '../../../hooks/useNow';
+import { todayLocal } from '../../../lib/dateUtils';
 import { DayGrid } from './DayGrid';
 import { UntimedSection } from './UntimedSection';
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function todayLocal(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
 
 const NAV_DATE_FORMAT = new Intl.DateTimeFormat('de-DE', {
   weekday: 'short',
@@ -74,14 +68,12 @@ export function TimelineView({ onBack }: Readonly<Props>) {
   const goToPreviousDay = useGoToPreviousDay();
   const goToNextDay = useGoToNextDay();
   const goToToday = useGoToToday();
+  const datedTimeless = useDatedTimelessEntries();
 
   const now = useNow();
   const todayStr = todayLocal();
   const isToday = selectedDate === todayStr;
   const dayEntries = byDate.get(selectedDate) ?? [];
-
-  // Dated entries for the selected day that have no startTime — off-grid, shown in sheet.
-  const datedTimeless = dayEntries.filter(e => e.payload.startTime == null);
 
   return (
     <div className={VIEW}>

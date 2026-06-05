@@ -37,3 +37,9 @@ export function useSelectedDayEntries(): readonly BrainDumpEntry[] {
   const selectedDate = useSelectedDate();
   return byDate.get(selectedDate) ?? EMPTY_ENTRIES;
 }
+
+/** Entries for the selected day that have a date but no startTime (all-day / off-grid). */
+export function useDatedTimelessEntries(): readonly BrainDumpEntry[] {
+  const entries = useSelectedDayEntries();
+  return useMemo(() => entries.filter(e => e.payload.startTime == null), [entries]);
+}
