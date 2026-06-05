@@ -7,5 +7,6 @@ export interface TimelineDayGroup {
 
 export interface TimelineData {
   readonly byDate: ReadonlyMap<string, readonly BrainDumpEntry[]>;
-  readonly untimed: readonly BrainDumpEntry[];
+  /** Tasks with no date at all — always visible regardless of selected day. */
+  readonly undated: readonly BrainDumpEntry[];
 }

@@ -15,7 +15,7 @@ export function buildTimelineBuckets(entries: readonly BrainDumpEntry[]): Timeli
 
   // Guaranteed by ingest contract: only TASKs can be undated (EVENTs without date are
   // normalized to TASK at the API boundary; NOTEs are always timeless and excluded here).
-  const untimed = normalized.filter(e => e.payload.date == null && e.category === 'TASK');
+  const undated = normalized.filter(e => e.payload.date == null && e.category === 'TASK');
 
   const byDate = normalized
     .filter(e => e.payload.date != null)
@@ -26,5 +26,5 @@ export function buildTimelineBuckets(entries: readonly BrainDumpEntry[]): Timeli
       return map;
     }, new Map());
 
-  return { byDate, untimed };
+  return { byDate, undated };
 }

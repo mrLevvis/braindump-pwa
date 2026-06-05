@@ -63,7 +63,7 @@ interface Props {
 export function TimelineView({ onBack }: Readonly<Props>) {
   const [selectedEntry, setSelectedEntry] = useState<BrainDumpEntry | null>(null);
 
-  const { byDate, untimed } = useTimelineBuckets();
+  const { byDate, undated } = useTimelineBuckets();
   const selectedDate = useSelectedDate();
   const goToPreviousDay = useGoToPreviousDay();
   const goToNextDay = useGoToNextDay();
@@ -73,6 +73,9 @@ export function TimelineView({ onBack }: Readonly<Props>) {
   const todayStr = todayLocal();
   const isToday = selectedDate === todayStr;
   const dayEntries = byDate.get(selectedDate) ?? [];
+
+  // Dated entries for the selected day that have no startTime — off-grid, shown in sheet.
+  const datedTimeless = dayEntries.filter(e => e.payload.startTime == null);
 
   return (
     <div className={VIEW}>
@@ -117,7 +120,11 @@ export function TimelineView({ onBack }: Readonly<Props>) {
             </button>
           </div>
 
-          <UntimedSection entries={untimed} />
+          <UntimedSection
+            datedTimeless={datedTimeless}
+            undated={undated}
+            onSelect={setSelectedEntry}
+          />
         </div>
       </header>
 
