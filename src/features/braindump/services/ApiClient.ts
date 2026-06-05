@@ -97,12 +97,11 @@ export async function deleteEntry(id: string): Promise<DeleteResult> {
  * @returns ToggleResult: 'toggled' | 'not_found' | 'error'
  */
 export async function toggleTaskCompleted(id: string, completed: boolean): Promise<ToggleResult> {
-    const { error, count } = await supabase
+    const { error } = await supabase
         .from(BRAINDUMP_ENTRIES_DB)
-        .update({ completed }, { count: 'exact' })
+        .update({ completed })
         .eq('id', id);
 
     if (error) return { status: 'error', message: error.message };
-    if (count === 0) return { status: 'not_found' };
     return { status: 'toggled', completed };
 }

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { BrainDumpState, DeleteResult, InsertEntry, ToggleResult } from "../types";
 import { deleteEntry as deleteEntryFromApi, fetchEntries, insertEntry, toggleTaskCompleted as toggleApi } from "../services";
 import { processText } from "../services/processBrainDump";
+import { showErrorToast } from "../../../hooks/useErrorToast";
 
 /**
  * Globaler Zustand-Store für das BrainDump-Feature.
@@ -77,6 +78,7 @@ export const useBrainDumpStore = create<BrainDumpState>()((set) => ({
             set(s => ({
                 entries: s.entries.map(e => e.id === id ? { ...e, completed: !completed } : e),
             }));
+            if (result.status === 'error') showErrorToast(result.message);
         }
 
         return result;

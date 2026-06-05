@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useDeleteEntry, useErrorToast, useSuccessToast } from '@/hooks';
+import { Circle, CircleCheck } from 'lucide-react';
+import { useDeleteEntry, useErrorToast, useSuccessToast, useToggleTaskCompleted } from '@/hooks';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -66,7 +67,7 @@ const TIME_ROW_CLASS_NAME = ['grid', 'gap-1'].join(' ');
 const TIME_LABEL_CLASS_NAME = ['text-xs', 'font-medium', 'uppercase', 'tracking-wide', 'text-muted-foreground'].join(' ');
 const TIME_VALUE_CLASS_NAME = ['text-sm', 'font-medium', 'text-foreground'].join(' ');
 const APPOINTMENT_LABEL_CLASS_NAME = ['inline-flex', 'w-fit', 'rounded-md', 'bg-primary/10', 'px-2', 'py-1', 'text-xs', 'font-medium', 'text-primary'].join(' ');
-const DELETE_ACTION_ROW_CLASS_NAME = ['flex', 'justify-end', 'pt-2'].join(' ');
+const ACTION_ROW_CLASS_NAME = ['flex', 'items-center', 'pt-2'].join(' ');
 const DELETE_BUTTON_CLASS_NAME = ['min-w-28'].join(' ');
 
 const formatCreatedDateTime = (createdAtIso: string): string => {
@@ -149,6 +150,7 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{ entry
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const deleteEntry = useDeleteEntry();
+  const toggleTaskCompleted = useToggleTaskCompleted();
   const showSuccessToast = useSuccessToast();
   const showErrorToast = useErrorToast();
   const title = entry.title?.trim() || 'Untitled';
@@ -202,7 +204,19 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{ entry
             </section>
           ) : null}
 
-          <div className={DELETE_ACTION_ROW_CLASS_NAME}>
+          <div className={[ACTION_ROW_CLASS_NAME, entry.category === 'TASK' ? 'justify-between' : 'justify-end'].join(' ')}>
+            {entry.category === 'TASK' && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => toggleTaskCompleted(entry.id, !entry.completed)}
+                className={entry.completed ? 'text-emerald-500 border-emerald-500/40' : ''}
+              >
+                {entry.completed
+                  ? <><CircleCheck className="mr-2 h-4 w-4 text-emerald-500" aria-hidden="true" />Erledigt</>
+                  : <><Circle className="mr-2 h-4 w-4" aria-hidden="true" />Abhaken</>}
+              </Button>
+            )}
             <Button type="button" variant="destructive" className={DELETE_BUTTON_CLASS_NAME} onClick={() => setIsDeleteDialogOpen(true)}>
               Loeschen
             </Button>

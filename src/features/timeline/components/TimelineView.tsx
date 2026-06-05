@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
-import type { BrainDumpEntry } from '../../braindump/types';
 import { EntryDetailPanel } from '../../braindump/views/EntryDetailPanel';
 import {
   useGoToNextDay,
@@ -9,7 +8,7 @@ import {
   useSelectedDate,
   useTimelineBuckets,
 } from '../../../hooks/timelineSelectors';
-import { useToggleTaskCompleted } from '../../../hooks/braindumpSelectors';
+import { useEntries, useToggleTaskCompleted } from '../../../hooks/braindumpSelectors';
 import { useNow } from '../../../hooks/useNow';
 import { DayGrid } from './DayGrid';
 import { UntimedSection } from './UntimedSection';
@@ -62,7 +61,12 @@ interface Props {
 }
 
 export function TimelineView({ onBack }: Readonly<Props>) {
-  const [selectedEntry, setSelectedEntry] = useState<BrainDumpEntry | null>(null);
+  const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
+
+  const allEntries = useEntries();
+  const selectedEntry = selectedEntryId != null
+    ? (allEntries.find(e => e.id === selectedEntryId) ?? null)
+    : null;
 
   const { byDate, undated } = useTimelineBuckets();
   const toggleTaskCompleted = useToggleTaskCompleted();
@@ -125,7 +129,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
           <UntimedSection
             datedTimeless={datedTimeless}
             undated={undated}
-            onSelect={setSelectedEntry}
+            onSelect={(e) => setSelectedEntryId(e.id)}
             onToggle={toggleTaskCompleted}
           />
         </div>
@@ -138,7 +142,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
             entries={dayEntries}
             isToday={isToday}
             now={now}
-            onSelect={setSelectedEntry}
+            onSelect={(e) => setSelectedEntryId(e.id)}
             onToggle={toggleTaskCompleted}
           />
         </div>
@@ -148,7 +152,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
         <EntryDetailPanel
           entry={selectedEntry}
           open
-          onOpenChange={(open) => { if (!open) setSelectedEntry(null); }}
+          onOpenChange={(open) => { if (!open) setSelectedEntryId(null); }}
         />
       )}
     </div>

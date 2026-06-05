@@ -50,11 +50,11 @@ const ENTRY_BADGES = ['flex', 'flex-wrap', 'gap-1'].join(' ');
 
 // ─── Inner card ───────────────────────────────────────────────────────────────
 
-const CHECKBOX_BTN = [
-  'absolute left-0 top-1/2 -translate-y-1/2',
-  'flex items-center justify-center h-9 w-9',
-  'text-muted-foreground hover:text-foreground transition-colors',
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded',
+const TOGGLE_BTN = [
+  'absolute bottom-2.5 right-3 z-10',
+  'flex items-center justify-center h-7 w-7 rounded',
+  'text-muted-foreground/60 hover:text-emerald-500 transition-colors',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
 ].join(' ');
 
 interface EntryCardProps {
@@ -70,30 +70,15 @@ function EntryCard({ entry, onSelect, onToggle }: Readonly<EntryCardProps>) {
   return (
     // Outer div: contains two sibling buttons — valid HTML, no nesting
     <div className="relative">
-      {/* Checkbox — only for TASKs, separate tap target on the left */}
-      {isTask && (
-        <button
-          type="button"
-          className={CHECKBOX_BTN}
-          onClick={() => onToggle(entry.id, !entry.completed)}
-          aria-label={entry.completed ? 'Als unerledigt markieren' : 'Als erledigt markieren'}
-          aria-pressed={entry.completed}
-        >
-          {entry.completed
-            ? <CircleCheck className="h-4 w-4 text-primary" aria-hidden="true" />
-            : <Circle className="h-4 w-4" aria-hidden="true" />}
-        </button>
-      )}
-
       {/* Card body — opens detail panel */}
       <button
         type="button"
-        className={[ENTRY_BTN, isTask ? 'pl-9' : ''].join(' ')}
+        className={ENTRY_BTN}
         onClick={() => onSelect(entry)}
         aria-label={`Eintrag öffnen: ${entry.title ?? entry.original_text}`}
       >
         <Card size="sm" className={[ENTRY_CARD, entry.completed ? 'opacity-60' : ''].join(' ')}>
-          <CardContent className="px-3">
+          <CardContent className={isTask ? 'pl-3 pr-10' : 'px-3'}>
             <p className={[ENTRY_TITLE, entry.completed ? 'line-through text-muted-foreground' : ''].join(' ')}>
               {entry.title ?? entry.original_text}
             </p>
@@ -104,6 +89,21 @@ function EntryCard({ entry, onSelect, onToggle }: Readonly<EntryCardProps>) {
           </CardContent>
         </Card>
       </button>
+
+      {/* Toggle — only for TASKs, bottom-right corner */}
+      {isTask && (
+        <button
+          type="button"
+          className={TOGGLE_BTN}
+          onClick={() => onToggle(entry.id, !entry.completed)}
+          aria-label={entry.completed ? 'Als unerledigt markieren' : 'Als erledigt markieren'}
+          aria-pressed={entry.completed}
+        >
+          {entry.completed
+            ? <CircleCheck className="h-5 w-5 text-emerald-500" aria-hidden="true" />
+            : <Circle className="h-5 w-5" aria-hidden="true" />}
+        </button>
+      )}
     </div>
   );
 }

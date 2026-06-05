@@ -59,7 +59,7 @@ export function GridBlock({ entry, status, topPx, heightPx, onSelect, onToggle }
         className="absolute inset-0 w-full h-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
       >
         <Card size="sm" className="h-full rounded-lg py-1 gap-0">
-          <CardContent className={['px-2 h-full flex flex-col gap-0.5 overflow-hidden', isTask ? 'pl-6' : ''].join(' ')}>
+          <CardContent className={['px-2 h-full flex flex-col gap-0.5 overflow-hidden', isTask ? 'pr-7' : ''].join(' ')}>
             <time dateTime={dateTimeAttr} className="text-[10px] font-mono text-muted-foreground leading-none shrink-0">
               {startTime}{endTime ? `–${endTime}` : ''}
             </time>
@@ -76,18 +76,18 @@ export function GridBlock({ entry, status, topPx, heightPx, onSelect, onToggle }
         </Card>
       </button>
 
-      {/* Checkbox — only for TASKs, floats above the detail button */}
+      {/* Toggle — only for TASKs, bottom-right corner */}
       {isTask && (
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onToggle(entry.id, !entry.completed); }}
           aria-label={entry.completed ? 'Als unerledigt markieren' : 'Als erledigt markieren'}
           aria-pressed={entry.completed}
-          className="absolute left-1 top-1 z-10 flex items-center justify-center h-4 w-4 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring text-muted-foreground hover:text-foreground transition-colors"
+          className="absolute bottom-1 right-1 z-10 flex items-center justify-center h-6 w-6 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring text-muted-foreground/60 hover:text-emerald-500 transition-colors"
         >
           {entry.completed
-            ? <CircleCheck className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-            : <Circle className="h-3.5 w-3.5" aria-hidden="true" />}
+            ? <CircleCheck className="h-5 w-5 text-emerald-500" aria-hidden="true" />
+            : <Circle className="h-5 w-5" aria-hidden="true" />}
         </button>
       )}
     </div>

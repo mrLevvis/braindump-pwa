@@ -1,14 +1,23 @@
 import { useState } from 'react';
+import { Circle, CircleCheck } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import type { BrainDumpEntry } from '../types';
 import { formatCreatedTime } from '../utils';
 import { CategoryBadge, EntryDetailPanel, TagBadgeList } from './EntryDetailPanel.tsx';
+import { useToggleTaskCompleted } from '@/hooks';
 
 const ENTRY_DATE_FORMATTER = new Intl.DateTimeFormat('de-DE', {
   weekday: 'short',
   month: '2-digit',
   day: '2-digit',
 });
+
+const TOGGLE_BTN = [
+  'absolute bottom-4 right-4 z-10',
+  'flex items-center justify-center h-8 w-8 rounded-lg',
+  'text-muted-foreground/60 hover:text-emerald-500 transition-colors',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+].join(' ');
 
 const CARD_BUTTON_CLASS_NAME = [
   'w-full',
@@ -60,32 +69,50 @@ const EntryPayloadTime = ({ date, startTime, endTime }: Readonly<{ date?: string
 
 export function EntryCard({ entry }: Readonly<{ entry: BrainDumpEntry }>) {
   const [isDetailPanelOpen, setIsDetailPanelOpen] = useState(false);
+  const toggleTaskCompleted = useToggleTaskCompleted();
   const createdTime = formatCreatedTime(entry.created_at);
   const title = entry.title?.trim() || 'Untitled';
   const tags = entry.payload?.tags ?? [];
   const date = entry.payload?.date;
   const entryTime = entry.payload?.startTime;
   const entryEndTime = entry.payload?.endTime;
+  const isTask = entry.category === 'TASK';
 
   return (
     <>
-      <button type="button" className={CARD_BUTTON_CLASS_NAME} onClick={() => setIsDetailPanelOpen(true)}>
-        <Card className={CARD_CLASS_NAME} size="sm">
-          <CardHeader className={CARD_HEADER_CLASS_NAME}>
-            <CardTitle>{title}</CardTitle>
-            <CategoryBadge category={entry.category} />
-          </CardHeader>
+      <div className="relative">
+        <button type="button" className={CARD_BUTTON_CLASS_NAME} onClick={() => setIsDetailPanelOpen(true)}>
+          <Card className={[CARD_CLASS_NAME, entry.completed ? 'opacity-60' : ''].join(' ')} size="sm">
+            <CardHeader className={CARD_HEADER_CLASS_NAME}>
+              <CardTitle className={entry.completed ? 'line-through text-muted-foreground' : ''}>{title}</CardTitle>
+              <CategoryBadge category={entry.category} />
+            </CardHeader>
 
-          <CardContent className={CARD_CONTENT_CLASS_NAME}>
-            <EntryPayloadTime date={date} startTime={entryTime} endTime={entryEndTime} />
-            <TagBadgeList tags={tags} />
-          </CardContent>
+            <CardContent className={[CARD_CONTENT_CLASS_NAME, isTask ? 'pr-12' : ''].join(' ')}>
+              <EntryPayloadTime date={date} startTime={entryTime} endTime={entryEndTime} />
+              <TagBadgeList tags={tags} />
+            </CardContent>
 
-          <CardFooter className={CARD_FOOTER_CLASS_NAME}>
-            <time dateTime={entry.created_at}>{createdTime}</time>
-          </CardFooter>
-        </Card>
-      </button>
+            <CardFooter className={CARD_FOOTER_CLASS_NAME}>
+              <time dateTime={entry.created_at}>{createdTime}</time>
+            </CardFooter>
+          </Card>
+        </button>
+
+        {isTask && (
+          <button
+            type="button"
+            className={TOGGLE_BTN}
+            onClick={() => toggleTaskCompleted(entry.id, !entry.completed)}
+            aria-label={entry.completed ? 'Als unerledigt markieren' : 'Als erledigt markieren'}
+            aria-pressed={entry.completed}
+          >
+            {entry.completed
+              ? <CircleCheck className="h-6 w-6 text-emerald-500" aria-hidden="true" />
+              : <Circle className="h-6 w-6" aria-hidden="true" />}
+          </button>
+        )}
+      </div>
 
       <EntryDetailPanel entry={entry} open={isDetailPanelOpen} onOpenChange={setIsDetailPanelOpen} />
     </>
