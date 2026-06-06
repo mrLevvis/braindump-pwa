@@ -16,11 +16,37 @@ Zustand ist eine schlanke State-Management-Library für React. Im Gegensatz zu `
 
 ## Wo liegt unser Store?
 
+Das Projekt hat **zwei eigenständige Stores** — aufgeteilt nach Feature-Grenze, nicht nach technischem Muster.
+
+### BrainDump-Store
+
 ```
 src/features/braindump/store/BrainDumpStore.ts
 ```
 
-Der Store enthält **State** (die Daten) und **Actions** (Funktionen, die den State verändern) — alles in einem Objekt. Der Aufnahme-Teil ist als eigener Slice ausgelagert (`recordingSliceStore.ts`) und wird in den Haupt-Store gemischt.
+Enthält den globalen Eintrags-State: Einträge laden, speichern, verarbeiten. Der Aufnahme-Teil ist als eigener Slice ausgelagert (`recordingSliceStore.ts`) und wird in den Haupt-Store gemischt.
+
+### Day-Selection-Store (Timeline)
+
+```
+src/features/timeline/store/DaySelectionSlice.ts
+```
+
+Hält ausschließlich den ausgewählten Tag der Timeline-Ansicht. Er ist bewusst vom BrainDump-Store getrennt, weil er keinen Eintrags-State braucht und auch außerhalb der Timeline-View konsumiert werden kann (z.B. in Selektoren).
+
+```typescript
+import { useDaySelectionStore } from '../store';
+```
+
+| Name | Typ | Bedeutung |
+| :--- | :--- | :--- |
+| `selectedDate` | `string` (YYYY-MM-DD) | Der aktuell angezeigte Tag |
+| `goToPreviousDay()` | Action | Wechselt einen Tag zurück |
+| `goToNextDay()` | Action | Wechselt einen Tag vor |
+| `goToToday()` | Action | Setzt `selectedDate` auf heute |
+| `setSelectedDate(date)` | Action | Setzt einen beliebigen Tag direkt |
+
+Der Store initialisiert sich beim ersten Laden aus der URL (via `parseAppRoute`), um einen Flash zu vermeiden. In der Praxis wird er meistens über die Selektoren in `hooks/timelineSelectors.ts` konsumiert, nicht direkt.
 
 ---
 
