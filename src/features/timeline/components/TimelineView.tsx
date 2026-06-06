@@ -7,12 +7,14 @@ import {
   useGoToPreviousDay,
   useGoToToday,
   useSelectedDate,
+  useSetSelectedDate,
   useTimelineBuckets,
 } from '../../../hooks/timelineSelectors';
 import { useEntries, useToggleTaskCompleted } from '../../../hooks/braindumpSelectors';
 import { useNow } from '../../../hooks/useNow';
 import { todayLocal } from '../../../lib/dateUtils';
 import { DayGrid } from './DayGrid';
+import { DayTabs } from './DayTabs';
 import { UntimedSection } from './UntimedSection';
 
 const NAV_DATE_FORMAT = new Intl.DateTimeFormat('de-DE', {
@@ -30,9 +32,15 @@ function formatNavLabel(dateStr: string, todayStr: string): string {
 
 const VIEW = ['flex', 'min-h-dvh', 'flex-col', 'bg-background'].join(' ');
 const HEADER = ['shrink-0', 'border-b', 'bg-background', 'sticky', 'top-0', 'z-10'].join(' ');
-const HEADER_INNER = [
+// Row 1: back + current date label + actions
+const HEADER_TOP = [
   'mx-auto', 'flex', 'w-full', 'max-w-3xl',
   'items-center', 'justify-between', 'px-4', 'py-3',
+].join(' ');
+// Row 2: step arrows + scrollable day tabs
+const TABS_ROW = [
+  'mx-auto', 'flex', 'w-full', 'max-w-3xl',
+  'items-center', 'gap-1', 'px-2', 'pb-2',
 ].join(' ');
 const ICON_BTN = [
   'flex', 'items-center', 'justify-center',
@@ -41,13 +49,8 @@ const ICON_BTN = [
   'transition-colors',
   'focus-visible:outline-none', 'focus-visible:ring-2', 'focus-visible:ring-ring',
 ].join(' ');
-const DAY_NAV = ['flex', 'items-center', 'gap-0.5'].join(' ');
-// Fixed width prevents layout shift when the label text changes between days.
-const DAY_LABEL_BASE = ['min-w-[9rem]', 'text-center', 'text-sm', 'font-semibold', 'select-none', 'px-1'].join(' ');
-const DAY_LABEL_STATIC = DAY_LABEL_BASE;
-const DAY_LABEL_BTN = [
-  DAY_LABEL_BASE, 'cursor-pointer', 'hover:text-primary', 'transition-colors',
-  'rounded', 'focus-visible:outline-none', 'focus-visible:ring-2', 'focus-visible:ring-ring',
+const CURRENT_DATE = [
+  'text-sm', 'font-semibold', 'text-center', 'select-none',
 ].join(' ');
 const MAIN = ['flex-1', 'overflow-y-auto'].join(' ');
 const MAIN_INNER = ['mx-auto', 'w-full', 'max-w-3xl', 'px-4', 'py-4'].join(' ');
@@ -80,6 +83,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
   const goToPreviousDay = useGoToPreviousDay();
   const goToNextDay = useGoToNextDay();
   const goToToday = useGoToToday();
+  const setSelectedDate = useSetSelectedDate();
   const datedTimeless = useDatedTimelessEntries();
 
   const now = useNow();
@@ -110,7 +114,8 @@ export function TimelineView({ onBack }: Readonly<Props>) {
   return (
     <div className={VIEW}>
       <header className={HEADER}>
-        <div className={HEADER_INNER}>
+        {/* Row 1: back + current date label + actions */}
+        <div className={HEADER_TOP}>
           <button
             type="button"
             className={ICON_BTN}
@@ -120,42 +125,9 @@ export function TimelineView({ onBack }: Readonly<Props>) {
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           </button>
 
-          <div className={DAY_NAV}>
-            <button
-              type="button"
-              className={ICON_BTN}
-              onClick={goToPreviousDay}
-              aria-label="Vorheriger Tag"
-            >
-              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-            </button>
-
-            {isToday ? (
-              <time dateTime={selectedDate} className={DAY_LABEL_STATIC}>
-                {formatNavLabel(selectedDate, todayStr)}
-              </time>
-            ) : (
-              <button
-                type="button"
-                className={DAY_LABEL_BTN}
-                onClick={goToToday}
-                aria-label="Zu heute springen"
-              >
-                <time dateTime={selectedDate}>
-                  {formatNavLabel(selectedDate, todayStr)}
-                </time>
-              </button>
-            )}
-
-            <button
-              type="button"
-              className={ICON_BTN}
-              onClick={goToNextDay}
-              aria-label="Nächster Tag"
-            >
-              <ChevronRight className="h-4 w-4" aria-hidden="true" />
-            </button>
-          </div>
+          <time dateTime={selectedDate} className={CURRENT_DATE}>
+            {formatNavLabel(selectedDate, todayStr)}
+          </time>
 
           <div className={HEADER_ACTIONS}>
             <button
@@ -173,6 +145,35 @@ export function TimelineView({ onBack }: Readonly<Props>) {
               onToggle={toggleTaskCompleted}
             />
           </div>
+        </div>
+
+        {/* Row 2: step arrows + day-tab strip (primary day navigation) */}
+        <div className={TABS_ROW}>
+          <button
+            type="button"
+            className={ICON_BTN}
+            onClick={goToPreviousDay}
+            aria-label="Vorheriger Tag"
+          >
+            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+          </button>
+
+          <div className="flex-1 min-w-0">
+            <DayTabs
+              selectedDate={selectedDate}
+              windowRadiusDays={30}
+              onSelectDay={setSelectedDate}
+            />
+          </div>
+
+          <button
+            type="button"
+            className={ICON_BTN}
+            onClick={goToNextDay}
+            aria-label="Nächster Tag"
+          >
+            <ChevronRight className="h-4 w-4" aria-hidden="true" />
+          </button>
         </div>
       </header>
 
