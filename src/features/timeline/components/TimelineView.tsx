@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { EntryDetailPanel } from '../../braindump/views/EntryDetailPanel';
 import {
   useDatedTimelessEntries,
@@ -51,6 +51,14 @@ const DAY_LABEL_BTN = [
 ].join(' ');
 const MAIN = ['flex-1', 'overflow-y-auto'].join(' ');
 const MAIN_INNER = ['mx-auto', 'w-full', 'max-w-3xl', 'px-4', 'py-4'].join(' ');
+const HEADER_ACTIONS = ['flex', 'items-center', 'gap-1'].join(' ');
+const JETZT_BTN = [
+  'flex', 'items-center', 'gap-1', 'px-2', 'h-8', 'rounded-lg', 'shrink-0',
+  'text-xs', 'font-medium',
+  'text-muted-foreground', 'hover:text-foreground', 'hover:bg-muted/50',
+  'transition-colors',
+  'focus-visible:outline-none', 'focus-visible:ring-2', 'focus-visible:ring-ring',
+].join(' ');
 
 // ─── TimelineView (Container) ─────────────────────────────────────────────────
 
@@ -78,6 +86,26 @@ export function TimelineView({ onBack }: Readonly<Props>) {
   const todayStr = todayLocal();
   const isToday = selectedDate === todayStr;
   const dayEntries = byDate.get(selectedDate) ?? [];
+
+  const nowLineRef = useRef<HTMLDivElement>(null);
+  const pendingScrollRef = useRef(false);
+
+  const handleNowClick = () => {
+    if (!isToday) {
+      goToToday();
+      pendingScrollRef.current = true;
+    } else {
+      nowLineRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
+  // After navigating to today via handleNowClick, scroll to the now-line once it mounts.
+  useEffect(() => {
+    if (isToday && pendingScrollRef.current) {
+      pendingScrollRef.current = false;
+      nowLineRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [isToday]);
 
   return (
     <div className={VIEW}>
@@ -129,11 +157,22 @@ export function TimelineView({ onBack }: Readonly<Props>) {
             </button>
           </div>
 
-          <UntimedSection
-            undated={undated}
-            onSelect={(e) => setSelectedEntryId(e.id)}
-            onToggle={toggleTaskCompleted}
-          />
+          <div className={HEADER_ACTIONS}>
+            <button
+              type="button"
+              className={JETZT_BTN}
+              onClick={handleNowClick}
+              aria-label="Zur aktuellen Uhrzeit springen"
+            >
+              <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>Jetzt</span>
+            </button>
+            <UntimedSection
+              undated={undated}
+              onSelect={(e) => setSelectedEntryId(e.id)}
+              onToggle={toggleTaskCompleted}
+            />
+          </div>
         </div>
       </header>
 
@@ -145,6 +184,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
             allDay={datedTimeless}
             isToday={isToday}
             now={now}
+            nowLineRef={nowLineRef}
             onSelect={(e) => setSelectedEntryId(e.id)}
             onToggle={toggleTaskCompleted}
           />

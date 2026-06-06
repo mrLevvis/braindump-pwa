@@ -1,3 +1,4 @@
+import type { RefObject } from 'react';
 import { Circle, CircleCheck } from 'lucide-react';
 import { Card, CardContent } from '../../../components/ui/card';
 import type { BrainDumpEntry } from '../../braindump/types';
@@ -97,11 +98,12 @@ interface Props {
   allDay: readonly BrainDumpEntry[];
   isToday: boolean;
   now: Date;
+  nowLineRef?: RefObject<HTMLDivElement>;
   onSelect: (entry: BrainDumpEntry) => void;
   onToggle: (id: string, completed: boolean) => void;
 }
 
-export function DayGrid({ date, entries, allDay, isToday, now, onSelect, onToggle }: Readonly<Props>) {
+export function DayGrid({ date, entries, allDay, isToday, now, nowLineRef, onSelect, onToggle }: Readonly<Props>) {
   // Off-grid: entries without startTime are excluded from the 24h grid.
   const timedEntries = entries.filter(e => e.payload.startTime != null);
 
@@ -141,6 +143,7 @@ export function DayGrid({ date, entries, allDay, isToday, now, onSelect, onToggl
           {/* "Jetzt" line — only on today */}
           {nowTopPx !== null && (
             <div
+              ref={nowLineRef}
               className={NOW_LINE_ROW}
               style={{ top: `${nowTopPx}px` }}
               aria-hidden="true"
