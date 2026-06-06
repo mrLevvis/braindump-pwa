@@ -1,16 +1,41 @@
 import { useState } from 'react';
-import { Circle, CircleCheck } from 'lucide-react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import type { BrainDumpEntry } from '../types';
+import { Calendar, Circle, CircleCheck } from 'lucide-react';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import type { BrainDumpEntry, EntryCategory } from '../types';
 import { formatCreatedTime } from '../utils';
-import { CategoryBadge, EntryDetailPanel, TagBadgeList } from './EntryDetailPanel.tsx';
+import { CATEGORY_STYLES, EntryDetailPanel, TagBadgeList } from './EntryDetailPanel';
 import { useToggleTaskCompleted } from '@/hooks';
 
-const ENTRY_DATE_FORMATTER = new Intl.DateTimeFormat('de-DE', {
-  weekday: 'short',
-  month: '2-digit',
-  day: '2-digit',
-});
+// ─── Date/time helpers ────────────────────────────────────────────────────────
+
+const DAY_FMT = new Intl.DateTimeFormat('de-DE', { day: 'numeric' });
+const MONTH_FMT = new Intl.DateTimeFormat('de-DE', { month: 'short' });
+
+function parseDateBlock(iso: string): { day: string; month: string } | null {
+  const d = new Date(`${iso}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return null;
+  return {
+    day: DAY_FMT.format(d),
+    month: MONTH_FMT.format(d).replace('.', ''),
+  };
+}
+
+function fmtTime(startTime?: string, endTime?: string): string | null {
+  if (!startTime) return null;
+  return endTime ? `${startTime}–${endTime} Uhr` : `${startTime} Uhr`;
+}
+
+// ─── Shared class constants ───────────────────────────────────────────────────
+
+const CARD_BASE = ['gap-3', 'rounded-2xl', 'py-4', 'transition', 'hover:shadow-sm'].join(' ');
+
+const CARD_BTN = [
+  'w-full', 'rounded-2xl', 'text-left',
+  'focus-visible:outline-none', 'focus-visible:ring-2',
+  'focus-visible:ring-ring', 'focus-visible:ring-offset-2',
+].join(' ');
+
+const FOOTER_CLS = 'px-4 pt-0 text-xs text-muted-foreground';
 
 const TOGGLE_BTN = [
   'absolute bottom-4 right-4 z-10',
@@ -19,102 +44,150 @@ const TOGGLE_BTN = [
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
 ].join(' ');
 
-const CARD_BUTTON_CLASS_NAME = [
-  'w-full',
-  'rounded-2xl',
-  'text-left',
-  'focus-visible:outline-none',
-  'focus-visible:ring-2',
-  'focus-visible:ring-ring',
-  'focus-visible:ring-offset-2',
-].join(' ');
+// ─── Card component props ─────────────────────────────────────────────────────
 
-const CARD_CLASS_NAME = ['gap-3', 'rounded-2xl', 'py-4', 'transition', 'hover:border-foreground/20', 'hover:shadow-sm'].join(' ');
-const CARD_HEADER_CLASS_NAME = ['flex', 'flex-row', 'items-start', 'justify-between', 'gap-2', 'px-4', 'pb-0'].join(' ');
-const CARD_CONTENT_CLASS_NAME = ['space-y-2.5', 'px-4', 'pt-0'].join(' ');
-const CARD_FOOTER_CLASS_NAME = ['px-4', 'pt-0', 'text-xs', 'text-muted-foreground'].join(' ');
-const PAYLOAD_TIME_BLOCK_CLASS_NAME = ['flex', 'flex-wrap', 'items-center', 'gap-x-3', 'gap-y-1', 'text-sm', 'font-semibold', 'text-foreground'].join(' ');
-const PAYLOAD_TIME_LABEL_CLASS_NAME = ['inline-flex', 'w-fit', 'rounded-md', 'bg-primary/10', 'px-2', 'py-0.5', 'text-[11px]', 'font-medium', 'text-primary'].join(' ');
+interface CardProps {
+  entry: BrainDumpEntry;
+}
 
-const formatEntryDate = (entryDateIso?: string): string | null => {
-  if (!entryDateIso) return null;
+// ─── TaskCard ─────────────────────────────────────────────────────────────────
 
-  const parsedDate = new Date(`${entryDateIso}T00:00:00`);
-
-  if (Number.isNaN(parsedDate.getTime())) return entryDateIso;
-
-  return ENTRY_DATE_FORMATTER.format(parsedDate);
-};
-
-const formatEntryTime = (startTime?: string, endTime?: string): string | null => {
-  if (!startTime) return null;
-  return endTime ? `${startTime}–${endTime} Uhr` : `${startTime} Uhr`;
-};
-
-const EntryPayloadTime = ({ date, startTime, endTime }: Readonly<{ date?: string; startTime?: string; endTime?: string }>) => {
-  if (!date && !startTime) return null;
-
-  const formattedDate = formatEntryDate(date);
-  const formattedTime = formatEntryTime(startTime, endTime);
-
-  return (
-    <div className={PAYLOAD_TIME_BLOCK_CLASS_NAME}>
-      <span className={PAYLOAD_TIME_LABEL_CLASS_NAME}>Termin</span>
-      {formattedDate ? <time dateTime={date}>{formattedDate}</time> : null}
-      {formattedDate && formattedTime ? <span aria-hidden="true">um</span> : null}
-      {formattedTime ? <time dateTime={date ? `${date}T${startTime}` : startTime}>{formattedTime}</time> : null}
-    </div>
-  );
-};
-
-export function EntryCard({ entry }: Readonly<{ entry: BrainDumpEntry }>) {
-  const [isDetailPanelOpen, setIsDetailPanelOpen] = useState(false);
-  const toggleTaskCompleted = useToggleTaskCompleted();
-  const createdTime = formatCreatedTime(entry.created_at);
+function TaskCard({ entry }: Readonly<CardProps>) {
+  const [open, setOpen] = useState(false);
+  const toggle = useToggleTaskCompleted();
+  const { cardDecoration, accent } = CATEGORY_STYLES.TASK;
   const title = entry.title?.trim() || 'Untitled';
   const tags = entry.payload?.tags ?? [];
-  const date = entry.payload?.date;
-  const entryTime = entry.payload?.startTime;
-  const entryEndTime = entry.payload?.endTime;
-  const isTask = entry.category === 'TASK';
 
   return (
     <>
       <div className="relative">
-        <button type="button" className={CARD_BUTTON_CLASS_NAME} onClick={() => setIsDetailPanelOpen(true)}>
-          <Card className={[CARD_CLASS_NAME, entry.completed ? 'opacity-60' : ''].join(' ')} size="sm">
-            <CardHeader className={CARD_HEADER_CLASS_NAME}>
-              <CardTitle className={entry.completed ? 'line-through text-muted-foreground' : ''}>{title}</CardTitle>
-              <CategoryBadge category={entry.category} />
-            </CardHeader>
-
-            <CardContent className={[CARD_CONTENT_CLASS_NAME, isTask ? 'pr-12' : ''].join(' ')}>
-              <EntryPayloadTime date={date} startTime={entryTime} endTime={entryEndTime} />
-              <TagBadgeList tags={tags} />
+        <button type="button" className={CARD_BTN} onClick={() => setOpen(true)}>
+          <Card className={[CARD_BASE, cardDecoration, entry.completed ? 'opacity-60' : ''].join(' ')} size="sm">
+            <CardContent className="flex items-start gap-3 px-4 pr-12">
+              <span className={['mt-0.5 shrink-0', accent].join(' ')} aria-hidden="true">
+                {entry.completed
+                  ? <CircleCheck className="h-5 w-5" />
+                  : <Circle className="h-5 w-5" />}
+              </span>
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <p className={['text-sm font-semibold leading-snug', entry.completed ? 'line-through text-muted-foreground' : ''].join(' ')}>
+                  {title}
+                </p>
+                <TagBadgeList tags={tags} />
+              </div>
             </CardContent>
-
-            <CardFooter className={CARD_FOOTER_CLASS_NAME}>
-              <time dateTime={entry.created_at}>{createdTime}</time>
+            <CardFooter className={FOOTER_CLS}>
+              <time dateTime={entry.created_at}>{formatCreatedTime(entry.created_at)}</time>
             </CardFooter>
           </Card>
         </button>
 
-        {isTask && (
-          <button
-            type="button"
-            className={TOGGLE_BTN}
-            onClick={() => toggleTaskCompleted(entry.id, !entry.completed)}
-            aria-label={entry.completed ? 'Als unerledigt markieren' : 'Als erledigt markieren'}
-            aria-pressed={entry.completed}
-          >
-            {entry.completed
-              ? <CircleCheck className="h-6 w-6 text-emerald-500" aria-hidden="true" />
-              : <Circle className="h-6 w-6" aria-hidden="true" />}
-          </button>
-        )}
+        <button
+          type="button"
+          className={TOGGLE_BTN}
+          onClick={() => toggle(entry.id, !entry.completed)}
+          aria-label={entry.completed ? 'Als unerledigt markieren' : 'Als erledigt markieren'}
+          aria-pressed={entry.completed}
+        >
+          {entry.completed
+            ? <CircleCheck className="h-6 w-6 text-emerald-500" aria-hidden="true" />
+            : <Circle className="h-6 w-6" aria-hidden="true" />}
+        </button>
       </div>
 
-      <EntryDetailPanel entry={entry} open={isDetailPanelOpen} onOpenChange={setIsDetailPanelOpen} />
+      <EntryDetailPanel entry={entry} open={open} onOpenChange={setOpen} />
     </>
   );
+}
+
+// ─── EventCard ────────────────────────────────────────────────────────────────
+
+function EventCard({ entry }: Readonly<CardProps>) {
+  const [open, setOpen] = useState(false);
+  const { cardDecoration, accentBg } = CATEGORY_STYLES.EVENT;
+  const title = entry.title?.trim() || 'Untitled';
+  const tags = entry.payload?.tags ?? [];
+  const dateBlock = entry.payload?.date ? parseDateBlock(entry.payload.date) : null;
+  const timeStr = fmtTime(entry.payload?.startTime, entry.payload?.endTime);
+
+  return (
+    <>
+      <button type="button" className={CARD_BTN} onClick={() => setOpen(true)}>
+        <Card className={[CARD_BASE, cardDecoration].join(' ')} size="sm">
+          <CardContent className="flex items-start gap-3 px-4">
+            <div
+              className={['shrink-0 flex flex-col items-center justify-center rounded-lg px-2.5 py-1.5 min-w-[2.75rem]', accentBg].join(' ')}
+              aria-hidden="true"
+            >
+              {dateBlock ? (
+                <>
+                  <span className="text-base font-bold text-white leading-none">{dateBlock.day}</span>
+                  <span className="text-[10px] font-medium text-white/80 uppercase tracking-wide">{dateBlock.month}</span>
+                </>
+              ) : (
+                <Calendar className="h-5 w-5 text-white" />
+              )}
+            </div>
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <p className="text-sm font-semibold leading-snug">{title}</p>
+              {timeStr && <p className="text-xs text-muted-foreground">{timeStr}</p>}
+              <TagBadgeList tags={tags} />
+            </div>
+          </CardContent>
+          <CardFooter className={FOOTER_CLS}>
+            <time dateTime={entry.created_at}>{formatCreatedTime(entry.created_at)}</time>
+          </CardFooter>
+        </Card>
+      </button>
+
+      <EntryDetailPanel entry={entry} open={open} onOpenChange={setOpen} />
+    </>
+  );
+}
+
+// ─── NoteCard ─────────────────────────────────────────────────────────────────
+
+function NoteCard({ entry }: Readonly<CardProps>) {
+  const [open, setOpen] = useState(false);
+  const { cardDecoration } = CATEGORY_STYLES.NOTE;
+  const title = entry.title?.trim() || 'Untitled';
+  const tags = entry.payload?.tags ?? [];
+
+  return (
+    <>
+      <button type="button" className={CARD_BTN} onClick={() => setOpen(true)}>
+        <Card className={[CARD_BASE, cardDecoration].join(' ')} size="sm">
+          <CardContent className="space-y-1.5 px-4">
+            <p className="text-sm font-semibold leading-snug">{title}</p>
+            <TagBadgeList tags={tags} />
+          </CardContent>
+          <CardFooter className={FOOTER_CLS}>
+            <time dateTime={entry.created_at}>{formatCreatedTime(entry.created_at)}</time>
+          </CardFooter>
+        </Card>
+      </button>
+
+      <EntryDetailPanel entry={entry} open={open} onOpenChange={setOpen} />
+    </>
+  );
+}
+
+// ─── Dispatcher ───────────────────────────────────────────────────────────────
+
+const CARD_REGISTRY: Record<EntryCategory, React.ComponentType<CardProps>> = {
+  TASK: TaskCard,
+  EVENT: EventCard,
+  NOTE: NoteCard,
+};
+
+export function resolveEntryCard(category: EntryCategory): React.ComponentType<CardProps> {
+  return CARD_REGISTRY[category];
+}
+
+// ─── EntryCard ────────────────────────────────────────────────────────────────
+
+export function EntryCard({ entry }: Readonly<{ entry: BrainDumpEntry }>) {
+  const CardComponent = resolveEntryCard(entry.category);
+  return <CardComponent entry={entry} />;
 }

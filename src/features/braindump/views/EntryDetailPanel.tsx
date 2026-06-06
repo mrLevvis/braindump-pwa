@@ -37,21 +37,35 @@ const CREATED_AT_FORMATTER = new Intl.DateTimeFormat(undefined, {
   minute: '2-digit',
 });
 
-export const CATEGORY_BADGE_CONFIG: Record<EntryCategory, Readonly<{ label: string; variant: 'default' | 'secondary' | 'outline'; className: string }>> = {
+interface CategoryStyle {
+  /** Extra classes applied to the Card element (ring color, left border, …). */
+  cardDecoration: string;
+  /** Text/icon color for the category's identity element. */
+  accent: string;
+  /** Solid fill for the identity block (e.g. EVENT date tile). */
+  accentBg: string;
+  /** Config for the CategoryBadge shown in the DetailPanel. */
+  badge: Readonly<{ label: string; variant: 'default' | 'secondary' | 'outline'; className: string }>;
+}
+
+export const CATEGORY_STYLES: Record<EntryCategory, CategoryStyle> = {
   TASK: {
-    label: 'Task',
-    variant: 'default',
-    className: 'bg-emerald-500/90 text-white hover:bg-emerald-500/80',
+    cardDecoration: 'ring-violet-200 dark:ring-violet-800/40',
+    accent: 'text-violet-500',
+    accentBg: 'bg-violet-500',
+    badge: { label: 'Task', variant: 'default', className: 'bg-violet-500/90 text-white hover:bg-violet-500/80' },
   },
   EVENT: {
-    label: 'Event',
-    variant: 'secondary',
-    className: 'bg-sky-100 text-sky-800 dark:bg-sky-950/50 dark:text-sky-200',
+    cardDecoration: 'ring-sky-200 dark:ring-sky-800/40',
+    accent: 'text-sky-500',
+    accentBg: 'bg-sky-500',
+    badge: { label: 'Event', variant: 'secondary', className: 'bg-sky-100 text-sky-800 dark:bg-sky-950/50 dark:text-sky-200' },
   },
   NOTE: {
-    label: 'Note',
-    variant: 'outline',
-    className: 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200',
+    cardDecoration: 'border-l-4 border-l-amber-400 dark:border-l-amber-600',
+    accent: 'text-amber-500',
+    accentBg: 'bg-amber-500',
+    badge: { label: 'Note', variant: 'outline', className: 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200' },
   },
 };
 
@@ -94,11 +108,11 @@ const formatEntryTime = (startTime?: string, endTime?: string): string | null =>
 };
 
 export const CategoryBadge = ({ category }: Readonly<{ category: EntryCategory }>) => {
-  const badgeConfig = CATEGORY_BADGE_CONFIG[category];
+  const { badge } = CATEGORY_STYLES[category];
 
   return (
-    <Badge variant={badgeConfig.variant} className={badgeConfig.className}>
-      {badgeConfig.label}
+    <Badge variant={badge.variant} className={badge.className}>
+      {badge.label}
     </Badge>
   );
 };
