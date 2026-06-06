@@ -3,7 +3,8 @@ import { BrainDumpDashboard } from './components/BrainDumpDashboard';
 import { TimelineView } from './features/timeline';
 import { Toaster } from './components/ui/sonner';
 import { useEntriesBootstrap } from './hooks/useEntriesBootstrap';
-import { parseAppRoute, useRouteSync, type AppView } from './hooks/useRouteSync';
+import { parseAppRoute, type AppView } from './lib/routing';
+import { useRouteSync } from './hooks/useRouteSync';
 import { useSelectedDate } from './hooks/timelineSelectors';
 import { useDaySelectionStore } from './features/timeline/store';
 
@@ -11,6 +12,7 @@ function App() {
   useEntriesBootstrap();
 
   const selectedDate = useSelectedDate();
+  const navMode = useDaySelectionStore(s => s.navMode);
   const setSelectedDate = useDaySelectionStore(s => s.setSelectedDate);
 
   // Initialize view from URL on first render (date is already primed in the store).
@@ -22,7 +24,7 @@ function App() {
     if (date) setSelectedDate(date);
   }, [setSelectedDate]);
 
-  useRouteSync(view, selectedDate, handlePop);
+  useRouteSync(view, selectedDate, navMode, handlePop);
 
   return (
     <div>

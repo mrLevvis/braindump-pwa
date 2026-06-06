@@ -1,9 +1,11 @@
 import { create } from 'zustand';
 import { todayLocal, shiftDate } from '../../../lib/dateUtils';
-import { parseAppRoute } from '../../../hooks/useRouteSync';
+import { parseAppRoute } from '../../../lib/routing';
 
 export interface DaySelectionSlice {
   selectedDate: string;
+  /** Signals to useRouteSync whether to replaceState (step) or pushState (jump). */
+  navMode: 'step' | 'jump';
   goToPreviousDay: () => void;
   goToNextDay: () => void;
   goToToday: () => void;
@@ -18,8 +20,9 @@ function parseInitialDate(): string {
 
 export const useDaySelectionStore = create<DaySelectionSlice>()((set) => ({
   selectedDate: parseInitialDate(),
-  goToPreviousDay: () => set((s) => ({ selectedDate: shiftDate(s.selectedDate, -1) })),
-  goToNextDay:     () => set((s) => ({ selectedDate: shiftDate(s.selectedDate, 1) })),
-  goToToday:       () => set({ selectedDate: todayLocal() }),
-  setSelectedDate: (date) => set({ selectedDate: date }),
+  navMode: 'step',
+  goToPreviousDay: () => set((s) => ({ selectedDate: shiftDate(s.selectedDate, -1), navMode: 'step' })),
+  goToNextDay:     () => set((s) => ({ selectedDate: shiftDate(s.selectedDate, 1), navMode: 'step' })),
+  goToToday:       () => set({ selectedDate: todayLocal(), navMode: 'jump' }),
+  setSelectedDate: (date) => set({ selectedDate: date, navMode: 'jump' }),
 }));
