@@ -37,8 +37,9 @@ const ALL_DAY_ENTRY_BTN = [
 
 const ALL_DAY_TOGGLE_BTN = [
   'absolute right-2 top-1/2 -translate-y-1/2 z-10',
-  'flex items-center justify-center h-6 w-6 rounded',
-  'text-muted-foreground/60 hover:text-emerald-500 transition-colors',
+  'flex items-center justify-center h-6 w-6 rounded-full',
+  'bg-white dark:bg-white/10 shadow-sm',
+  'hover:opacity-80 transition-opacity',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
 ].join(' ');
 

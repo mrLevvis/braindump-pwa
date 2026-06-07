@@ -78,7 +78,7 @@ export function GridBlock({ entry, status, topPx, heightPx, onSelect, onToggle }
           onClick={(e) => { e.stopPropagation(); onToggle(entry.id, !entry.completed); }}
           aria-label={entry.completed ? 'Als unerledigt markieren' : 'Als erledigt markieren'}
           aria-pressed={entry.completed}
-          className="absolute bottom-1 right-1 z-10 flex items-center justify-center h-6 w-6 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
+          className="absolute bottom-1 right-1 z-10 flex items-center justify-center h-6 w-6 rounded-full bg-white dark:bg-white/10 shadow-sm hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           {entry.completed
             ? <CircleCheck className="h-5 w-5 text-emerald-500" aria-hidden="true" />

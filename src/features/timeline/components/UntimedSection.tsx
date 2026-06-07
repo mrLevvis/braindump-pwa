@@ -52,8 +52,9 @@ const ENTRY_BADGES = ['flex', 'flex-wrap', 'gap-1'].join(' ');
 
 const TOGGLE_BTN = [
   'absolute bottom-2.5 right-3 z-10',
-  'flex items-center justify-center h-7 w-7 rounded',
-  'text-muted-foreground/60 hover:text-emerald-500 transition-colors',
+  'flex items-center justify-center h-7 w-7 rounded-full',
+  'bg-white dark:bg-white/10 shadow-sm',
+  'hover:opacity-80 transition-opacity',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
 ].join(' ');
 

@@ -39,8 +39,9 @@ const FOOTER_CLS = 'px-4 pt-0 text-xs text-muted-foreground';
 
 const TOGGLE_BTN = [
   'absolute bottom-4 right-4 z-10',
-  'flex items-center justify-center h-9 w-9 rounded-lg',
-  'hover:bg-muted/50 transition-colors',
+  'flex items-center justify-center h-9 w-9 rounded-full',
+  'bg-white dark:bg-white/10 shadow-sm',
+  'hover:opacity-80 transition-opacity',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
 ].join(' ');
 
