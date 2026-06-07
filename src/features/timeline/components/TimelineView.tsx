@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import { ArrowLeft, Clock } from 'lucide-react';
 import { EntryDetailPanel } from '../../braindump/views/EntryDetailPanel';
 import {
   useDatedTimelessEntries,
-  useGoToNextDay,
-  useGoToPreviousDay,
   useGoToToday,
   useSelectedDate,
   useSetSelectedDate,
@@ -37,11 +35,8 @@ const HEADER_TOP = [
   'mx-auto', 'flex', 'w-full', 'max-w-3xl',
   'items-center', 'justify-between', 'px-4', 'py-3',
 ].join(' ');
-// Row 2: step arrows + scrollable day tabs
-const TABS_ROW = [
-  'mx-auto', 'flex', 'w-full', 'max-w-3xl',
-  'items-center', 'gap-1', 'px-2', 'pb-2',
-].join(' ');
+// Row 2: scrollable day-tab strip
+const TABS_ROW = ['mx-auto', 'w-full', 'max-w-3xl', 'px-2', 'pb-2'].join(' ');
 const ICON_BTN = [
   'flex', 'items-center', 'justify-center',
   'h-8', 'w-8', 'rounded-lg', 'shrink-0',
@@ -80,8 +75,6 @@ export function TimelineView({ onBack }: Readonly<Props>) {
   const { byDate, undated } = useTimelineBuckets();
   const toggleTaskCompleted = useToggleTaskCompleted();
   const selectedDate = useSelectedDate();
-  const goToPreviousDay = useGoToPreviousDay();
-  const goToNextDay = useGoToNextDay();
   const goToToday = useGoToToday();
   const setSelectedDate = useSetSelectedDate();
   const datedTimeless = useDatedTimelessEntries();
@@ -154,33 +147,13 @@ export function TimelineView({ onBack }: Readonly<Props>) {
           </div>
         </div>
 
-        {/* Row 2: step arrows + day-tab strip (primary day navigation) */}
+        {/* Row 2: scrollable day-tab strip (primary day navigation) */}
         <div className={TABS_ROW}>
-          <button
-            type="button"
-            className={ICON_BTN}
-            onClick={goToPreviousDay}
-            aria-label="Vorheriger Tag"
-          >
-            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-          </button>
-
-          <div className="flex-1 min-w-0">
-            <DayTabs
-              selectedDate={selectedDate}
-              windowRadiusDays={30}
-              onSelectDay={setSelectedDate}
-            />
-          </div>
-
-          <button
-            type="button"
-            className={ICON_BTN}
-            onClick={goToNextDay}
-            aria-label="Nächster Tag"
-          >
-            <ChevronRight className="h-4 w-4" aria-hidden="true" />
-          </button>
+          <DayTabs
+            selectedDate={selectedDate}
+            windowRadiusDays={30}
+            onSelectDay={setSelectedDate}
+          />
         </div>
       </header>
 
