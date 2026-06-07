@@ -9,14 +9,13 @@ export type { AppView } from '../lib/routing';
  * Bidirectional URL ↔ store sync. The only place in the app that touches
  * window.history and popstate — all other code goes through the store.
  *
- * - Store → URL: replaceState for step navigation (prev/next day);
- *   pushState for jumps (goToToday, setSelectedDate) and view changes.
+ * - Store → URL: pushState only on view changes; replaceState for all day
+ *   navigation (steps and jumps alike — days must not fill the history stack).
  * - URL → Store: calls onPop when the user navigates with Back / Forward.
  */
 export function useRouteSync(
   view: AppView,
   selectedDate: string,
-  navMode: 'step' | 'jump',
   onPop: (view: AppView, date: string | null) => void,
 ): void {
   const prevViewRef = useRef<AppView>(view);
@@ -24,14 +23,14 @@ export function useRouteSync(
   useEffect(() => {
     const path = buildPath(view, selectedDate);
     if (window.location.pathname !== path) {
-      if (prevViewRef.current !== view || navMode === 'jump') {
+      if (prevViewRef.current !== view) {
         window.history.pushState(null, '', path);
       } else {
         window.history.replaceState(null, '', path);
       }
     }
     prevViewRef.current = view;
-  }, [view, selectedDate, navMode]);
+  }, [view, selectedDate]);
 
   const stableOnPop = useCallback(() => {
     const { view: v, date } = parseAppRoute();

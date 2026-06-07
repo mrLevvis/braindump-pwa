@@ -12,7 +12,6 @@ function App() {
   useEntriesBootstrap();
 
   const selectedDate = useSelectedDate();
-  const navMode = useDaySelectionStore(s => s.navMode);
   const setSelectedDate = useDaySelectionStore(s => s.setSelectedDate);
 
   // Initialize view from URL on first render (date is already primed in the store).
@@ -24,7 +23,7 @@ function App() {
     if (date) setSelectedDate(date);
   }, [setSelectedDate]);
 
-  useRouteSync(view, selectedDate, navMode, handlePop);
+  useRouteSync(view, selectedDate, handlePop);
 
   return (
     <div>
