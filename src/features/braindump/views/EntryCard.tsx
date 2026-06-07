@@ -39,8 +39,8 @@ const FOOTER_CLS = 'px-4 pt-0 text-xs text-muted-foreground';
 
 const TOGGLE_BTN = [
   'absolute bottom-4 right-4 z-10',
-  'flex items-center justify-center h-8 w-8 rounded-lg',
-  'text-muted-foreground/60 hover:text-emerald-500 transition-colors',
+  'flex items-center justify-center h-9 w-9 rounded-lg',
+  'hover:bg-muted/50 transition-colors',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
 ].join(' ');
 
@@ -55,7 +55,7 @@ interface CardProps {
 function TaskCard({ entry }: Readonly<CardProps>) {
   const [open, setOpen] = useState(false);
   const toggle = useToggleTaskCompleted();
-  const { cardDecoration, accent } = CATEGORY_STYLES.TASK;
+  const { tintBackground, accent } = CATEGORY_STYLES.TASK;
   const title = entry.title?.trim() || 'Untitled';
   const tags = entry.payload?.tags ?? [];
 
@@ -63,19 +63,12 @@ function TaskCard({ entry }: Readonly<CardProps>) {
     <>
       <div className="relative">
         <button type="button" className={CARD_BTN} onClick={() => setOpen(true)}>
-          <Card className={[CARD_BASE, cardDecoration, entry.completed ? 'opacity-60' : ''].join(' ')} size="sm">
-            <CardContent className="flex items-start gap-3 px-4 pr-12">
-              <span className={['mt-0.5 shrink-0', accent].join(' ')} aria-hidden="true">
-                {entry.completed
-                  ? <CircleCheck className="h-5 w-5" />
-                  : <Circle className="h-5 w-5" />}
-              </span>
-              <div className="min-w-0 flex-1 space-y-1.5">
-                <p className={['text-sm font-semibold leading-snug', entry.completed ? 'line-through text-muted-foreground' : ''].join(' ')}>
-                  {title}
-                </p>
-                <TagBadgeList tags={tags} />
-              </div>
+          <Card className={[CARD_BASE, tintBackground, entry.completed ? 'opacity-60' : ''].join(' ')} size="sm">
+            <CardContent className="space-y-1.5 px-4 pr-12">
+              <p className={['text-sm font-semibold leading-snug', entry.completed ? 'line-through text-muted-foreground' : ''].join(' ')}>
+                {title}
+              </p>
+              <TagBadgeList tags={tags} />
             </CardContent>
             <CardFooter className={FOOTER_CLS}>
               <time dateTime={entry.created_at}>{formatCreatedTime(entry.created_at)}</time>
@@ -91,8 +84,8 @@ function TaskCard({ entry }: Readonly<CardProps>) {
           aria-pressed={entry.completed}
         >
           {entry.completed
-            ? <CircleCheck className="h-6 w-6 text-emerald-500" aria-hidden="true" />
-            : <Circle className="h-6 w-6" aria-hidden="true" />}
+            ? <CircleCheck className="h-7 w-7 text-emerald-500" aria-hidden="true" />
+            : <Circle className={['h-7 w-7', accent].join(' ')} aria-hidden="true" />}
         </button>
       </div>
 
@@ -105,7 +98,7 @@ function TaskCard({ entry }: Readonly<CardProps>) {
 
 function EventCard({ entry }: Readonly<CardProps>) {
   const [open, setOpen] = useState(false);
-  const { cardDecoration, accentBg } = CATEGORY_STYLES.EVENT;
+  const { tintBackground, accentBg } = CATEGORY_STYLES.EVENT;
   const title = entry.title?.trim() || 'Untitled';
   const tags = entry.payload?.tags ?? [];
   const dateBlock = entry.payload?.date ? parseDateBlock(entry.payload.date) : null;
@@ -114,7 +107,7 @@ function EventCard({ entry }: Readonly<CardProps>) {
   return (
     <>
       <button type="button" className={CARD_BTN} onClick={() => setOpen(true)}>
-        <Card className={[CARD_BASE, cardDecoration].join(' ')} size="sm">
+        <Card className={[CARD_BASE, tintBackground].join(' ')} size="sm">
           <CardContent className="flex items-start gap-3 px-4">
             <div
               className={['shrink-0 flex flex-col items-center justify-center rounded-lg px-2.5 py-1.5 min-w-[2.75rem]', accentBg].join(' ')}
@@ -150,14 +143,14 @@ function EventCard({ entry }: Readonly<CardProps>) {
 
 function NoteCard({ entry }: Readonly<CardProps>) {
   const [open, setOpen] = useState(false);
-  const { cardDecoration } = CATEGORY_STYLES.NOTE;
+  const { tintBackground } = CATEGORY_STYLES.NOTE;
   const title = entry.title?.trim() || 'Untitled';
   const tags = entry.payload?.tags ?? [];
 
   return (
     <>
       <button type="button" className={CARD_BTN} onClick={() => setOpen(true)}>
-        <Card className={[CARD_BASE, cardDecoration].join(' ')} size="sm">
+        <Card className={[CARD_BASE, tintBackground].join(' ')} size="sm">
           <CardContent className="space-y-1.5 px-4">
             <p className="text-sm font-semibold leading-snug">{title}</p>
             <TagBadgeList tags={tags} />

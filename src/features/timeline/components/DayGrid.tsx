@@ -2,7 +2,7 @@ import type { RefObject } from 'react';
 import { Circle, CircleCheck } from 'lucide-react';
 import { Card, CardContent } from '../../../components/ui/card';
 import type { BrainDumpEntry } from '../../braindump/types';
-import { CategoryBadge } from '../../braindump/views/EntryDetailPanel';
+import { CATEGORY_STYLES } from '../../braindump/views/EntryDetailPanel';
 import { getBlockGeometry, GRID_TOTAL_HEIGHT_PX, HOUR_HEIGHT_PX } from '../getBlockGeometry';
 import { getTemporalStatus } from '../getTemporalStatus';
 import { GridBlock } from './GridBlock';
@@ -53,6 +53,7 @@ interface AllDayEntryProps {
 function AllDayEntry({ entry, onSelect, onToggle }: Readonly<AllDayEntryProps>) {
   const isTask = entry.category === 'TASK';
   const title = entry.title ?? entry.original_text;
+  const { tintBackground, accent } = CATEGORY_STYLES[entry.category];
 
   return (
     <div className="relative">
@@ -62,10 +63,9 @@ function AllDayEntry({ entry, onSelect, onToggle }: Readonly<AllDayEntryProps>) 
         onClick={() => onSelect(entry)}
         aria-label={`Eintrag öffnen: ${title}`}
       >
-        <Card size="sm" className={['rounded-lg py-2 transition hover:border-foreground/20', entry.completed ? 'opacity-60' : ''].join(' ')}>
-          <CardContent className={['px-3 flex items-center gap-2 min-w-0', isTask ? 'pr-10' : ''].join(' ')}>
-            <CategoryBadge category={entry.category} />
-            <p className={['text-xs font-medium flex-1 truncate min-w-0', entry.completed ? 'line-through text-muted-foreground' : ''].join(' ')}>
+        <Card size="sm" className={['rounded-lg py-2 transition hover:border-foreground/20', tintBackground, entry.completed ? 'opacity-60' : ''].join(' ')}>
+          <CardContent className={['px-3 min-w-0', isTask ? 'pr-10' : ''].join(' ')}>
+            <p className={['text-xs font-medium truncate min-w-0', entry.completed ? 'line-through text-muted-foreground' : ''].join(' ')}>
               {title}
             </p>
           </CardContent>
@@ -82,7 +82,7 @@ function AllDayEntry({ entry, onSelect, onToggle }: Readonly<AllDayEntryProps>) 
         >
           {entry.completed
             ? <CircleCheck className="h-5 w-5 text-emerald-500" aria-hidden="true" />
-            : <Circle className="h-5 w-5" aria-hidden="true" />}
+            : <Circle className={['h-5 w-5', accent].join(' ')} aria-hidden="true" />}
         </button>
       )}
     </div>

@@ -8,7 +8,7 @@ import {
 } from '../../../components/ui/sheet';
 import { Card, CardContent } from '../../../components/ui/card';
 import type { BrainDumpEntry } from '../../braindump/types';
-import { CategoryBadge, TagBadgeList } from '../../braindump/views/EntryDetailPanel';
+import { CATEGORY_STYLES, TagBadgeList } from '../../braindump/views/EntryDetailPanel';
 
 // ─── Class name constants ─────────────────────────────────────────────────────
 
@@ -66,6 +66,7 @@ interface EntryCardProps {
 function EntryCard({ entry, onSelect, onToggle }: Readonly<EntryCardProps>) {
   const tags = entry.payload.tags ?? [];
   const isTask = entry.category === 'TASK';
+  const { tintBackground, accent } = CATEGORY_STYLES[entry.category];
 
   return (
     // Outer div: contains two sibling buttons — valid HTML, no nesting
@@ -77,15 +78,16 @@ function EntryCard({ entry, onSelect, onToggle }: Readonly<EntryCardProps>) {
         onClick={() => onSelect(entry)}
         aria-label={`Eintrag öffnen: ${entry.title ?? entry.original_text}`}
       >
-        <Card size="sm" className={[ENTRY_CARD, entry.completed ? 'opacity-60' : ''].join(' ')}>
+        <Card size="sm" className={[ENTRY_CARD, tintBackground, entry.completed ? 'opacity-60' : ''].join(' ')}>
           <CardContent className={isTask ? 'pl-3 pr-10' : 'px-3'}>
             <p className={[ENTRY_TITLE, entry.completed ? 'line-through text-muted-foreground' : ''].join(' ')}>
               {entry.title ?? entry.original_text}
             </p>
-            <div className={ENTRY_BADGES}>
-              <CategoryBadge category={entry.category} />
-              {tags.length > 0 && <TagBadgeList tags={tags} />}
-            </div>
+            {tags.length > 0 && (
+              <div className={ENTRY_BADGES}>
+                <TagBadgeList tags={tags} />
+              </div>
+            )}
           </CardContent>
         </Card>
       </button>
@@ -101,7 +103,7 @@ function EntryCard({ entry, onSelect, onToggle }: Readonly<EntryCardProps>) {
         >
           {entry.completed
             ? <CircleCheck className="h-5 w-5 text-emerald-500" aria-hidden="true" />
-            : <Circle className="h-5 w-5" aria-hidden="true" />}
+            : <Circle className={['h-5 w-5', accent].join(' ')} aria-hidden="true" />}
         </button>
       )}
     </div>
