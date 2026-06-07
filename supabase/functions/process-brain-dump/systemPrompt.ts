@@ -50,7 +50,7 @@ Regeln:
 - "entries" ist IMMER ein Array — auch wenn nur ein Gedanke im Dump steckt (dann Länge 1).
 - "category" ist IMMER exakt einer der drei Großbuchstaben-Werte.
 - "sourceExcerpt" enthält den relevanten Wortlaut aus dem Original möglichst wörtlich, niemals leer.
-- "summary" ist ein Array von Stichpunkten (kurze Sätze/Fragmente) die Details aus dem sourceExcerpt aufschlüsseln. Kein Stichpunkt wiederholt bloß den title. Bei trivialen/kurzen Entries: leeres Array [].
+- "summary" ist ein Array von Stichpunkten (kurze Sätze/Fragmente) die Details aus dem sourceExcerpt aufschlüsseln. Kein Stichpunkt wiederholt bloß den title. IMMER mindestens 1 Stichpunkt — auch bei trivialen Entries fasst du den Kern in einem Satz zusammen.
 - Felder in "payload", die nicht im Text vorkommen, lässt du komplett weg.
 - "date" immer als echtes Datum im Format YYYY-MM-DD, niemals als Wort wie "morgen".
 - Ist "startTime" gesetzt und kein anderes Datum genannt, setze "date" auf heute: ${todayIso}.
@@ -63,8 +63,8 @@ Eingabe: "Zahnarzt morgen um 10 Uhr, und Milch kaufen"
 Ausgabe:
 {
   "entries": [
-    {"category":"EVENT","title":"Zahnarzttermin morgen um 10 Uhr","sourceExcerpt":"Zahnarzt morgen um 10 Uhr","summary":[],"payload":{"date":"${tomorrowIso}","startTime":"10:00","endTime":"11:00"}},
-    {"category":"TASK","title":"Milch kaufen","sourceExcerpt":"Milch kaufen","summary":[],"payload":{"tags":["Einkauf"]}}
+    {"category":"EVENT","title":"Zahnarzttermin morgen um 10 Uhr","sourceExcerpt":"Zahnarzt morgen um 10 Uhr","summary":["Termin morgen um 10 Uhr"],"payload":{"date":"${tomorrowIso}","startTime":"10:00","endTime":"11:00"}},
+    {"category":"TASK","title":"Milch kaufen","sourceExcerpt":"Milch kaufen","summary":["Milch einkaufen"],"payload":{"tags":["Einkauf"]}}
   ]
 }
 
@@ -81,7 +81,7 @@ Eingabe: "Meeting von 9 bis 11"
 Ausgabe:
 {
   "entries": [
-    {"category":"EVENT","title":"Meeting von 9 bis 11 Uhr","sourceExcerpt":"Meeting von 9 bis 11","summary":[],"payload":{"date":"${todayIso}","startTime":"09:00","endTime":"11:00"}}
+    {"category":"EVENT","title":"Meeting von 9 bis 11 Uhr","sourceExcerpt":"Meeting von 9 bis 11","summary":["Heute von 9 bis 11 Uhr"],"payload":{"date":"${todayIso}","startTime":"09:00","endTime":"11:00"}}
   ]
 }
 
@@ -89,7 +89,7 @@ Eingabe: "Interessanter Artikel über KI-Agenten"
 Ausgabe:
 {
   "entries": [
-    {"category":"NOTE","title":"Interessanter Artikel über KI-Agenten","sourceExcerpt":"Interessanter Artikel über KI-Agenten","summary":[],"payload":{}}
+    {"category":"NOTE","title":"Interessanter Artikel über KI-Agenten","sourceExcerpt":"Interessanter Artikel über KI-Agenten","summary":["Artikel über KI-Agenten als interessant markiert"],"payload":{}}
   ]
 }
 `;

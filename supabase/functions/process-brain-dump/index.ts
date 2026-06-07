@@ -20,7 +20,7 @@ function isValidEntry(e: unknown): e is StructuredEntry {
     typeof entry.title === "string" && entry.title.trim().length > 0 &&
     typeof entry.payload === "object" && entry.payload !== null && !Array.isArray(entry.payload) &&
     typeof entry.sourceExcerpt === "string" && entry.sourceExcerpt.trim().length > 0 &&
-    Array.isArray(entry.summary) && (entry.summary as unknown[]).every((s) => typeof s === "string")
+    Array.isArray(entry.summary) && (entry.summary as unknown[]).length >= 1 && (entry.summary as unknown[]).every((s) => typeof s === "string")
   );
 }
 
