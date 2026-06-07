@@ -75,6 +75,20 @@ export async function insertEntry(entry: InsertEntry): Promise<InsertEntry | nul
 }
 
 /**
+ * Fügt mehrere Einträge eines Dumps in einer einzigen Operation ein (Batch-Insert).
+ * Wirft bei DB-Fehler — der Aufrufer ist für All-or-Nothing-Semantik verantwortlich.
+ */
+export async function insertEntries(entries: readonly InsertEntry[]): Promise<void> {
+    const { error } = await supabase
+        .from(BRAINDUMP_ENTRIES_DB)
+        .insert(entries as InsertEntry[]);
+    if (error) {
+        showErrorToast(`Error inserting entries: ${error.message}`);
+        throw new Error(error.message);
+    }
+}
+
+/**
  * Loescht einen bestehenden Eintrag per ID aus der Datenbank.
  * @param id Die UUID des Eintrags.
  * @returns DeleteResult: 'deleted' | 'not_found' | 'error'

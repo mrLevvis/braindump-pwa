@@ -5,7 +5,7 @@
  * Beide Funktionen werfen Fehler, wenn die Anfrage fehlschlägt, damit der Aufrufer (z.B. der BrainDumpDashboard) entsprechend reagieren kann.
  */
 
-import type { StructuredEntry } from '../types';
+import type { IngestResult } from '../types';
 
 const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -31,12 +31,10 @@ if (!ANON_KEY) {
 }
 
 /**
- * Schickt einen Text an die Edge Function und gibt den strukturierten Eintrag zurück. Der Vertrag ist in ../_shared/contract.ts definiert.
- * Die Funktion ist "dumm": Sie kümmert sich nur um die Kommunikation, nicht um die Logik. Sie könnte genauso gut in einem anderen Kontext liegen.
- * @param text Der Rohtext, der strukturiert werden soll.
- * @returns Der strukturierte Eintrag.
+ * Schickt einen Text an die Edge Function und gibt das Ingest-Ergebnis zurück.
+ * Das Ergebnis enthält eine captureId und ein Array von strukturierten Entries.
  */
-export async function processText(text: string): Promise<StructuredEntry> {
+export async function processText(text: string): Promise<IngestResult> {
     const response = await fetch(FUNCTION_URL, {
         method: 'POST',
         headers: {

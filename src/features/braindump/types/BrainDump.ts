@@ -46,10 +46,12 @@ export interface BrainDumpEntry {
   id: string;               // UUID aus Supabase (PRIMARY KEY)
   created_at: string;       // TIMESTAMP WITH TIME ZONE als ISO-String
   title?: string;           // Optionaler Titel, falls von der KI extrahiert
-  original_text: string;    // Der Rohtext, den der Nutzer eingegeben hat
+  original_text: string;    // Der volle Rohtext des Dumps (identisch auf allen Entries desselben Dumps)
   category: EntryCategory;  // Das strikte Enum
   payload: EntryPayload;    // Das strukturierte JSON-Objekt
   completed: boolean;       // Mutabler Status — unabhängig vom unveränderlichen Dump-Inhalt
+  capture_id?: string;      // UUID, die alle Entries desselben Dumps verbindet
+  source_excerpt?: string;  // Relevanter Wortlaut aus original_text für diesen Entry
 }
 
 /**
@@ -76,14 +78,16 @@ export type ToggleResult =
   | { status: 'not_found' }
   | { status: 'error'; message: string };
 
-/**
- * Der strukturierte Eintrag, den wir von der KI zurückbekommen.
- * Dieser Vertrag definiert die Daten, die unsere Edge Function nach der Verarbeitung des Textes oder Audios zurückgibt.
- * Er entspricht unserem KI-Vertrag und wird in unserem Zustand-Management verwendet, um die Einträge zu aktualisieren.
- * In zukünftigen Iterationen könnte dieser Vertrag erweitert werden, wenn die KI mehr Informationen extrahieren kann.
- */
+/** Ein strukturierter Eintrag, wie ihn die KI zurückgibt. */
 export interface StructuredEntry {
   category: EntryCategory;
   title: string;
   payload: EntryPayload;
+  sourceExcerpt: string;
+}
+
+/** Vollständiges Ergebnis der Edge Function nach captureId-Vergabe. */
+export interface IngestResult {
+  captureId: string;
+  entries: StructuredEntry[];
 }

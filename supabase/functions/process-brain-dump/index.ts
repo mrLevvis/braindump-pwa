@@ -12,6 +12,17 @@ import type { StructuredEntry } from "../_shared/contract.ts";
 import { ENTRY_CATEGORIES, normalizeEntryContract } from "../_shared/contract.ts";
 import { transcribeAudio } from "./transcribeAudio.ts";
 
+function isValidEntry(e: unknown): e is StructuredEntry {
+  if (!e || typeof e !== "object" || Array.isArray(e)) return false;
+  const entry = e as Record<string, unknown>;
+  return (
+    ENTRY_CATEGORIES.includes(entry.category as StructuredEntry["category"]) &&
+    typeof entry.title === "string" && entry.title.trim().length > 0 &&
+    typeof entry.payload === "object" && entry.payload !== null && !Array.isArray(entry.payload) &&
+    typeof entry.sourceExcerpt === "string" && entry.sourceExcerpt.trim().length > 0
+  );
+}
+
 
 Deno.serve(async (request) => {
 
@@ -89,9 +100,9 @@ Deno.serve(async (request) => {
 
 
   // 4. Den Rohtext von Groq strukturieren lassen.
-  let entry: StructuredEntry;
+  let ingestResponse: { entries: unknown[] };
   try {
-    entry = await structureText(rawText, groqApiKey);
+    ingestResponse = await structureText(rawText, groqApiKey);
   } catch (e) {
     const details = e instanceof Error ? e.message : String(e);
     return new Response(
@@ -100,24 +111,32 @@ Deno.serve(async (request) => {
     );
   }
 
-
-  // 5. Vertrag prüfen, BEVOR wir antworten (Groq könnte Mist liefern).
-  const isValidCategory = ENTRY_CATEGORIES.includes(entry?.category);
-  const isValidTitle = typeof entry?.title === "string" && entry.title.trim().length > 0;
-  const isValidPayload = entry && typeof entry.payload === "object" && entry.payload !== null && !Array.isArray(entry.payload);
-
-  if (!isValidCategory || !isValidTitle || !isValidPayload) {
+  // 5. Vertrag prüfen — pro Entry in einer Schleife (All-or-Nothing).
+  if (!Array.isArray(ingestResponse?.entries) || ingestResponse.entries.length === 0) {
     return new Response(
-      JSON.stringify({ error: "Invalid AI response", entry }),
+      JSON.stringify({ error: "Invalid AI response: missing entries array", raw: ingestResponse }),
       { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
-  // 6. Zeitbezug-Vertrag normalisieren (EVENT ohne Datum → TASK; NOTE mit Datum → Strip).
-  entry = normalizeEntryContract(entry);
+  for (const raw of ingestResponse.entries) {
+    if (!isValidEntry(raw)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid AI response: malformed entry", entry: raw }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+  }
 
-  // 7. Alles gut -> den normalisierten Eintrag als JSON zurückgeben.
-  return new Response(JSON.stringify(entry), {
+  // 6. Zeitbezug-Vertrag pro Entry normalisieren.
+  const normalizedEntries: StructuredEntry[] = (ingestResponse.entries as StructuredEntry[])
+    .map(normalizeEntryContract);
+
+  // 7. captureId serverseitig vergeben — verbindet alle Entries dieses Dumps.
+  const captureId = crypto.randomUUID();
+
+  // 8. Alles gut -> { captureId, entries } zurückgeben.
+  return new Response(JSON.stringify({ captureId, entries: normalizedEntries }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 });

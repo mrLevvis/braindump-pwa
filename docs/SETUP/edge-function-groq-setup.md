@@ -17,9 +17,10 @@ verlässt sie nie. Ablauf eines Requests:
 ```
 Frontend  --(Text/Audio)-->  Edge Function  --(Key aus Secrets)-->  Groq
                                    |
-                              validiert JSON
+                     validiert jeden Entry im Batch
+                     vergibt captureId (UUID) serverseitig
                                    |
-Frontend  <--(StructuredEntry)-----+
+Frontend  <--({ captureId, entries: StructuredEntry[] })-----+
 ```
 
 ---
@@ -177,11 +178,20 @@ try {
 ### Erwartete Antwort (Erfolg)
 ```json
 {
-  "category": "TASK",
-  "title": "Brot kaufen",
-  "payload": { "date": "...", "time": "15:00", "tags": ["Einkauf"] }
+  "captureId": "550e8400-e29b-41d4-a716-446655440000",
+  "entries": [
+    {
+      "category": "TASK",
+      "title": "Morgen um 15 Uhr Brot kaufen",
+      "sourceExcerpt": "Ich muss morgen um 15 Uhr Brot kaufen",
+      "payload": { "date": "...", "startTime": "15:00", "endTime": "15:30", "tags": ["Einkauf"] }
+    }
+  ]
 }
 ```
+
+Enthält ein Dump mehrere eigenständige Gedanken, gibt die Function entsprechend mehrere
+Objekte im `entries`-Array zurück — alle mit derselben `captureId`.
 
 ### Fehler-Codes als Wegweiser
 | Code | Bedeutung | Wo suchen |
@@ -203,12 +213,12 @@ try {
 supabase/
 └── functions/
     ├── _shared/
-    │   ├── contract.ts          # KI-Vertrag (Typen): StructuredEntry, ENTRY_CATEGORIES
+    │   ├── contract.ts          # KI-Vertrag: StructuredEntry, IngestResponse, IngestResult, ENTRY_CATEGORIES
     │   └── cors.ts              # CORS-Header (damit der Browser zugreifen darf)
     └── process-brain-dump/
-        ├── index.ts             # Einstiegspunkt: Request -> Routing -> validierte Antwort
-        ├── systemPrompt.ts      # Fester System-Prompt (zwingt KI ins JSON-Format)
-        ├── structureText.ts     # Text  -> Groq (Llama) -> StructuredEntry
+        ├── index.ts             # Einstiegspunkt: Request -> Routing -> Validierungs-Schleife -> { captureId, entries }
+        ├── systemPrompt.ts      # System-Prompt (Multi-Entry, entries[] + sourceExcerpt)
+        ├── structureText.ts     # Text  -> Groq (Llama) -> IngestResponse
         └── transcribeAudio.ts   # Audio -> Groq (Whisper) -> Text   [Audio-Pfad]
 ```
 

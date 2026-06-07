@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { BrainDumpState, DeleteResult, InsertEntry, ToggleResult } from "../types";
-import { deleteEntry as deleteEntryFromApi, fetchEntries, insertEntry, toggleTaskCompleted as toggleApi } from "../services";
+import { deleteEntry as deleteEntryFromApi, fetchEntries, insertEntries, toggleTaskCompleted as toggleApi } from "../services";
 import { processText } from "../services/processBrainDump";
 import { showErrorToast } from "../../../hooks/useErrorToast";
 
@@ -32,19 +32,22 @@ export const useBrainDumpStore = create<BrainDumpState>()((set) => ({
     submitText: async (text: string) => {
         set(() => ({ isProcessing: true }));
         try {
-            // 1. Text von der KI strukturieren lassen.
-            const structured = await processText(text);
+            // 1. Text von der KI strukturieren lassen — liefert captureId + entries[].
+            const { captureId, entries } = await processText(text);
 
-            // 2. Den Eintrag für die DB zusammenbauen (id/created_at macht Supabase).
-            const newEntry: InsertEntry = {
-                title: structured.title,
+            // 2. Alle Entries für den Batch-Insert zusammenbauen.
+            //    Jede Zeile trägt denselben captureId + vollen original_text + eigenen source_excerpt.
+            const newEntries: InsertEntry[] = entries.map((e) => ({
+                title: e.title,
                 original_text: text,
-                category: structured.category,
-                payload: structured.payload,
-            };
+                category: e.category,
+                payload: e.payload,
+                capture_id: captureId,
+                source_excerpt: e.sourceExcerpt,
+            }));
 
-            // 3. Speichern, dann Liste neu laden, damit der Eintrag erscheint.
-            await insertEntry(newEntry);
+            // 3. Batch-Insert, dann Liste neu laden.
+            await insertEntries(newEntries);
             const data = await fetchEntries();
             if (data) set(() => ({ entries: data }));
         } catch (e) {

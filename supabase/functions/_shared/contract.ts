@@ -37,6 +37,21 @@ export interface StructuredEntry {
   category: EntryCategory;
   title: string;
   payload: EntryPayload;
+  sourceExcerpt: string;  // Relevanter Ausschnitt des Original-Dumps für diesen Entry
+}
+
+/** Root-Objekt der KI-Antwort (Groq json_object-Mode erlaubt kein nacktes Array). */
+export interface IngestResponse {
+  entries: StructuredEntry[];
+}
+
+/** Eine UUID pro Dump — serverseitig erzeugt, verbindet alle Entries eines Dumps. */
+export type CaptureId = string;
+
+/** Ergebnis des Service nach captureId-Vergabe. */
+export interface IngestResult {
+  captureId: CaptureId;
+  entries: StructuredEntry[];
 }
 
 /**

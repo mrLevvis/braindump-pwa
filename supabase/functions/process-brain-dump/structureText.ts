@@ -3,8 +3,8 @@
  * * Eine Aufgabe: reinen Text über Groqs Llama in den StructuredEntry-Vertrag übersetzen.
  */
 
-import { buildSystemPrompt } from "./systemPrompt.ts";   // war: SYSTEM_PROMPT
-import type { StructuredEntry } from "../_shared/contract.ts";
+import { buildSystemPrompt } from "./systemPrompt.ts";
+import type { IngestResponse } from "../_shared/contract.ts";
 
 const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
 const TEXT_MODEL = "llama-3.3-70b-versatile";
@@ -12,8 +12,7 @@ const TEXT_MODEL = "llama-3.3-70b-versatile";
 export async function structureText(
   rawText: string,
   groqApiKey: string,
-): Promise<StructuredEntry> {
-
+): Promise<IngestResponse> {
 
   // 1. Anfrage an Groq schicken.
   const response = await fetch(GROQ_CHAT_URL, {
@@ -32,13 +31,11 @@ export async function structureText(
     }),
   });
 
-
   // 2. Hat Groq überhaupt erfolgreich geantwortet?
   if (!response.ok) {
     const text = await response.text();
     throw new Error(`Groq API request failed: ${response.status} ${response.statusText} - ${text}`);
   }
-
 
   // 3. Die Antwort-Hülle von Groq auspacken.
   const data = await response.json();
@@ -51,16 +48,16 @@ export async function structureText(
   }
 
   // 4. content ist ein JSON-STRING -> in ein echtes Objekt verwandeln.
-  let entry: StructuredEntry;
+  let parsed: IngestResponse;
   try {
-    entry = JSON.parse(content);
+    parsed = JSON.parse(content);
   } catch (err) {
     throw new Error(`Failed to parse Groq response as JSON: ${(err as Error).message}\nContent: ${content}`);
   }
 
   // 5. Das Objekt zurückgeben.
   //    KEINE Vertrags-Validierung hier – die macht index.ts (Schritt 5 dort).
-  return entry;
+  return parsed;
 }
 
 
