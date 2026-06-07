@@ -103,6 +103,13 @@ export function TimelineView({ onBack }: Readonly<Props>) {
     }
   };
 
+  // On mount: jump to current time without animation so the view opens at the right position.
+  // isTodayOnMount captures the value at render time; the empty-deps effect runs exactly once.
+  const isTodayOnMount = useRef(isToday);
+  useEffect(() => {
+    if (isTodayOnMount.current) nowLineRef.current?.scrollIntoView({ behavior: 'instant', block: 'center' });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // After navigating to today via handleNowClick, scroll to the now-line once it mounts.
   useEffect(() => {
     if (isToday && pendingScrollRef.current) {
