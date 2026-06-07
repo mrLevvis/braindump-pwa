@@ -40,12 +40,15 @@ export function GridBlock({ entry, status, topPx, heightPx, onSelect, onToggle }
     // Outer div: the positioned block container (two sibling buttons inside — valid HTML)
     <div
       className={[
-        'absolute inset-x-1 rounded-lg overflow-hidden shadow-sm',
+        'absolute inset-x-1 rounded-lg overflow-hidden shadow-md',
+        'bg-card',
         opacityClass,
-        tintBackground,
       ].join(' ')}
       style={{ top: `${topPx}px`, height: `${heightPx}px` }}
     >
+      {/* Category tint overlay — on top of opaque bg-card so hour lines don't bleed through */}
+      <div className={['absolute inset-0 pointer-events-none', tintBackground].join(' ')} aria-hidden="true" />
+
       {/* Detail button — fills the entire block */}
       <button
         type="button"
