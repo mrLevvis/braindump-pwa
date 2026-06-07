@@ -52,7 +52,7 @@ export interface BrainDumpEntry {
   completed: boolean;       // Mutabler Status — unabhängig vom unveränderlichen Dump-Inhalt
   capture_id?: string;      // UUID, die alle Entries desselben Dumps verbindet
   source_excerpt?: string;  // Relevanter Wortlaut aus original_text für diesen Entry
-  summary?: string[];       // Detail-Stichpunkte unterhalb des Titels (leer = keine)
+  summary?: string[];       // Detail-Stichpunkte (mind. 1 bei neuen Entries; optional/null für Altzeilen vor Migration)
 }
 
 /**

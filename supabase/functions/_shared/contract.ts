@@ -38,7 +38,7 @@ export interface StructuredEntry {
   title: string;
   payload: EntryPayload;
   sourceExcerpt: string;  // Relevanter Ausschnitt des Original-Dumps für diesen Entry
-  summary: string[];      // Detail-Stichpunkte unterhalb des Titels (leer = keine)
+  summary: string[];      // Detail-Stichpunkte unterhalb des Titels (mind. 1 Stichpunkt, Pflichtfeld)
 }
 
 /** Root-Objekt der KI-Antwort (Groq json_object-Mode erlaubt kein nacktes Array). */
