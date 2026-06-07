@@ -103,8 +103,8 @@ function EntryCard({ entry, onSelect, onToggle }: Readonly<EntryCardProps>) {
           aria-pressed={entry.completed}
         >
           {entry.completed
-            ? <CircleCheck className="h-5 w-5 text-emerald-500" aria-hidden="true" />
-            : <Circle className={['h-5 w-5', accent].join(' ')} aria-hidden="true" />}
+            ? <CircleCheck className="h-7 w-7 text-emerald-500" aria-hidden="true" />
+            : <Circle className={['h-7 w-7', accent].join(' ')} aria-hidden="true" />}
         </button>
       )}
     </div>

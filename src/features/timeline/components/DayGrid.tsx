@@ -82,8 +82,8 @@ function AllDayEntry({ entry, onSelect, onToggle }: Readonly<AllDayEntryProps>) 
           aria-pressed={entry.completed}
         >
           {entry.completed
-            ? <CircleCheck className="h-5 w-5 text-emerald-500" aria-hidden="true" />
-            : <Circle className={['h-5 w-5', accent].join(' ')} aria-hidden="true" />}
+            ? <CircleCheck className="h-6 w-6 text-emerald-500" aria-hidden="true" />
+            : <Circle className={['h-6 w-6', accent].join(' ')} aria-hidden="true" />}
         </button>
       )}
     </div>

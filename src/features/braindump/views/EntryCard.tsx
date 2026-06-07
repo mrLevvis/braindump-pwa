@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Calendar, Circle, CircleCheck } from 'lucide-react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import type { BrainDumpEntry, EntryCategory } from '../types';
-import { formatCreatedTime } from '../utils';
+import { formatCreatedTime, formatCreatedDateTime } from '../utils';
 import { CATEGORY_STYLES, EntryDetailPanel, TagBadgeList } from './EntryDetailPanel';
 import { useToggleTaskCompleted } from '@/hooks';
 
@@ -35,12 +35,12 @@ const CARD_BTN = [
   'focus-visible:ring-ring', 'focus-visible:ring-offset-2',
 ].join(' ');
 
-const FOOTER_CLS = 'px-4 pt-0 text-xs text-muted-foreground';
+const FOOTER_CLS = 'px-4 pt-0 text-[10px] text-muted-foreground';
 
 const TOGGLE_BTN = [
   'absolute bottom-4 right-4 z-10',
   'flex items-center justify-center h-9 w-9 rounded-full',
-  'bg-white dark:bg-white/10 shadow-sm',
+  'bg-white dark:bg-white/10',
   'hover:opacity-80 transition-opacity',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
 ].join(' ');
@@ -72,7 +72,7 @@ function TaskCard({ entry }: Readonly<CardProps>) {
               <TagBadgeList tags={tags} />
             </CardContent>
             <CardFooter className={FOOTER_CLS}>
-              <time dateTime={entry.created_at}>{formatCreatedTime(entry.created_at)}</time>
+              <time dateTime={entry.created_at}>erstellt am {formatCreatedDateTime(entry.created_at)} um {formatCreatedTime(entry.created_at)} Uhr</time>
             </CardFooter>
           </Card>
         </button>
@@ -85,8 +85,8 @@ function TaskCard({ entry }: Readonly<CardProps>) {
           aria-pressed={entry.completed}
         >
           {entry.completed
-            ? <CircleCheck className="h-7 w-7 text-emerald-500" aria-hidden="true" />
-            : <Circle className={['h-7 w-7', accent].join(' ')} aria-hidden="true" />}
+            ? <CircleCheck className="h-10 w-10 text-emerald-500" aria-hidden="true" />
+            : <Circle className={['h-10 w-10', accent].join(' ')} aria-hidden="true" />}
         </button>
       </div>
 
@@ -130,7 +130,7 @@ function EventCard({ entry }: Readonly<CardProps>) {
             </div>
           </CardContent>
           <CardFooter className={FOOTER_CLS}>
-            <time dateTime={entry.created_at}>{formatCreatedTime(entry.created_at)}</time>
+              <time dateTime={entry.created_at}>erstellt am {formatCreatedDateTime(entry.created_at)} um {formatCreatedTime(entry.created_at)} Uhr</time>
           </CardFooter>
         </Card>
       </button>
@@ -157,7 +157,7 @@ function NoteCard({ entry }: Readonly<CardProps>) {
             <TagBadgeList tags={tags} />
           </CardContent>
           <CardFooter className={FOOTER_CLS}>
-            <time dateTime={entry.created_at}>{formatCreatedTime(entry.created_at)}</time>
+              <time dateTime={entry.created_at}>erstellt am {formatCreatedDateTime(entry.created_at)} um {formatCreatedTime(entry.created_at)} Uhr</time>
           </CardFooter>
         </Card>
       </button>

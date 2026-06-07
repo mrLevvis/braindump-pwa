@@ -112,7 +112,7 @@ export const CategoryBadge = ({ category }: Readonly<{ category: EntryCategory }
 
   return (
     <Badge variant={badge.variant} className={badge.className}>
-      {badge.label}
+      {badge.label.toUpperCase()}
     </Badge>
   );
 };
