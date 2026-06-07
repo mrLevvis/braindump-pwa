@@ -30,6 +30,7 @@ Gib das JSON exakt in dieser Form zurück:
       "category": "TASK" | "EVENT" | "NOTE",
       "title": "vollständiger, selbsterklärender Titel als EIN Satz mit den wichtigsten Infos, maximal ca. 15 Wörter",
       "sourceExcerpt": "der relevante Wortlaut aus dem Original-Dump für diesen Entry (möglichst wörtlich)",
+      "summary": ["Stichpunkt 1", "Stichpunkt 2"],
       "payload": {
         "date": "YYYY-MM-DD (wenn startTime gesetzt und kein anderes Datum genannt: immer ${todayIso}; sonst nur wenn Datum gemeint/berechenbar)",
         "startTime": "HH:MM (Beginn, nur wenn eine Uhrzeit genannt wird, sonst weglassen)",
@@ -49,6 +50,7 @@ Regeln:
 - "entries" ist IMMER ein Array — auch wenn nur ein Gedanke im Dump steckt (dann Länge 1).
 - "category" ist IMMER exakt einer der drei Großbuchstaben-Werte.
 - "sourceExcerpt" enthält den relevanten Wortlaut aus dem Original möglichst wörtlich, niemals leer.
+- "summary" ist ein Array von Stichpunkten (kurze Sätze/Fragmente) die Details aus dem sourceExcerpt aufschlüsseln. Kein Stichpunkt wiederholt bloß den title. Bei trivialen/kurzen Entries: leeres Array [].
 - Felder in "payload", die nicht im Text vorkommen, lässt du komplett weg.
 - "date" immer als echtes Datum im Format YYYY-MM-DD, niemals als Wort wie "morgen".
 - Ist "startTime" gesetzt und kein anderes Datum genannt, setze "date" auf heute: ${todayIso}.
@@ -61,8 +63,17 @@ Eingabe: "Zahnarzt morgen um 10 Uhr, und Milch kaufen"
 Ausgabe:
 {
   "entries": [
-    {"category":"EVENT","title":"Zahnarzttermin morgen um 10 Uhr","sourceExcerpt":"Zahnarzt morgen um 10 Uhr","payload":{"date":"${tomorrowIso}","startTime":"10:00","endTime":"11:00"}},
-    {"category":"TASK","title":"Milch kaufen","sourceExcerpt":"Milch kaufen","payload":{"tags":["Einkauf"]}}
+    {"category":"EVENT","title":"Zahnarzttermin morgen um 10 Uhr","sourceExcerpt":"Zahnarzt morgen um 10 Uhr","summary":[],"payload":{"date":"${tomorrowIso}","startTime":"10:00","endTime":"11:00"}},
+    {"category":"TASK","title":"Milch kaufen","sourceExcerpt":"Milch kaufen","summary":[],"payload":{"tags":["Einkauf"]}}
+  ]
+}
+
+Eingabe: "Projektmeeting morgen: Budget-Review mit Anna, danach Demo für den Kunden vorbereiten, Slides fertig bis 17 Uhr"
+Ausgabe:
+{
+  "entries": [
+    {"category":"EVENT","title":"Projektmeeting morgen mit Anna – Budget-Review","sourceExcerpt":"Projektmeeting morgen: Budget-Review mit Anna","summary":["Teilnehmerin: Anna","Thema: Budget-Review"],"payload":{"date":"${tomorrowIso}"}},
+    {"category":"TASK","title":"Kunden-Demo vorbereiten und Slides bis 17 Uhr fertigstellen","sourceExcerpt":"danach Demo für den Kunden vorbereiten, Slides fertig bis 17 Uhr","summary":["Demo für Kunden vorbereiten","Slides bis 17 Uhr abschließen"],"payload":{"date":"${tomorrowIso}","startTime":"17:00","endTime":"17:30"}}
   ]
 }
 
@@ -70,7 +81,7 @@ Eingabe: "Meeting von 9 bis 11"
 Ausgabe:
 {
   "entries": [
-    {"category":"EVENT","title":"Meeting von 9 bis 11 Uhr","sourceExcerpt":"Meeting von 9 bis 11","payload":{"date":"${todayIso}","startTime":"09:00","endTime":"11:00"}}
+    {"category":"EVENT","title":"Meeting von 9 bis 11 Uhr","sourceExcerpt":"Meeting von 9 bis 11","summary":[],"payload":{"date":"${todayIso}","startTime":"09:00","endTime":"11:00"}}
   ]
 }
 
@@ -78,7 +89,7 @@ Eingabe: "Interessanter Artikel über KI-Agenten"
 Ausgabe:
 {
   "entries": [
-    {"category":"NOTE","title":"Interessanter Artikel über KI-Agenten","sourceExcerpt":"Interessanter Artikel über KI-Agenten","payload":{}}
+    {"category":"NOTE","title":"Interessanter Artikel über KI-Agenten","sourceExcerpt":"Interessanter Artikel über KI-Agenten","summary":[],"payload":{}}
   ]
 }
 `;

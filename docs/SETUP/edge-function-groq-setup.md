@@ -184,6 +184,7 @@ try {
       "category": "TASK",
       "title": "Morgen um 15 Uhr Brot kaufen",
       "sourceExcerpt": "Ich muss morgen um 15 Uhr Brot kaufen",
+      "summary": [],
       "payload": { "date": "...", "startTime": "15:00", "endTime": "15:30", "tags": ["Einkauf"] }
     }
   ]

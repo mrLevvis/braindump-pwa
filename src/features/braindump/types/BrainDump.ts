@@ -52,6 +52,7 @@ export interface BrainDumpEntry {
   completed: boolean;       // Mutabler Status — unabhängig vom unveränderlichen Dump-Inhalt
   capture_id?: string;      // UUID, die alle Entries desselben Dumps verbindet
   source_excerpt?: string;  // Relevanter Wortlaut aus original_text für diesen Entry
+  summary?: string[];       // Detail-Stichpunkte unterhalb des Titels (leer = keine)
 }
 
 /**
@@ -84,6 +85,7 @@ export interface StructuredEntry {
   title: string;
   payload: EntryPayload;
   sourceExcerpt: string;
+  summary: string[];
 }
 
 /** Vollständiges Ergebnis der Edge Function nach captureId-Vergabe. */

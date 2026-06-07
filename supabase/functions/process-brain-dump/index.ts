@@ -19,7 +19,8 @@ function isValidEntry(e: unknown): e is StructuredEntry {
     ENTRY_CATEGORIES.includes(entry.category as StructuredEntry["category"]) &&
     typeof entry.title === "string" && entry.title.trim().length > 0 &&
     typeof entry.payload === "object" && entry.payload !== null && !Array.isArray(entry.payload) &&
-    typeof entry.sourceExcerpt === "string" && entry.sourceExcerpt.trim().length > 0
+    typeof entry.sourceExcerpt === "string" && entry.sourceExcerpt.trim().length > 0 &&
+    Array.isArray(entry.summary) && (entry.summary as unknown[]).every((s) => typeof s === "string")
   );
 }
 

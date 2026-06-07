@@ -44,6 +44,7 @@ export const useBrainDumpStore = create<BrainDumpState>()((set) => ({
                 payload: e.payload,
                 capture_id: captureId,
                 source_excerpt: e.sourceExcerpt,
+                summary: e.summary,
             }));
 
             // 3. Batch-Insert, dann Liste neu laden.
