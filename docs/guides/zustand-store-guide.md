@@ -29,7 +29,7 @@ Enthält den globalen Eintrags-State: Einträge laden, speichern, verarbeiten. D
 ### Day-Selection-Store (Timeline)
 
 ```
-src/features/timeline/store/DaySelectionSlice.ts
+src/features/timeline/store/DaySelectionStore.ts
 ```
 
 Hält ausschließlich den ausgewählten Tag der Timeline-Ansicht. Er ist bewusst vom BrainDump-Store getrennt, weil er keinen Eintrags-State braucht und auch außerhalb der Timeline-View konsumiert werden kann (z.B. in Selektoren).
@@ -41,8 +41,6 @@ import { useDaySelectionStore } from '../store';
 | Name | Typ | Bedeutung |
 | :--- | :--- | :--- |
 | `selectedDate` | `string` (YYYY-MM-DD) | Der aktuell angezeigte Tag |
-| `goToPreviousDay()` | Action | Wechselt einen Tag zurück |
-| `goToNextDay()` | Action | Wechselt einen Tag vor |
 | `goToToday()` | Action | Setzt `selectedDate` auf heute |
 | `setSelectedDate(date)` | Action | Setzt einen beliebigen Tag direkt |
 

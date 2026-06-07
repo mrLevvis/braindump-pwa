@@ -20,10 +20,12 @@ export function getBlockGeometry(
   endTime?: string,
 ): { topMinutes: number; heightMinutes: number } {
   const topMinutes = parseHHMM(startTime);
+  const maxHeight = GRID_TOTAL_HEIGHT_PX - topMinutes;
   const rawHeight = endTime != null ? parseHHMM(endTime) - topMinutes : DEFAULT_DURATION_MIN;
-  const cappedHeight = Math.min(rawHeight, GRID_TOTAL_HEIGHT_PX - topMinutes);
+  // Floor applied only when the remaining window is large enough; otherwise the block
+  // stays within the grid (e.g. a 23:59 start keeps height = 1, not 24).
   return {
     topMinutes,
-    heightMinutes: Math.max(cappedHeight, MIN_BLOCK_HEIGHT_MIN),
+    heightMinutes: Math.min(Math.max(Math.min(rawHeight, maxHeight), MIN_BLOCK_HEIGHT_MIN), maxHeight),
   };
 }
