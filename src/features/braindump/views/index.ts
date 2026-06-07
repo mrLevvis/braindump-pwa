@@ -1,4 +1,5 @@
 export { EntryCard } from './EntryCard';
-export { CATEGORY_STYLES, CategoryBadge, EntryDetailPanel, TagBadgeList } from './EntryDetailPanel';
+export { EntryDetailPanel } from './EntryDetailPanel';
+export { CATEGORY_STYLES, CategoryBadge, TagBadgeList } from '../categoryStyles';
 export { default as EntryList } from './EntryList';
 export { default as InputSection } from './InputSection';

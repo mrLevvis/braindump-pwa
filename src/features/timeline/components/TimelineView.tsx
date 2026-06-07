@@ -5,6 +5,7 @@ import {
   useDatedTimelessEntries,
   useGoToToday,
   useSelectedDate,
+  useSelectedDayTimedEntries,
   useSetSelectedDate,
   useTimelineBuckets,
 } from '../../../hooks/timelineSelectors';
@@ -72,17 +73,17 @@ export function TimelineView({ onBack }: Readonly<Props>) {
     ? (allEntries.find(e => e.id === selectedEntryId) ?? null)
     : null;
 
-  const { byDate, undated } = useTimelineBuckets();
+  const { undated } = useTimelineBuckets();
   const toggleTaskCompleted = useToggleTaskCompleted();
   const selectedDate = useSelectedDate();
   const goToToday = useGoToToday();
   const setSelectedDate = useSetSelectedDate();
+  const timedEntries = useSelectedDayTimedEntries();
   const datedTimeless = useDatedTimelessEntries();
 
   const now = useNow();
   const todayStr = todayLocal();
   const isToday = selectedDate === todayStr;
-  const dayEntries = byDate.get(selectedDate) ?? [];
 
   const nowLineRef = useRef<HTMLDivElement>(null);
   const pendingScrollRef = useRef(false);
@@ -161,7 +162,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
         <div className={MAIN_INNER}>
           <DayGrid
             date={selectedDate}
-            entries={dayEntries}
+            entries={timedEntries}
             allDay={datedTimeless}
             isToday={isToday}
             now={now}

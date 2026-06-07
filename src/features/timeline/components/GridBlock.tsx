@@ -1,11 +1,11 @@
-import { Circle, CircleCheck } from 'lucide-react';
 import { CardContent } from '../../../components/ui/card';
+import { TaskToggle } from '../../../components/TaskToggle';
 import type { BrainDumpEntry } from '../../braindump/types';
-import { CATEGORY_STYLES, TagBadgeList } from '../../braindump/views/EntryDetailPanel';
+import { CATEGORY_STYLES, TagBadgeList } from '../../braindump/categoryStyles';
 import type { TemporalStatus } from '../getTemporalStatus';
 
-// Height threshold below which badges are hidden to avoid clutter in small blocks.
-const MIN_BADGE_HEIGHT_PX = 48;
+// Height threshold below which tags are hidden to avoid clutter in small blocks.
+const MIN_TAGS_HEIGHT_PX = 48;
 
 // ─── Status maps ─────────────────────────────────────────────────────────────
 
@@ -28,7 +28,7 @@ interface Props {
 
 export function GridBlock({ entry, status, topPx, heightPx, onSelect, onToggle }: Readonly<Props>) {
   const { startTime, endTime, date, tags = [] } = entry.payload;
-  const showTags = heightPx >= MIN_BADGE_HEIGHT_PX && tags.length > 0;
+  const showTags = heightPx >= MIN_TAGS_HEIGHT_PX && tags.length > 0;
   const dateTimeAttr = date ? `${date}T${startTime}` : startTime;
   const isTask = entry.category === 'TASK';
   const opacityClass = entry.completed
@@ -73,17 +73,13 @@ export function GridBlock({ entry, status, topPx, heightPx, onSelect, onToggle }
 
       {/* Toggle — only for TASKs, bottom-right corner */}
       {isTask && (
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onToggle(entry.id, !entry.completed); }}
-          aria-label={entry.completed ? 'Als unerledigt markieren' : 'Als erledigt markieren'}
-          aria-pressed={entry.completed}
-          className="absolute bottom-1 right-1 z-10 flex items-center justify-center h-6 w-6 rounded-full bg-white dark:bg-white/10 shadow-sm hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          {entry.completed
-            ? <CircleCheck className="h-5 w-5 text-emerald-500" aria-hidden="true" />
-            : <Circle className={['h-5 w-5', accent].join(' ')} aria-hidden="true" />}
-        </button>
+        <TaskToggle
+          completed={entry.completed}
+          accent={accent}
+          size="sm"
+          onToggle={() => onToggle(entry.id, !entry.completed)}
+          className="absolute bottom-1 right-1 z-10"
+        />
       )}
     </div>
   );

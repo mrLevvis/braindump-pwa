@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Calendar, Circle, CircleCheck } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { TaskToggle } from '@/components/TaskToggle';
 import type { BrainDumpEntry, EntryCategory } from '../types';
 import { formatCreatedTime, formatCreatedDateTime } from '../utils';
-import { CATEGORY_STYLES, EntryDetailPanel, TagBadgeList } from './EntryDetailPanel';
+import { CATEGORY_STYLES, TagBadgeList } from '../categoryStyles';
+import { EntryDetailPanel } from './EntryDetailPanel';
 import { useToggleTaskCompleted } from '@/hooks';
 
 // ─── Date/time helpers ────────────────────────────────────────────────────────
@@ -37,13 +39,6 @@ const CARD_BTN = [
 
 const FOOTER_CLS = 'px-4 pt-0 text-[10px] text-muted-foreground';
 
-const TOGGLE_BTN = [
-  'absolute bottom-4 right-4 z-10',
-  'flex items-center justify-center h-9 w-9 rounded-full',
-  'bg-white dark:bg-white/10',
-  'hover:opacity-80 transition-opacity',
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-].join(' ');
 
 // ─── Card component props ─────────────────────────────────────────────────────
 
@@ -77,17 +72,13 @@ function TaskCard({ entry }: Readonly<CardProps>) {
           </Card>
         </button>
 
-        <button
-          type="button"
-          className={TOGGLE_BTN}
-          onClick={() => toggle(entry.id, !entry.completed)}
-          aria-label={entry.completed ? 'Als unerledigt markieren' : 'Als erledigt markieren'}
-          aria-pressed={entry.completed}
-        >
-          {entry.completed
-            ? <CircleCheck className="h-10 w-10 text-emerald-500" aria-hidden="true" />
-            : <Circle className={['h-10 w-10', accent].join(' ')} aria-hidden="true" />}
-        </button>
+        <TaskToggle
+          completed={entry.completed}
+          accent={accent}
+          size="lg"
+          onToggle={() => toggle(entry.id, !entry.completed)}
+          className="absolute bottom-4 right-4 z-10"
+        />
       </div>
 
       <EntryDetailPanel entry={entry} open={open} onOpenChange={setOpen} />

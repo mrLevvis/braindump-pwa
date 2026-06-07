@@ -1,8 +1,8 @@
 import type { RefObject } from 'react';
-import { Circle, CircleCheck } from 'lucide-react';
 import { Card, CardContent } from '../../../components/ui/card';
+import { TaskToggle } from '../../../components/TaskToggle';
 import type { BrainDumpEntry } from '../../braindump/types';
-import { CATEGORY_STYLES } from '../../braindump/views/EntryDetailPanel';
+import { CATEGORY_STYLES } from '../../braindump/categoryStyles';
 import { getBlockGeometry, GRID_TOTAL_HEIGHT_PX, HOUR_HEIGHT_PX } from '../getBlockGeometry';
 import { getTemporalStatus } from '../getTemporalStatus';
 import { GridBlock } from './GridBlock';
@@ -35,13 +35,6 @@ const ALL_DAY_ENTRY_BTN = [
   'focus-visible:outline-none', 'focus-visible:ring-2', 'focus-visible:ring-ring',
 ].join(' ');
 
-const ALL_DAY_TOGGLE_BTN = [
-  'absolute right-2 top-1/2 -translate-y-1/2 z-10',
-  'flex items-center justify-center h-6 w-6 rounded-full',
-  'bg-white dark:bg-white/10 shadow-sm',
-  'hover:opacity-80 transition-opacity',
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-].join(' ');
 
 // ─── AllDayEntry ──────────────────────────────────────────────────────────────
 
@@ -74,17 +67,13 @@ function AllDayEntry({ entry, onSelect, onToggle }: Readonly<AllDayEntryProps>) 
       </button>
 
       {isTask && (
-        <button
-          type="button"
-          className={ALL_DAY_TOGGLE_BTN}
-          onClick={() => onToggle(entry.id, !entry.completed)}
-          aria-label={entry.completed ? 'Als unerledigt markieren' : 'Als erledigt markieren'}
-          aria-pressed={entry.completed}
-        >
-          {entry.completed
-            ? <CircleCheck className="h-6 w-6 text-emerald-500" aria-hidden="true" />
-            : <Circle className={['h-6 w-6', accent].join(' ')} aria-hidden="true" />}
-        </button>
+        <TaskToggle
+          completed={entry.completed}
+          accent={accent}
+          size="sm"
+          onToggle={() => onToggle(entry.id, !entry.completed)}
+          className="absolute right-2 top-1/2 -translate-y-1/2 z-10"
+        />
       )}
     </div>
   );
@@ -105,9 +94,6 @@ interface Props {
 }
 
 export function DayGrid({ date, entries, allDay, isToday, now, nowLineRef, onSelect, onToggle }: Readonly<Props>) {
-  // Off-grid: entries without startTime are excluded from the 24h grid.
-  const timedEntries = entries.filter(e => e.payload.startTime != null);
-
   // 1 min = 1 px (HOUR_HEIGHT_PX = 60)
   const nowTopPx = isToday ? now.getHours() * 60 + now.getMinutes() : null;
 
@@ -155,7 +141,7 @@ export function DayGrid({ date, entries, allDay, isToday, now, nowLineRef, onSel
           )}
 
           {/* Entry blocks */}
-          {timedEntries.map(entry => {
+          {entries.map(entry => {
             const { topMinutes, heightMinutes } = getBlockGeometry(
               entry.payload.startTime!,
               entry.payload.endTime,

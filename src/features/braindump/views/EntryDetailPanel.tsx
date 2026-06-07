@@ -11,10 +11,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import type { BrainDumpEntry, DeleteResult, EntryCategory } from '../types';
+import type { BrainDumpEntry, DeleteResult } from '../types';
+import { CategoryBadge, TagBadgeList } from '../categoryStyles';
 
 const DELETE_FEEDBACK: Record<DeleteResult['status'], string> = {
   deleted: 'Eintrag gelöscht.',
@@ -37,43 +37,9 @@ const CREATED_AT_FORMATTER = new Intl.DateTimeFormat(undefined, {
   minute: '2-digit',
 });
 
-interface CategoryStyle {
-  /** Subtle tint filling the entire card background — primary identity signal. */
-  tintBackground: string;
-  /** Text/icon color for accent elements (e.g. TASK circle icon). */
-  accent: string;
-  /** Solid fill for identity blocks (e.g. EVENT date tile). */
-  accentBg: string;
-  /** Badge config — used only in the DetailPanel dialog header. */
-  badge: Readonly<{ label: string; variant: 'default' | 'secondary' | 'outline'; className: string }>;
-}
-
-export const CATEGORY_STYLES: Record<EntryCategory, CategoryStyle> = {
-  TASK: {
-    tintBackground: 'bg-violet-500/10 dark:bg-violet-500/15',
-    accent: 'text-violet-500',
-    accentBg: 'bg-violet-500',
-    badge: { label: 'Task', variant: 'default', className: 'bg-violet-500/90 text-white hover:bg-violet-500/80' },
-  },
-  EVENT: {
-    tintBackground: 'bg-sky-500/10 dark:bg-sky-500/15',
-    accent: 'text-sky-500',
-    accentBg: 'bg-sky-500',
-    badge: { label: 'Event', variant: 'secondary', className: 'bg-sky-100 text-sky-800 dark:bg-sky-950/50 dark:text-sky-200' },
-  },
-  NOTE: {
-    tintBackground: 'bg-amber-500/10 dark:bg-amber-500/15',
-    accent: 'text-amber-500',
-    accentBg: 'bg-amber-500',
-    badge: { label: 'Note', variant: 'outline', className: 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200' },
-  },
-};
-
 const PANEL_CONTENT_CLASS_NAME = ['w-full', 'sm:max-w-xl'].join(' ');
 const PANEL_BODY_CLASS_NAME = ['space-y-6', 'px-6', 'pb-6'].join(' ');
 const META_ROW_CLASS_NAME = ['flex', 'flex-wrap', 'items-center', 'gap-2'].join(' ');
-const TAG_LIST_CLASS_NAME = ['flex', 'flex-wrap', 'gap-1.5'].join(' ');
-const TAG_BADGE_CLASS_NAME = ['text-[11px]', 'font-normal', 'bg-white', 'border-0', 'text-foreground/70', 'dark:bg-white/10'].join(' ');
 const ORIGINAL_TEXT_SECTION_CLASS_NAME = ['space-y-2'].join(' ');
 const ORIGINAL_TEXT_CLASS_NAME = ['rounded-lg', 'border', 'bg-muted/30', 'p-3', 'text-sm', 'leading-relaxed', 'whitespace-pre-wrap', 'break-words'].join(' ');
 const TIME_BLOCK_CLASS_NAME = ['space-y-3', 'rounded-lg', 'border', 'bg-muted/20', 'p-3'].join(' ');
@@ -105,30 +71,6 @@ const formatEntryDate = (entryDateIso?: string): string | null => {
 const formatEntryTime = (startTime?: string, endTime?: string): string | null => {
   if (!startTime) return null;
   return endTime ? `${startTime}–${endTime} Uhr` : `${startTime} Uhr`;
-};
-
-export const CategoryBadge = ({ category }: Readonly<{ category: EntryCategory }>) => {
-  const { badge } = CATEGORY_STYLES[category];
-
-  return (
-    <Badge variant={badge.variant} className={badge.className}>
-      {badge.label.toUpperCase()}
-    </Badge>
-  );
-};
-
-export const TagBadgeList = ({ tags }: Readonly<{ tags: readonly string[] }>) => {
-  if (tags.length === 0) return null;
-
-  return (
-    <div className={TAG_LIST_CLASS_NAME}>
-      {tags.map((tag, index) => (
-        <Badge key={`${tag}-${index}`} variant="outline" className={TAG_BADGE_CLASS_NAME}>
-          {tag}
-        </Badge>
-      ))}
-    </div>
-  );
 };
 
 const EntryTimingDetails = ({ date, entryTime, entryEndTime, createdAt }: Readonly<{ date?: string; entryTime?: string; entryEndTime?: string; createdAt: string }>) => {

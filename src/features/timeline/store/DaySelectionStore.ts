@@ -1,11 +1,9 @@
 import { create } from 'zustand';
-import { todayLocal, shiftDate } from '../../../lib/dateUtils';
+import { todayLocal } from '../../../lib/dateUtils';
 import { parseAppRoute } from '../../../lib/routing';
 
-export interface DaySelectionSlice {
+export interface DaySelectionState {
   selectedDate: string;
-  goToPreviousDay: () => void;
-  goToNextDay: () => void;
   goToToday: () => void;
   setSelectedDate: (date: string) => void;
 }
@@ -16,10 +14,8 @@ function parseInitialDate(): string {
   return date ?? todayLocal();
 }
 
-export const useDaySelectionStore = create<DaySelectionSlice>()((set) => ({
+export const useDaySelectionStore = create<DaySelectionState>()((set) => ({
   selectedDate: parseInitialDate(),
-  goToPreviousDay: () => set((s) => ({ selectedDate: shiftDate(s.selectedDate, -1) })),
-  goToNextDay:     () => set((s) => ({ selectedDate: shiftDate(s.selectedDate, 1) })),
   goToToday:       () => set({ selectedDate: todayLocal() }),
   setSelectedDate: (date) => set({ selectedDate: date }),
 }));

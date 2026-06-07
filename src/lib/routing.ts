@@ -1,6 +1,6 @@
 // ─── App routing types & URL helpers ─────────────────────────────────────────
 // Single source of truth for URL parsing / path building.
-// Imported by the store (DaySelectionSlice), the hook (useRouteSync), and App.
+// Imported by the store (DaySelectionStore), the hook (useRouteSync), and App.
 
 export type AppView = 'dashboard' | 'timeline';
 

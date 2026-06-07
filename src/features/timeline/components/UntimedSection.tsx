@@ -1,4 +1,4 @@
-import { Circle, CircleCheck, ListTodo } from 'lucide-react';
+import { ListTodo } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -7,8 +7,9 @@ import {
   SheetTrigger,
 } from '../../../components/ui/sheet';
 import { Card, CardContent } from '../../../components/ui/card';
+import { TaskToggle } from '../../../components/TaskToggle';
 import type { BrainDumpEntry } from '../../braindump/types';
-import { CATEGORY_STYLES, TagBadgeList } from '../../braindump/views/EntryDetailPanel';
+import { CATEGORY_STYLES, TagBadgeList } from '../../braindump/categoryStyles';
 
 // ─── Class name constants ─────────────────────────────────────────────────────
 
@@ -50,13 +51,6 @@ const ENTRY_BADGES = ['flex', 'flex-wrap', 'gap-1'].join(' ');
 
 // ─── Inner card ───────────────────────────────────────────────────────────────
 
-const TOGGLE_BTN = [
-  'absolute bottom-2.5 right-3 z-10',
-  'flex items-center justify-center h-7 w-7 rounded-full',
-  'bg-white dark:bg-white/10 shadow-sm',
-  'hover:opacity-80 transition-opacity',
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-].join(' ');
 
 interface EntryCardProps {
   entry: BrainDumpEntry;
@@ -95,17 +89,13 @@ function EntryCard({ entry, onSelect, onToggle }: Readonly<EntryCardProps>) {
 
       {/* Toggle — only for TASKs, bottom-right corner */}
       {isTask && (
-        <button
-          type="button"
-          className={TOGGLE_BTN}
-          onClick={() => onToggle(entry.id, !entry.completed)}
-          aria-label={entry.completed ? 'Als unerledigt markieren' : 'Als erledigt markieren'}
-          aria-pressed={entry.completed}
-        >
-          {entry.completed
-            ? <CircleCheck className="h-7 w-7 text-emerald-500" aria-hidden="true" />
-            : <Circle className={['h-7 w-7', accent].join(' ')} aria-hidden="true" />}
-        </button>
+        <TaskToggle
+          completed={entry.completed}
+          accent={accent}
+          size="md"
+          onToggle={() => onToggle(entry.id, !entry.completed)}
+          className="absolute bottom-2.5 right-3 z-10"
+        />
       )}
     </div>
   );

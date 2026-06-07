@@ -21,8 +21,9 @@ export function getBlockGeometry(
 ): { topMinutes: number; heightMinutes: number } {
   const topMinutes = parseHHMM(startTime);
   const rawHeight = endTime != null ? parseHHMM(endTime) - topMinutes : DEFAULT_DURATION_MIN;
+  const cappedHeight = Math.min(rawHeight, GRID_TOTAL_HEIGHT_PX - topMinutes);
   return {
     topMinutes,
-    heightMinutes: Math.max(rawHeight, MIN_BLOCK_HEIGHT_MIN),
+    heightMinutes: Math.max(cappedHeight, MIN_BLOCK_HEIGHT_MIN),
   };
 }

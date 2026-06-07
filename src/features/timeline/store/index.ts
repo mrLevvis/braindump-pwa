@@ -1,2 +1,2 @@
-export { useDaySelectionStore } from './DaySelectionSlice';
-export type { DaySelectionSlice } from './DaySelectionSlice';
+export { useDaySelectionStore } from './DaySelectionStore';
+export type { DaySelectionState } from './DaySelectionStore';

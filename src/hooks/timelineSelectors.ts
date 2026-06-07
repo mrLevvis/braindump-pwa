@@ -16,14 +16,6 @@ export function useSelectedDate() {
   return useDaySelectionStore((s) => s.selectedDate);
 }
 
-export function useGoToPreviousDay() {
-  return useDaySelectionStore((s) => s.goToPreviousDay);
-}
-
-export function useGoToNextDay() {
-  return useDaySelectionStore((s) => s.goToNextDay);
-}
-
 export function useGoToToday() {
   return useDaySelectionStore((s) => s.goToToday);
 }
@@ -36,6 +28,12 @@ export function useSelectedDayEntries(): readonly BrainDumpEntry[] {
   const { byDate } = useTimelineBuckets();
   const selectedDate = useSelectedDate();
   return byDate.get(selectedDate) ?? EMPTY_ENTRIES;
+}
+
+/** Entries for the selected day that have a startTime (placed on the 24h grid). */
+export function useSelectedDayTimedEntries(): readonly BrainDumpEntry[] {
+  const entries = useSelectedDayEntries();
+  return useMemo(() => entries.filter(e => e.payload.startTime != null), [entries]);
 }
 
 /** Entries for the selected day that have a date but no startTime (all-day / off-grid). */
