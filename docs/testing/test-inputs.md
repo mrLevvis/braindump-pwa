@@ -53,10 +53,10 @@ Die KI erzeugt pro Entry ein stichpunktartiges Summary der wichtigsten Inhalte, 
 - Das Summary entsteht im selben LLM-Strukturierungs-Pass wie der Entry — kein Extra-Call.
 - Bezugsbasis ist der sourceExcerpt des jeweiligen Entries (aus D1), **nicht** der gesamte Dump — jedes Summary bleibt auf seinen Entry begrenzt.
 - Typ: summary: string[] (eine Liste von Stichpunkten), Teil des Entry-Contracts.
-- Leeres Summary ist erlaubt (kurze/triviale Entries → []); das DetailPanel rendert dann nichts.
+- Summary ist Pflichtfeld: mind. 1 Stichpunkt pro Entry (auch bei trivialen Einträgen). Leeres Array wird von `isValidEntry` abgelehnt.
 - Das DetailPanel rendert ausschließlich — keine Aufbereitungslogik im View.
 # **Akzeptanzkriterien**
-- [ ] Jeder Entry trägt ein summary-Feld vom Typ string[].
+- [ ] Jeder Entry trägt ein summary-Feld vom Typ string[] mit mind. 1 Stichpunkt.
 - [ ] Das Summary referenziert nur Inhalte aus dem sourceExcerpt des Entries.
 - [ ] Das DetailPanel zeigt das Summary als Stichpunktliste an, wenn vorhanden.
 - [ ] Bei leerem Summary erscheint kein leerer Listen-Container im DetailPanel.
