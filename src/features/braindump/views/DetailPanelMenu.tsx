@@ -35,24 +35,22 @@ export function DetailPanelMenu({ onDeleteClick }: Readonly<Props>) {
         <EllipsisVertical className="h-4 w-4" aria-hidden="true" />
       </Menu.Trigger>
 
-      <Menu.Portal>
-        <Menu.Positioner side="bottom" align="start" sideOffset={4}>
-          <Menu.Popup className={POPUP_CLASS}>
-            <Menu.Item className={cn(ITEM_BASE, 'text-muted-foreground')} disabled>
-              Bearbeiten
-            </Menu.Item>
-            <Menu.Item
-              className={cn(
-                ITEM_BASE,
-                'text-destructive data-highlighted:bg-destructive/10 data-highlighted:text-destructive',
-              )}
-              onClick={onDeleteClick}
-            >
-              Löschen
-            </Menu.Item>
-          </Menu.Popup>
-        </Menu.Positioner>
-      </Menu.Portal>
+      <Menu.Positioner side="bottom" align="start" sideOffset={4}>
+        <Menu.Popup className={POPUP_CLASS}>
+          <Menu.Item className={cn(ITEM_BASE, 'text-muted-foreground')} disabled>
+            Bearbeiten
+          </Menu.Item>
+          <Menu.Item
+            className={cn(
+              ITEM_BASE,
+              'text-destructive data-highlighted:bg-destructive/10 data-highlighted:text-destructive',
+            )}
+            onClick={onDeleteClick}
+          >
+            Löschen
+          </Menu.Item>
+        </Menu.Popup>
+      </Menu.Positioner>
     </Menu.Root>
   );
 }
