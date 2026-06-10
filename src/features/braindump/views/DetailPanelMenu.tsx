@@ -1,4 +1,4 @@
-import { Menu } from '@base-ui/react/menu';
+import { useEffect, useRef, useState } from 'react';
 import { EllipsisVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -11,16 +11,15 @@ const TRIGGER_CLASS = [
 ].join(' ');
 
 const POPUP_CLASS = [
-  'z-[60] min-w-[9rem] overflow-hidden rounded-xl border bg-popover',
+  'absolute top-full left-0 mt-1 z-10',
+  'min-w-[9rem] overflow-hidden rounded-xl border bg-popover',
   'p-1 shadow-md text-sm text-popover-foreground outline-none',
-  'data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95',
-  'data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
 ].join(' ');
 
 const ITEM_BASE = [
-  'flex cursor-pointer select-none items-center rounded-lg px-2 py-1.5',
+  'flex w-full cursor-pointer select-none items-center rounded-lg px-2 py-1.5',
   'text-sm outline-none transition-colors',
-  'data-highlighted:bg-muted',
+  'hover:bg-muted',
   'disabled:pointer-events-none disabled:opacity-40',
 ].join(' ');
 
@@ -29,28 +28,56 @@ interface Props {
 }
 
 export function DetailPanelMenu({ onDeleteClick }: Readonly<Props>) {
-  return (
-    <Menu.Root>
-      <Menu.Trigger aria-label="Aktionen" className={TRIGGER_CLASS}>
-        <EllipsisVertical className="h-4 w-4" aria-hidden="true" />
-      </Menu.Trigger>
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-      <Menu.Positioner side="bottom" align="start" sideOffset={4}>
-        <Menu.Popup className={POPUP_CLASS}>
-          <Menu.Item className={cn(ITEM_BASE, 'text-muted-foreground')} disabled>
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent | KeyboardEvent) => {
+      if (e instanceof KeyboardEvent) { if (e.key === 'Escape') setOpen(false); return; }
+      if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    document.addEventListener('keydown', close);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      document.removeEventListener('keydown', close);
+    };
+  }, [open]);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        aria-label="Aktionen"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className={TRIGGER_CLASS}
+        onClick={() => setOpen(v => !v)}
+      >
+        <EllipsisVertical className="h-4 w-4" aria-hidden="true" />
+      </button>
+
+      {open && (
+        <div role="menu" className={POPUP_CLASS}>
+          <button
+            role="menuitem"
+            type="button"
+            disabled
+            className={cn(ITEM_BASE, 'text-muted-foreground')}
+          >
             Bearbeiten
-          </Menu.Item>
-          <Menu.Item
-            className={cn(
-              ITEM_BASE,
-              'text-destructive data-highlighted:bg-destructive/10 data-highlighted:text-destructive',
-            )}
-            onClick={onDeleteClick}
+          </button>
+          <button
+            role="menuitem"
+            type="button"
+            className={cn(ITEM_BASE, 'text-destructive hover:bg-destructive/10 hover:text-destructive')}
+            onClick={() => { setOpen(false); onDeleteClick(); }}
           >
             Löschen
-          </Menu.Item>
-        </Menu.Popup>
-      </Menu.Positioner>
-    </Menu.Root>
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
