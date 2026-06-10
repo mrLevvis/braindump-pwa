@@ -1,14 +1,14 @@
 import { Circle, CircleCheck } from 'lucide-react';
 
 const SIZE_MAP = {
-  sm: { container: 'h-6 w-6', icon: 'h-5 w-5' },
-  md: { container: 'h-7 w-7', icon: 'h-6 w-6' },
-  lg: { container: 'h-9 w-9', icon: 'h-8 w-8' },
+  sm: { container: 'h-5 w-5', icon: 'h-5 w-5' },
+  md: { container: 'h-6 w-6', icon: 'h-6 w-6' },
+  lg: { container: 'h-8 w-8', icon: 'h-8 w-8' },
 } as const;
 
 const BASE_BTN = [
   'flex items-center justify-center rounded-full',
-  'bg-white dark:bg-white/10 shadow-sm',
+  'bg-white dark:bg-white/10',
   'hover:opacity-80 transition-opacity',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
 ].join(' ');
