@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { BrainDumpEntry, DeleteResult } from '../types';
 import { CategoryBadge, TagBadgeList } from '../categoryStyles';
+import { DetailPanelMenu } from './DetailPanelMenu';
 
 const DELETE_FEEDBACK: Record<DeleteResult['status'], string> = {
   deleted: 'Eintrag gelöscht.',
@@ -52,7 +53,6 @@ const SUMMARY_LIST_CLASS_NAME = ['space-y-1', 'rounded-lg', 'border', 'bg-muted/
 const SUMMARY_ITEM_CLASS_NAME = ['flex', 'items-start', 'gap-2', 'text-sm', 'leading-relaxed'].join(' ');
 const SUMMARY_BULLET_CLASS_NAME = ['mt-1.5', 'h-1.5', 'w-1.5', 'shrink-0', 'rounded-full', 'bg-muted-foreground/60'].join(' ');
 const ACTION_ROW_CLASS_NAME = ['flex', 'items-center', 'pt-2'].join(' ');
-const DELETE_BUTTON_CLASS_NAME = ['min-w-28'].join(' ');
 
 const formatCreatedDateTime = (createdAtIso: string): string => {
   const createdAt = new Date(createdAtIso);
@@ -142,7 +142,11 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{ entry
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={PANEL_CONTENT_CLASS_NAME}>
-        <DialogHeader>
+        <div className="absolute top-4 left-4 z-10">
+          <DetailPanelMenu onDeleteClick={() => setIsDeleteDialogOpen(true)} />
+        </div>
+
+        <DialogHeader className="pl-8">
           <DialogTitle>{title}</DialogTitle>
           <div className={META_ROW_CLASS_NAME}>
             <CategoryBadge category={entry.category} />
@@ -178,8 +182,8 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{ entry
             </section>
           ) : null}
 
-          <div className={[ACTION_ROW_CLASS_NAME, entry.category === 'TASK' ? 'justify-between' : 'justify-end'].join(' ')}>
-            {entry.category === 'TASK' && (
+          {entry.category === 'TASK' && (
+            <div className={ACTION_ROW_CLASS_NAME}>
               <Button
                 type="button"
                 variant="outline"
@@ -190,11 +194,8 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{ entry
                   ? <><CircleCheck className="mr-2 h-4 w-4 text-emerald-500" aria-hidden="true" />Erledigt</>
                   : <><Circle className="mr-2 h-4 w-4" aria-hidden="true" />Abhaken</>}
               </Button>
-            )}
-            <Button type="button" variant="destructive" className={DELETE_BUTTON_CLASS_NAME} onClick={() => setIsDeleteDialogOpen(true)}>
-              Loeschen
-            </Button>
-          </div>
+            </div>
+          )}
         </div>
       </DialogContent>
 
