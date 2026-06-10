@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Clock } from 'lucide-react';
+import { ArrowLeft, Clock, ZoomIn, ZoomOut } from 'lucide-react';
 import { EntryDetailPanel } from '../../braindump/views/EntryDetailPanel';
+import { MIN_PX_PER_HOUR, MAX_PX_PER_HOUR } from '../getBlockGeometry';
+import { useZoomStore } from '../store';
 import {
   useDatedTimelessEntries,
   useDayMarkers,
@@ -83,6 +85,10 @@ export function TimelineView({ onBack }: Readonly<Props>) {
   const datedTimeless = useDatedTimelessEntries();
   const dayMarkers = useDayMarkers();
 
+  const pxPerHour    = useZoomStore(s => s.pxPerHour);
+  const setPxPerHour = useZoomStore(s => s.setPxPerHour);
+  const ZOOM_STEP = 20;
+
   const now = useNow();
   const todayStr = todayLocal();
   const isToday = selectedDate === todayStr;
@@ -135,6 +141,24 @@ export function TimelineView({ onBack }: Readonly<Props>) {
           <div className={HEADER_ACTIONS}>
             <button
               type="button"
+              className={ICON_BTN}
+              onClick={() => setPxPerHour(pxPerHour - ZOOM_STEP)}
+              disabled={pxPerHour <= MIN_PX_PER_HOUR}
+              aria-label="Zoom verringern"
+            >
+              <ZoomOut className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={ICON_BTN}
+              onClick={() => setPxPerHour(pxPerHour + ZOOM_STEP)}
+              disabled={pxPerHour >= MAX_PX_PER_HOUR}
+              aria-label="Zoom erhöhen"
+            >
+              <ZoomIn className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
               className={JETZT_BTN}
               onClick={handleNowClick}
               aria-label="Zur aktuellen Uhrzeit springen"
@@ -169,6 +193,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
             allDay={datedTimeless}
             isToday={isToday}
             now={now}
+            pxPerHour={pxPerHour}
             nowLineRef={nowLineRef}
             onSelect={(e) => setSelectedEntryId(e.id)}
             onToggle={toggleTaskCompleted}

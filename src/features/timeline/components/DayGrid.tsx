@@ -3,7 +3,7 @@ import { Card, CardContent } from '../../../components/ui/card';
 import { TaskToggle } from '../../../components/TaskToggle';
 import type { BrainDumpEntry } from '../../braindump/types';
 import { CATEGORY_STYLES } from '../../braindump/categoryStyles';
-import { getBlockGeometry, GRID_TOTAL_HEIGHT_PX, HOUR_HEIGHT_PX } from '../getBlockGeometry';
+import { getBlockGeometry } from '../getBlockGeometry';
 import { getTemporalStatus } from '../getTemporalStatus';
 import { GridBlock } from './GridBlock';
 
@@ -88,14 +88,17 @@ interface Props {
   allDay: readonly BrainDumpEntry[];
   isToday: boolean;
   now: Date;
+  pxPerHour: number;
   nowLineRef?: RefObject<HTMLDivElement>;
   onSelect: (entry: BrainDumpEntry) => void;
   onToggle: (id: string, completed: boolean) => void;
 }
 
-export function DayGrid({ date, entries, allDay, isToday, now, nowLineRef, onSelect, onToggle }: Readonly<Props>) {
-  // 1 min = 1 px (HOUR_HEIGHT_PX = 60)
-  const nowTopPx = isToday ? now.getHours() * 60 + now.getMinutes() : null;
+export function DayGrid({ date, entries, allDay, isToday, now, pxPerHour, nowLineRef, onSelect, onToggle }: Readonly<Props>) {
+  const gridHeight = 24 * pxPerHour;
+  const nowTopPx = isToday
+    ? (now.getHours() * 60 + now.getMinutes()) * (pxPerHour / 60)
+    : null;
 
   return (
     <div className="flex flex-col gap-3">
@@ -112,13 +115,13 @@ export function DayGrid({ date, entries, allDay, isToday, now, nowLineRef, onSel
       )}
 
       {/* ── 24h grid ────────────────────────────────────────────────────────── */}
-      <div className="relative" style={{ height: `${GRID_TOTAL_HEIGHT_PX}px` }}>
+      <div className="relative" style={{ height: `${gridHeight}px` }}>
         {/* Hour backbone */}
         {HOURS.map(h => (
           <div
             key={h}
             className={HOUR_ROW}
-            style={{ top: `${h * HOUR_HEIGHT_PX}px`, height: `${HOUR_HEIGHT_PX}px` }}
+            style={{ top: `${h * pxPerHour}px`, height: `${pxPerHour}px` }}
           >
             <span className={HOUR_LABEL}>{String(h).padStart(2, '0')}</span>
             <div className={GRID_LINE} />
@@ -142,17 +145,18 @@ export function DayGrid({ date, entries, allDay, isToday, now, nowLineRef, onSel
 
           {/* Entry blocks */}
           {entries.map(entry => {
-            const { topMinutes, heightMinutes } = getBlockGeometry(
+            const { top, height } = getBlockGeometry(
               entry.payload.startTime!,
               entry.payload.endTime,
+              pxPerHour,
             );
             return (
               <GridBlock
                 key={entry.id}
                 entry={entry}
                 status={getTemporalStatus(date, entry.payload.startTime, now)}
-                topPx={topMinutes}
-                heightPx={heightMinutes}
+                topPx={top}
+                heightPx={height}
                 onSelect={onSelect}
                 onToggle={onToggle}
               />

@@ -1,7 +1,8 @@
-export const HOUR_HEIGHT_PX = 60; // 1 pixel per minute — keeps topMinutes === topPx
-export const GRID_TOTAL_HEIGHT_PX = 24 * HOUR_HEIGHT_PX; // 1440
+export const MIN_PX_PER_HOUR     = 30;
+export const MAX_PX_PER_HOUR     = 160;
+export const DEFAULT_PX_PER_HOUR = 60;
 
-// Default block duration when no endTime is stored (legacy entries pre-A8 system-prompt update).
+const GRID_TOTAL_MINUTES  = 24 * 60; // 1440
 const DEFAULT_DURATION_MIN = 60;
 const MIN_BLOCK_HEIGHT_MIN = 24;
 
@@ -10,22 +11,33 @@ function parseHHMM(hhmm: string): number {
   return h * 60 + m;
 }
 
+export interface BlockGeometry {
+  readonly top: number;
+  readonly height: number;
+}
+
 /**
- * Pure geometry: converts a time range into grid coordinates.
- * topMinutes === top offset in px (1 min = 1 px at HOUR_HEIGHT_PX = 60).
- * heightMinutes is clamped to MIN_BLOCK_HEIGHT_MIN for point appointments.
+ * Pure geometry: converts a time range into pixel coordinates for a given zoom level.
+ *
+ * Height is clamped to [MIN_BLOCK_HEIGHT_MIN, remaining grid space]:
+ *   - floor  = min(MIN_BLOCK_HEIGHT_MIN, remaining) so late-day entries never overflow
+ *   - ceiling = remaining minutes (entry stays inside the 24 h grid)
  */
 export function getBlockGeometry(
   startTime: string,
-  endTime?: string,
-): { topMinutes: number; heightMinutes: number } {
-  const topMinutes = parseHHMM(startTime);
-  const maxHeight = GRID_TOTAL_HEIGHT_PX - topMinutes;
-  const rawHeight = endTime != null ? parseHHMM(endTime) - topMinutes : DEFAULT_DURATION_MIN;
-  // Floor applied only when the remaining window is large enough; otherwise the block
-  // stays within the grid (e.g. a 23:59 start keeps height = 1, not 24).
+  endTime: string | undefined,
+  pxPerHour: number,
+): BlockGeometry {
+  const pxPerMin    = pxPerHour / 60;
+  const topMin      = parseHHMM(startTime);
+  const maxHeightMin = GRID_TOTAL_MINUTES - topMin;
+  const rawHeightMin = endTime != null ? parseHHMM(endTime) - topMin : DEFAULT_DURATION_MIN;
+
+  const floor      = Math.min(MIN_BLOCK_HEIGHT_MIN, maxHeightMin);
+  const heightMin  = Math.max(Math.min(rawHeightMin, maxHeightMin), floor);
+
   return {
-    topMinutes,
-    heightMinutes: Math.min(Math.max(Math.min(rawHeight, maxHeight), MIN_BLOCK_HEIGHT_MIN), maxHeight),
+    top:    topMin     * pxPerMin,
+    height: heightMin  * pxPerMin,
   };
 }
