@@ -1,5 +1,7 @@
 import type { BrainDumpEntry } from '../types';
+import { buildDashboardRows } from '../utils/buildDashboardRows';
 import { EntryCard } from './';
+import { DateDivider } from './DateDivider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const EMPTY_STATE_CARD_CLASS_NAME = ['rounded-2xl', 'border-dashed', 'bg-muted/20'].join(' ');
@@ -20,16 +22,19 @@ const EmptyEntriesState = () => (
 export default function EntryList({ entries }: { entries: readonly BrainDumpEntry[] }) {
   if (!entries || entries.length === 0) return <EmptyEntriesState />;
 
-  // Chronologisch sortieren (älteste unten, neueste oben)
-  const sortedEntries = [...entries].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  const rows = buildDashboardRows(entries);
 
   return (
     <ul className="space-y-3">
-      {sortedEntries.map((entry) => (
-        <li key={entry.id}>
-          <EntryCard entry={entry} />
-        </li>
-      ))}
+      {rows.map((row) =>
+        row.kind === 'divider' ? (
+          <DateDivider key={row.dateIso} dateIso={row.dateIso} />
+        ) : (
+          <li key={row.entry.id}>
+            <EntryCard entry={row.entry} />
+          </li>
+        ),
+      )}
     </ul>
   );
 }
