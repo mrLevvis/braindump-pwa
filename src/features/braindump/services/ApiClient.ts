@@ -50,6 +50,12 @@ function handlePostgrestError<T>(message: string, error: PostgrestError | null, 
  * --- API-FUNKTIONEN ---
  * ------------------------------------------------------------------------------*/
 
+/** Raw DB row returned by Supabase — snake_case column names, nullable new columns. */
+type BrainDumpEntryRow = Omit<BrainDumpEntry, 'captureId' | 'sourceExcerpt'> & {
+    capture_id?: string | null;
+    source_excerpt?: string | null;
+};
+
 /**
  * Fetcht alle brain dump entries aus der Datenbank, sortiert nach Erstellungsdatum (neueste zuerst).
  * @returns Ein Array von BrainDumpEntry-Objekten oder null, wenn ein Fehler auftritt.
@@ -59,7 +65,13 @@ export async function fetchEntries(): Promise<BrainDumpEntry[] | null> {
         .from(BRAINDUMP_ENTRIES_DB)
         .select('*')
         .order('created_at', { ascending: false });
-    return handlePostgrestError<BrainDumpEntry[]>('Error fetching entries:', error, data);
+    const rows = handlePostgrestError<BrainDumpEntryRow[]>('Error fetching entries:', error, data as BrainDumpEntryRow[] | null);
+    if (!rows) return null;
+    return rows.map(({ capture_id, source_excerpt, ...rest }) => ({
+        ...rest,
+        captureId: capture_id ?? undefined,
+        sourceExcerpt: source_excerpt ?? undefined,
+    }));
 }
 
 /**

@@ -50,16 +50,24 @@ export interface BrainDumpEntry {
   category: EntryCategory;  // Das strikte Enum
   payload: EntryPayload;    // Das strukturierte JSON-Objekt
   completed: boolean;       // Mutabler Status — unabhängig vom unveränderlichen Dump-Inhalt
-  capture_id?: string;      // UUID, die alle Entries desselben Dumps verbindet
-  source_excerpt?: string;  // Relevanter Wortlaut aus original_text für diesen Entry
+  captureId?: string;       // UUID, die alle Entries desselben Dumps verbindet
+  sourceExcerpt?: string;   // Relevanter Wortlaut aus original_text für diesen Entry
   summary?: string[];       // Detail-Stichpunkte (mind. 1 bei neuen Entries; optional/null für Altzeilen vor Migration)
 }
 
 /**
- * Hilfs-Typ für das Erstellen eines neuen Eintrags (INSERT).
+ * DB-seitige Form eines neuen Eintrags (INSERT) — snake_case, entspricht den Spaltennamen.
  * IDs, Zeitstempel und completed werden von der Datenbank generiert/defaulted.
  */
-export type InsertEntry = Omit<BrainDumpEntry, 'id' | 'created_at' | 'completed'>;
+export interface InsertEntry {
+  title?: string;
+  original_text: string;
+  category: EntryCategory;
+  payload: EntryPayload;
+  capture_id?: string;
+  source_excerpt?: string;
+  summary?: string[];
+}
 
 /**
  * Diskriminierte Union für das Ergebnis eines DELETE-Calls.
