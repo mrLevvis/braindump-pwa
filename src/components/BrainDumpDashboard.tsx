@@ -6,7 +6,7 @@ import { useEntries, useIsProcessing, useSetProcessing, useSubmitText } from '..
 import { useErrorToast, useSuccessToast } from '../hooks/useErrorToast';
 import { useVoiceRecording } from '../hooks/useVoiceRecording';
 
-const DASHBOARD_ROOT_CLASS_NAME = ['flex', 'min-h-dvh', 'flex-col', 'bg-background'].join(' ');
+const DASHBOARD_ROOT_CLASS_NAME = ['flex', 'h-dvh', 'flex-col', 'bg-background'].join(' ');
 const DASHBOARD_HEADER_CLASS_NAME = ['shrink-0', 'border-b', 'bg-background'].join(' ');
 const DASHBOARD_HEADER_INNER_CLASS_NAME = [
   'mx-auto', 'flex', 'w-full', 'max-w-3xl',
