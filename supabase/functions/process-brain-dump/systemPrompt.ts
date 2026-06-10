@@ -28,7 +28,7 @@ Gib das JSON exakt in dieser Form zurück:
   "entries": [
     {
       "category": "TASK" | "EVENT" | "NOTE",
-      "title": "vollständiger, selbsterklärender Titel als EIN Satz mit den wichtigsten Infos, maximal ca. 15 Wörter",
+      "title": "vollständiger, selbsterklärender Titel als EIN Satz mit den wichtigsten Infos, maximal ca. 15 Wörter – OHNE jedes Datum, jede Uhrzeit oder Zeitangabe (kein 'morgen', 'Freitag', '15 Uhr' o. Ä.)",
       "sourceExcerpt": "der relevante Wortlaut aus dem Original-Dump für diesen Entry (möglichst wörtlich)",
       "summary": ["Stichpunkt 1", "Stichpunkt 2"],
       "payload": {
@@ -56,6 +56,8 @@ Regeln:
 - Ist "startTime" gesetzt und kein anderes Datum genannt, setze "date" auf heute: ${todayIso}.
 - Ist "startTime" gesetzt, setze immer auch "endTime": explizit falls genannt, sonst EVENT → +60 Min., TASK → +30 Min.
 - "tags" immer auf Deutsch, kurz und großgeschrieben (z.B. "Einkauf", "Arbeit", "Privat").
+- "title" enthält NIEMALS ein Datum, eine Uhrzeit oder eine relative Zeitangabe (z.B. niemals "morgen", "Freitag", "15 Uhr", "um 10", "bis 17 Uhr"). Zeit gehört ausschließlich in "payload.date", "payload.startTime" und "payload.endTime".
+  FALSCH: "Zahnarzt Freitag 15 Uhr" | RICHTIG: "Zahnarzt"
 
 Beispiele (heute ist ${todayIso}):
 
@@ -63,7 +65,7 @@ Eingabe: "Zahnarzt morgen um 10 Uhr, und Milch kaufen"
 Ausgabe:
 {
   "entries": [
-    {"category":"EVENT","title":"Zahnarzttermin morgen um 10 Uhr","sourceExcerpt":"Zahnarzt morgen um 10 Uhr","summary":["Termin morgen um 10 Uhr"],"payload":{"date":"${tomorrowIso}","startTime":"10:00","endTime":"11:00"}},
+    {"category":"EVENT","title":"Zahnarzttermin","sourceExcerpt":"Zahnarzt morgen um 10 Uhr","summary":["Termin morgen um 10 Uhr"],"payload":{"date":"${tomorrowIso}","startTime":"10:00","endTime":"11:00"}},
     {"category":"TASK","title":"Milch kaufen","sourceExcerpt":"Milch kaufen","summary":["Milch einkaufen"],"payload":{"tags":["Einkauf"]}}
   ]
 }
@@ -72,8 +74,8 @@ Eingabe: "Projektmeeting morgen: Budget-Review mit Anna, danach Demo für den Ku
 Ausgabe:
 {
   "entries": [
-    {"category":"EVENT","title":"Projektmeeting morgen mit Anna – Budget-Review","sourceExcerpt":"Projektmeeting morgen: Budget-Review mit Anna","summary":["Teilnehmerin: Anna","Thema: Budget-Review"],"payload":{"date":"${tomorrowIso}"}},
-    {"category":"TASK","title":"Kunden-Demo vorbereiten und Slides bis 17 Uhr fertigstellen","sourceExcerpt":"danach Demo für den Kunden vorbereiten, Slides fertig bis 17 Uhr","summary":["Demo für Kunden vorbereiten","Slides bis 17 Uhr abschließen"],"payload":{"date":"${tomorrowIso}","startTime":"17:00","endTime":"17:30"}}
+    {"category":"EVENT","title":"Projektmeeting mit Anna – Budget-Review","sourceExcerpt":"Projektmeeting morgen: Budget-Review mit Anna","summary":["Teilnehmerin: Anna","Thema: Budget-Review"],"payload":{"date":"${tomorrowIso}"}},
+    {"category":"TASK","title":"Kunden-Demo vorbereiten und Slides fertigstellen","sourceExcerpt":"danach Demo für den Kunden vorbereiten, Slides fertig bis 17 Uhr","summary":["Demo für Kunden vorbereiten","Slides bis 17 Uhr abschließen"],"payload":{"date":"${tomorrowIso}","startTime":"17:00","endTime":"17:30"}}
   ]
 }
 
@@ -81,7 +83,7 @@ Eingabe: "Meeting von 9 bis 11"
 Ausgabe:
 {
   "entries": [
-    {"category":"EVENT","title":"Meeting von 9 bis 11 Uhr","sourceExcerpt":"Meeting von 9 bis 11","summary":["Heute von 9 bis 11 Uhr"],"payload":{"date":"${todayIso}","startTime":"09:00","endTime":"11:00"}}
+    {"category":"EVENT","title":"Meeting","sourceExcerpt":"Meeting von 9 bis 11","summary":["Heute von 9 bis 11 Uhr"],"payload":{"date":"${todayIso}","startTime":"09:00","endTime":"11:00"}}
   ]
 }
 
