@@ -1,10 +1,6 @@
 import { CalendarDays } from 'lucide-react';
-import { useState } from 'react';
-import { transcribeAudio } from '../features/braindump/services/processBrainDump';
-import { EntryList, InputSection } from '../features/braindump/views';
-import { useEntries, useIsProcessing, useSetProcessing, useSubmitText } from '../hooks/braindumpSelectors';
-import { useErrorToast, useSuccessToast } from '../hooks/useErrorToast';
-import { useVoiceRecording } from '../hooks/useVoiceRecording';
+import { EntryList } from '../features/braindump/views';
+import { useEntries } from '../hooks/braindumpSelectors';
 
 const DASHBOARD_ROOT_CLASS_NAME = ['flex', 'h-dvh', 'flex-col', 'bg-background'].join(' ');
 const DASHBOARD_HEADER_CLASS_NAME = ['shrink-0', 'border-b', 'bg-background'].join(' ');
@@ -24,43 +20,7 @@ const DASHBOARD_MAIN_CLASS_NAME = ['flex-1', 'overflow-y-auto'].join(' ');
 const DASHBOARD_MAIN_INNER_CLASS_NAME = ['mx-auto', 'w-full', 'max-w-3xl', 'px-4', 'py-4', 'pb-36'].join(' ');
 
 export const BrainDumpDashboard = ({ onOpenTimeline }: Readonly<{ onOpenTimeline: () => void }>) => {
-    const [textValue, setTextValue] = useState('');
     const entries = useEntries();
-    const { status, toggleRecording } = useVoiceRecording((blob) => {
-        handleTranscription(blob);
-    });
-    const isProcessing = useIsProcessing();
-    const buttonStatus = isProcessing ? 'processing' : status;
-    const submitText = useSubmitText();
-    const setProcessing = useSetProcessing();
-    const showErrorToast = useErrorToast();
-    const showSuccessToast = useSuccessToast();
-
-    const handleTextSubmit = async () => {
-        if (!textValue.trim()) return;
-
-        try {
-            await submitText(textValue);
-            setTextValue('');
-            showSuccessToast('Eintrag erfolgreich strukturiert und gespeichert.');
-        } catch {
-            showErrorToast('Beim Strukturieren ist etwas schiefgelaufen. Bitte versuche es gleich erneut.');
-        }
-    };
-
-    const handleTranscription = async (blob: Blob) => {
-        setProcessing(true);
-
-        try {
-            const transcript = await transcribeAudio(blob);
-            setTextValue(transcript);
-            showSuccessToast('Transkription erfolgreich erstellt.');
-        } catch (error) {
-            showErrorToast(error);
-        } finally {
-            setProcessing(false);
-        }
-    };
 
     return (
         <div className={DASHBOARD_ROOT_CLASS_NAME}>
@@ -83,16 +43,6 @@ export const BrainDumpDashboard = ({ onOpenTimeline }: Readonly<{ onOpenTimeline
                     <EntryList entries={entries} />
                 </div>
             </main>
-
-            <InputSection
-                textValue={textValue}
-                onTextChange={setTextValue}
-                onTextSubmit={handleTextSubmit}
-                status={buttonStatus}
-                onVoiceClick={toggleRecording}
-                disabled={isProcessing}
-            />
         </div>
     );
 };
-

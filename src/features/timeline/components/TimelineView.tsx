@@ -29,7 +29,7 @@ function formatNavLabel(dateStr: string, todayStr: string): string {
 
 // ─── Class name constants ─────────────────────────────────────────────────────
 
-const VIEW = ['flex', 'min-h-dvh', 'flex-col', 'bg-background'].join(' ');
+const VIEW = ['flex', 'h-dvh', 'flex-col', 'bg-background'].join(' ');
 const HEADER = ['shrink-0', 'border-b', 'bg-background', 'sticky', 'top-0', 'z-10'].join(' ');
 // Row 1: back + current date label + actions
 const HEADER_TOP = [
@@ -49,7 +49,7 @@ const CURRENT_DATE = [
   'text-sm', 'font-semibold', 'text-center', 'select-none',
 ].join(' ');
 const MAIN = ['flex-1', 'overflow-y-auto'].join(' ');
-const MAIN_INNER = ['mx-auto', 'w-full', 'max-w-3xl', 'px-4', 'py-4'].join(' ');
+const MAIN_INNER = ['mx-auto', 'w-full', 'max-w-3xl', 'px-4', 'py-4', 'pb-36'].join(' ');
 const HEADER_ACTIONS = ['flex', 'items-center', 'gap-1'].join(' ');
 const JETZT_BTN = [
   'flex', 'items-center', 'gap-1', 'px-2', 'h-8', 'rounded-lg', 'shrink-0',
