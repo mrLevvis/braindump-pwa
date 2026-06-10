@@ -1,4 +1,7 @@
 import { CalendarDays } from 'lucide-react';
+import { useCategoryFilterStore } from '../features/braindump/store/CategoryFilterStore';
+import { applyCategoryFilter } from '../features/braindump/utils/applyCategoryFilter';
+import { CategoryFilterTabs } from '../features/braindump/views/CategoryFilterTabs';
 import { EntryList } from '../features/braindump/views';
 import { useEntries } from '../hooks/braindumpSelectors';
 
@@ -20,7 +23,12 @@ const DASHBOARD_MAIN_CLASS_NAME = ['flex-1', 'overflow-y-auto'].join(' ');
 const DASHBOARD_MAIN_INNER_CLASS_NAME = ['mx-auto', 'w-full', 'max-w-3xl', 'px-4', 'py-4', 'pb-36'].join(' ');
 
 export const BrainDumpDashboard = ({ onOpenTimeline }: Readonly<{ onOpenTimeline: () => void }>) => {
-    const entries = useEntries();
+    const allEntries = useEntries();
+    const activeCategories = useCategoryFilterStore(s => s.activeCategories);
+    const toggleCategory   = useCategoryFilterStore(s => s.toggleCategory);
+    const clearFilter      = useCategoryFilterStore(s => s.clearFilter);
+
+    const entries = applyCategoryFilter(allEntries, activeCategories);
 
     return (
         <div className={DASHBOARD_ROOT_CLASS_NAME}>
@@ -40,7 +48,14 @@ export const BrainDumpDashboard = ({ onOpenTimeline }: Readonly<{ onOpenTimeline
 
             <main className={DASHBOARD_MAIN_CLASS_NAME}>
                 <div className={DASHBOARD_MAIN_INNER_CLASS_NAME}>
-                    <EntryList entries={entries} />
+                    <CategoryFilterTabs
+                        activeCategories={activeCategories}
+                        onToggle={toggleCategory}
+                        onClear={clearFilter}
+                    />
+                    <div className="mt-4">
+                        <EntryList entries={entries} />
+                    </div>
                 </div>
             </main>
         </div>
