@@ -1,9 +1,20 @@
-import type { KeyboardEvent } from 'react';
-import { Input } from './input';
+import { useEffect } from 'react';
+import type { KeyboardEvent, ChangeEvent } from 'react';
+import { cn } from '@/lib/utils';
+import { useAutosizeTextarea } from '@/hooks/useAutosizeTextarea';
 
-/* -------------------------------------------------------------------------- */
-/*                                   Props                                    */
-/* -------------------------------------------------------------------------- */
+const DEFAULT_PLACEHOLDER = 'Schreibe einen Gedanken...';
+const MAX_HEIGHT_VH = 30;
+
+const TEXTAREA_CLASS_NAME = [
+  'min-w-0', 'flex-1',
+  'min-h-9', 'resize-none',
+  'rounded-4xl', 'border', 'border-input', 'bg-background',
+  'px-3', 'py-1', 'text-base', 'shadow-sm', 'transition-colors', 'outline-none',
+  'placeholder:text-muted-foreground',
+  'focus-visible:border-ring', 'focus-visible:ring-3', 'focus-visible:ring-ring/30',
+  'disabled:cursor-not-allowed', 'disabled:opacity-50', 'md:text-sm',
+].join(' ');
 
 interface TextInputProps {
   value: string;
@@ -11,18 +22,8 @@ interface TextInputProps {
   onSubmit: () => void;
   placeholder?: string;
   disabled?: boolean;
+  className?: string;
 }
-
-/* -------------------------------------------------------------------------- */
-/*                              Styling Tokens                                */
-/* -------------------------------------------------------------------------- */
-
-const DEFAULT_PLACEHOLDER = 'Schreibe einen Gedanken...';
-const TEXT_INPUT_CLASS_NAME = ['min-w-0', 'flex-1'].join(' ');
-
-/* -------------------------------------------------------------------------- */
-/*                              UI Component                                  */
-/* -------------------------------------------------------------------------- */
 
 export function TextInput({
   value,
@@ -30,27 +31,36 @@ export function TextInput({
   onSubmit,
   placeholder,
   disabled = false,
+  className,
 }: Readonly<TextInputProps>) {
+  const maxHeightPx = window.innerHeight * (MAX_HEIGHT_VH / 100);
+  const { ref, resize } = useAutosizeTextarea(maxHeightPx);
   const resolvedPlaceholder = placeholder ?? DEFAULT_PLACEHOLDER;
 
-  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key !== 'Enter') return;
+  // Resize when value changes externally (e.g. cleared after submit).
+  useEffect(() => { resize(); }, [value, resize]);
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key !== 'Enter' || event.shiftKey) return;
+    event.preventDefault();
     if (!disabled && value.trim()) onSubmit();
   };
 
-  const handleInputChange = (nextValue: string) => {
-    onChange(nextValue);
+  const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    onChange(e.target.value);
+    resize();
   };
 
   return (
-    <Input
-      type="text"
+    <textarea
+      ref={ref}
+      rows={1}
       value={value}
-      onChange={(event) => handleInputChange(event.target.value)}
+      onChange={handleChange}
       onKeyDown={handleKeyDown}
       placeholder={resolvedPlaceholder}
       disabled={disabled}
-      className={TEXT_INPUT_CLASS_NAME}
+      className={cn(TEXTAREA_CLASS_NAME, className)}
     />
   );
 }
