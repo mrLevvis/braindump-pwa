@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { shiftDate, todayLocal } from '../../../lib/dateUtils';
+import { CATEGORY_STYLES } from '../../braindump/categoryStyles';
+import type { EntryCategory } from '../../braindump/types';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -7,6 +9,7 @@ interface DayTabsProps {
   selectedDate: string;
   windowRadiusDays: number;
   onSelectDay: (date: string) => void;
+  markers: ReadonlyMap<string, readonly EntryCategory[]>;
 }
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
@@ -41,10 +44,11 @@ const TAB_BASE = [
 
 const TAB_ACTIVE = [TAB_BASE, 'bg-primary text-primary-foreground'].join(' ');
 const TAB_INACTIVE = [TAB_BASE, 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'].join(' ');
+const TAB_INACTIVE_TODAY = [TAB_INACTIVE, 'ring-1 ring-primary/60'].join(' ');
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function DayTabs({ selectedDate, windowRadiusDays, onSelectDay }: Readonly<DayTabsProps>) {
+export function DayTabs({ selectedDate, windowRadiusDays, onSelectDay, markers }: Readonly<DayTabsProps>) {
   const today = todayLocal();
   const activeRef = useRef<HTMLButtonElement>(null);
 
@@ -65,13 +69,16 @@ export function DayTabs({ selectedDate, windowRadiusDays, onSelectDay }: Readonl
           const isActive = date === selectedDate;
           const isToday = date === today;
           const { weekday, day } = formatTab(date);
+          const categoryDots = markers.get(date) ?? [];
+
+          const tabClass = isActive ? TAB_ACTIVE : isToday ? TAB_INACTIVE_TODAY : TAB_INACTIVE;
 
           return (
             <button
               key={date}
               ref={isActive ? activeRef : undefined}
               type="button"
-              className={isActive ? TAB_ACTIVE : TAB_INACTIVE}
+              className={tabClass}
               onClick={() => onSelectDay(date)}
               aria-label={`${date}${isToday ? ' (heute)' : ''}`}
               aria-pressed={isActive}
@@ -82,11 +89,19 @@ export function DayTabs({ selectedDate, windowRadiusDays, onSelectDay }: Readonl
               <span className={['text-sm leading-none', isActive ? 'font-bold' : 'font-semibold'].join(' ')}>
                 {day}
               </span>
-              {isToday && (
-                <span
-                  className={['h-1 w-1 rounded-full', isActive ? 'bg-primary-foreground' : 'bg-primary'].join(' ')}
-                  aria-hidden="true"
-                />
+              {categoryDots.length > 0 && (
+                <span className="flex items-center gap-0.5" aria-hidden="true">
+                  {categoryDots.map(cat => (
+                    <span
+                      key={cat}
+                      className={[
+                        'h-1.5 w-1.5 rounded-full',
+                        isActive ? 'opacity-75' : '',
+                        CATEGORY_STYLES[cat].accentBg,
+                      ].join(' ')}
+                    />
+                  ))}
+                </span>
               )}
             </button>
           );

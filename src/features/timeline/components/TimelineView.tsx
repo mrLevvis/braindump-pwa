@@ -3,6 +3,7 @@ import { ArrowLeft, Clock } from 'lucide-react';
 import { EntryDetailPanel } from '../../braindump/views/EntryDetailPanel';
 import {
   useDatedTimelessEntries,
+  useDayMarkers,
   useGoToToday,
   useSelectedDate,
   useSelectedDayTimedEntries,
@@ -80,6 +81,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
   const setSelectedDate = useSetSelectedDate();
   const timedEntries = useSelectedDayTimedEntries();
   const datedTimeless = useDatedTimelessEntries();
+  const dayMarkers = useDayMarkers();
 
   const now = useNow();
   const todayStr = todayLocal();
@@ -154,6 +156,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
             selectedDate={selectedDate}
             windowRadiusDays={30}
             onSelectDay={setSelectedDate}
+            markers={dayMarkers}
           />
         </div>
       </header>
