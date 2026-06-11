@@ -10,17 +10,27 @@ eingerichtet wird: CLI installieren, Keys besorgen, deployen, testen.
 
 ## 0. Überblick: Wie hängt alles zusammen?
 
-Der KI-Anbieter (Groq) ist hinter einer Supabase Edge Function versteckt
+Der KI-Anbieter (Groq) ist hinter Supabase Edge Functions versteckt
 ("BFF" / Sicherheitsschicht). Der Groq-Key liegt **nur in der Cloud** und
-verlässt sie nie. Ablauf eines Requests:
+verlässt sie nie.
 
+**Ingest-Pfad** (Text/Audio → strukturierte Entries):
 ```
-Frontend  --(Text/Audio)-->  Edge Function  --(Key aus Secrets)-->  Groq
+Frontend  --(Text/Audio)-->  process-brain-dump  --(Key aus Secrets)-->  Groq
                                    |
                      validiert jeden Entry im Batch
                      vergibt captureId (UUID) serverseitig
                                    |
 Frontend  <--({ captureId, entries: StructuredEntry[] })-----+
+```
+
+**Priorisierungs-Pfad** (on-demand, kein DB-Write):
+```
+Frontend  --({ tasks: [{id, title, summary}] })-->  prioritize-tasks  --> Groq
+                                                          |
+                                          gibt nur IDs zurück (ephemer)
+                                                          |
+Frontend  <--({ orderedTaskIds: string[] })-------------+
 ```
 
 ---
@@ -114,14 +124,17 @@ $env:SUPABASE_ACCESS_TOKEN="DEIN_SUPABASE_TOKEN"
 
 ---
 
-## 5. Edge Function anlegen
+## 5. Edge Functions anlegen
 
 ```powershell
 supabase functions new process-brain-dump
+supabase functions new prioritize-tasks
 ```
 
-Erzeugt den Ordner `supabase/functions/process-brain-dump/`.
-Darin entsteht die Datei-Struktur (siehe Abschnitt 9).
+Erzeugt die Ordner `supabase/functions/process-brain-dump/` und
+`supabase/functions/prioritize-tasks/`.
+Beide teilen sich denselben Groq-Key (Abschnitt 6).
+Datei-Struktur: siehe Abschnitt 9.
 
 ---
 
@@ -137,33 +150,41 @@ supabase secrets set GROQ_API_KEY=DEIN_GROQ_KEY     # aus Schritt 3d
 
 ---
 
-## 7. Function deployen
+## 7. Functions deployen
 
 ```powershell
+# Ingest-Pipeline
 supabase functions deploy process-brain-dump --no-verify-jwt
+
+# Priorisierung (on-demand, kein DB-Write)
+supabase functions deploy prioritize-tasks --no-verify-jwt
 ```
 
-- `--no-verify-jwt`: schaltet die Login-Pflicht für die Function ab
-  (passend zum MVP **ohne Auth**). Für eine öffentliche App später anders lösen.
+- `--no-verify-jwt`: schaltet die Login-Pflicht ab (passend zum MVP **ohne Auth**).
 - Die Warnung **"Docker is not running" kann ignoriert werden** – Docker braucht
   man nur fürs *lokale* Testen, nicht fürs Deployen in die Cloud.
 
-> **WICHTIG:** Nach jeder Änderung an einem Secret (Abschnitt 6) muss die Function
-> **neu deployed** werden, sonst zieht sie den neuen Wert nicht!
+> **WICHTIG:** Nach jeder Änderung an einem Secret (Abschnitt 6) müssen **beide**
+> Functions neu deployed werden, sonst ziehen sie den neuen Wert nicht!
 
 ---
 
-## 8. Function testen (PowerShell)
+## 8. Functions testen (PowerShell)
 
 PowerShell ist bei `curl` zickig → wir nutzen `Invoke-RestMethod`.
 PowerShell versteckt bei Fehlern den Antwort-Body → der `try/catch` macht ihn
 sichtbar (zeigt das `details`-Feld mit dem echten Fehler).
 
+Den anon key einmalig setzen (aus Abschnitt 3c / `.env.local`):
+
 ```powershell
-$headers = @{
-  "apikey" = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvdWJhemZvanR6c2ZweHJ0eHFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1MjY4OTIsImV4cCI6MjA5NTEwMjg5Mn0.0EdzBvgPFdEBr3U8f5aP95jiqFGxsXoU2Ko2JRhBojY"
-  "Content-Type" = "application/json"
-}
+$anonKey = $env:VITE_SUPABASE_ANON_KEY   # oder direkt als String eintragen
+$headers = @{ "apikey" = $anonKey; "Content-Type" = "application/json" }
+```
+
+### 8a. process-brain-dump
+
+```powershell
 $body = '{"text": "Ich muss morgen um 15 Uhr Brot kaufen"}'
 
 try {
@@ -175,7 +196,7 @@ try {
 }
 ```
 
-### Erwartete Antwort (Erfolg)
+**Erwartete Antwort:**
 ```json
 {
   "captureId": "550e8400-e29b-41d4-a716-446655440000",
@@ -194,38 +215,77 @@ try {
 Enthält ein Dump mehrere eigenständige Gedanken, gibt die Function entsprechend mehrere
 Objekte im `entries`-Array zurück — alle mit derselben `captureId`.
 
-### Fehler-Codes als Wegweiser
-| Code | Bedeutung | Wo suchen |
-| :--- | :--- | :--- |
-| **401** | anon key falsch/fehlt **ODER** "Invalid API Key" von Groq | Schritt 3c bzw. 3d/6 |
-| **400** | Request-Body kaputt oder Feld `text` fehlt | Test-Body prüfen |
-| **500** | `GROQ_API_KEY` nicht in den Secrets angekommen | Schritt 6 + neu deployen (7) |
-| **502** | Groq selbst meckert (Key, Modellname, ...) | `details`-Feld lesen |
+---
 
-> **Logs ansehen:** Dashboard → Functions → `process-brain-dump` → Tab **Logs**.
-> Die "booted"-Zeile ist nur der Start; der echte Fehler steht in einer Zeile
-> mit `level: error` und beginnt mit "Groq API request failed:".
+### 8b. prioritize-tasks
+
+```powershell
+$body = @'
+{
+  "tasks": [
+    { "id": "id-1", "title": "Steuererklärung einreichen", "summary": ["Deadline heute Abend"] },
+    { "id": "id-2", "title": "Milch kaufen", "summary": ["Supermarkt"] },
+    { "id": "id-3", "title": "Kritischen Bug fixen", "summary": ["Kunde hat gemeldet", "Prod-System"] }
+  ]
+}
+'@
+
+try {
+  Invoke-RestMethod -Uri "https://woubazfojtzsfpxrtxqa.supabase.co/functions/v1/prioritize-tasks" -Method Post -Headers $headers -Body $body
+} catch {
+  $stream = $_.Exception.Response.GetResponseStream()
+  $reader = New-Object System.IO.StreamReader($stream)
+  Write-Host $reader.ReadToEnd()
+}
+```
+
+**Erwartete Antwort:**
+```json
+{ "orderedTaskIds": ["id-3", "id-1", "id-2"] }
+```
+
+IDs, die im Input nicht enthalten waren, werden von der Function herausgefiltert
+(kein Halluzinations-Risiko).
 
 ---
 
-## 9. Datei-Struktur der Function
+### Fehler-Codes als Wegweiser (beide Functions)
+| Code | Bedeutung | Wo suchen |
+| :--- | :--- | :--- |
+| **401** | anon key falsch/fehlt **ODER** "Invalid API Key" von Groq | Schritt 3c bzw. 3d/6 |
+| **400** | Request-Body kaputt oder Pflichtfeld fehlt | Test-Body prüfen |
+| **500** | `GROQ_API_KEY` nicht in den Secrets angekommen | Schritt 6 + neu deployen (7) |
+| **502** | Groq selbst meckert (Key, Modellname, ...) | `details`-Feld lesen |
+
+> **Logs ansehen:** Dashboard → Functions → jeweilige Function → Tab **Logs**.
+> Die "booted"-Zeile ist nur der Start; der echte Fehler steht in einer Zeile
+> mit `level: error`.
+
+---
+
+## 9. Datei-Struktur der Functions
 
 ```
 supabase/
 └── functions/
     ├── _shared/
-    │   ├── contract.ts          # KI-Vertrag: StructuredEntry, IngestResponse, IngestResult, ENTRY_CATEGORIES
+    │   ├── contract.ts          # KI-Vertrag: StructuredEntry, IngestResponse, ENTRY_CATEGORIES
     │   └── cors.ts              # CORS-Header (damit der Browser zugreifen darf)
-    └── process-brain-dump/
-        ├── index.ts             # Einstiegspunkt: Request -> Routing -> Validierungs-Schleife -> { captureId, entries }
-        ├── systemPrompt.ts      # System-Prompt (Multi-Entry, entries[] + sourceExcerpt)
-        ├── structureText.ts     # Text  -> Groq (Llama) -> IngestResponse
-        └── transcribeAudio.ts   # Audio -> Groq (Whisper) -> Text   [Audio-Pfad]
+    ├── process-brain-dump/
+    │   ├── index.ts             # Einstiegspunkt: Text/Audio -> Routing -> { captureId, entries }
+    │   ├── systemPrompt.ts      # System-Prompt (Multi-Entry, entries[] + sourceExcerpt)
+    │   ├── structureText.ts     # Text  -> Groq (Llama) -> IngestResponse
+    │   └── transcribeAudio.ts   # Audio -> Groq (Whisper) -> Text   [Audio-Pfad]
+    └── prioritize-tasks/
+        └── index.ts             # { tasks } -> Groq (Llama) -> { orderedTaskIds }  [kein DB-Write]
 ```
 
-**Warum `_shared/`?** Die Edge Function läuft auf Deno (Server) und kann nicht aus
+**Warum `_shared/`?** Die Edge Functions laufen auf Deno (Server) und können nicht aus
 dem Frontend-`src/` importieren. Geteilte Typen liegen daher in `_shared/`
 (der Unterstrich sagt der CLI: "nicht als eigene Function deployen").
+
+**`prioritize-tasks` ist bewusst schlank:** keine Validierungs-Schleife, kein DB-Write,
+nur IDs zurück. Unbekannte IDs aus der LLM-Antwort werden serverseitig herausgefiltert.
 
 ---
 

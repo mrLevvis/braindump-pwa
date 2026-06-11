@@ -13,7 +13,10 @@ export interface BrainDumpState {
   entries: BrainDumpEntry[];
   isRecording: boolean;
   isProcessing: boolean;
+  isPrioritizing: boolean;
   pendingPreview: IngestPreview | null;
+  /** Ephemere Priorisierung: dateIso → geordnete Task-IDs. Nicht in DB persistiert. */
+  prioritizedDays: Record<string, readonly string[]>;
   setRecording: (status: boolean) => void;
   setProcessing: (status: boolean) => void;
   submitText: (text: string) => Promise<void>;
@@ -22,6 +25,12 @@ export interface BrainDumpState {
   deleteEntry: (id: string) => Promise<DeleteResult>;
   toggleTaskCompleted: (id: string, completed: boolean) => Promise<ToggleResult>;
   updateEntryList: () => void;
+  prioritizeDayTasks: (date: string, tasks: readonly BrainDumpEntry[]) => Promise<void>;
+}
+
+/** Ergebnis der LLM-Priorisierung: geordnete Liste von Entry-IDs. */
+export interface PriorityResult {
+  orderedTaskIds: string[];
 }
 
 /**

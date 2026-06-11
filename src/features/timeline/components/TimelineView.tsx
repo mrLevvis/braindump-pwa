@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Clock, ZoomIn, ZoomOut } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowLeft, Clock, Sparkles, ZoomIn, ZoomOut } from 'lucide-react';
 import { EntryDetailPanel } from '../../braindump/views/EntryDetailPanel';
 import { MIN_PX_PER_HOUR, MAX_PX_PER_HOUR } from '../getBlockGeometry';
 import { useZoomStore } from '../store';
@@ -12,7 +12,7 @@ import {
   useSetSelectedDate,
   useTimelineBuckets,
 } from '../../../hooks/timelineSelectors';
-import { useEntries, useToggleTaskCompleted } from '../../../hooks/braindumpSelectors';
+import { useEntries, useIsPrioritizing, usePrioritizeDayTasks, usePrioritizedDays, useToggleTaskCompleted } from '../../../hooks/braindumpSelectors';
 import { useNow } from '../../../hooks/useNow';
 import { todayLocal } from '../../../lib/dateUtils';
 import { DayGrid } from './DayGrid';
@@ -62,6 +62,9 @@ const JETZT_BTN = [
   'focus-visible:outline-none', 'focus-visible:ring-2', 'focus-visible:ring-ring',
 ].join(' ');
 
+const PRIO_BTN_ACTIVE = [ICON_BTN, 'text-primary'].join(' ');
+const PRIO_BTN_SPINNING = 'animate-spin';
+
 // ─── TimelineView (Container) ─────────────────────────────────────────────────
 
 interface Props {
@@ -84,6 +87,24 @@ export function TimelineView({ onBack }: Readonly<Props>) {
   const timedEntries = useSelectedDayTimedEntries();
   const datedTimeless = useDatedTimelessEntries();
   const dayMarkers = useDayMarkers();
+
+  const isPrioritizing = useIsPrioritizing();
+  const prioritizeDayTasks = usePrioritizeDayTasks();
+  const prioritizedDays = usePrioritizedDays();
+  const prioritizedIds = prioritizedDays[selectedDate];
+  const hasPriority = prioritizedIds !== undefined;
+
+  // Sort allDay entries: TASKs in LLM-determined order, then non-TASKs in original order.
+  const sortedDatedTimeless = useMemo(() => {
+    if (!prioritizedIds) return datedTimeless;
+    const idOrder = new Map(prioritizedIds.map((id, i) => [id, i]));
+    const tasks = datedTimeless.filter(e => e.category === 'TASK');
+    const others = datedTimeless.filter(e => e.category !== 'TASK');
+    const sortedTasks = [...tasks].sort(
+      (a, b) => (idOrder.get(a.id) ?? Infinity) - (idOrder.get(b.id) ?? Infinity),
+    );
+    return [...sortedTasks, ...others];
+  }, [datedTimeless, prioritizedIds]);
 
   const pxPerHour    = useZoomStore(s => s.pxPerHour);
   const setPxPerHour = useZoomStore(s => s.setPxPerHour);
@@ -141,6 +162,16 @@ export function TimelineView({ onBack }: Readonly<Props>) {
           <div className={HEADER_ACTIONS}>
             <button
               type="button"
+              className={hasPriority ? PRIO_BTN_ACTIVE : ICON_BTN}
+              onClick={() => prioritizeDayTasks(selectedDate, datedTimeless)}
+              disabled={isPrioritizing}
+              aria-label="Tasks des Tages priorisieren"
+              title="KI-Priorisierung"
+            >
+              <Sparkles className={['h-4 w-4', isPrioritizing ? PRIO_BTN_SPINNING : ''].join(' ')} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
               className={ICON_BTN}
               onClick={() => setPxPerHour(pxPerHour - ZOOM_STEP)}
               disabled={pxPerHour <= MIN_PX_PER_HOUR}
@@ -190,7 +221,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
           <DayGrid
             date={selectedDate}
             entries={timedEntries}
-            allDay={datedTimeless}
+            allDay={sortedDatedTimeless}
             isToday={isToday}
             now={now}
             pxPerHour={pxPerHour}

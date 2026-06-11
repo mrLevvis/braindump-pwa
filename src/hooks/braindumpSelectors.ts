@@ -80,3 +80,15 @@ export function useConfirmIngest() {
 export function useDiscardIngest() {
     return useBrainDumpStore((s) => s.discardIngest);
 }
+
+export function useIsPrioritizing() {
+    return useBrainDumpStore((s) => s.isPrioritizing);
+}
+
+export function usePrioritizedDays() {
+    return useBrainDumpStore((s) => s.prioritizedDays);
+}
+
+export function usePrioritizeDayTasks() {
+    return useBrainDumpStore((s) => s.prioritizeDayTasks);
+}

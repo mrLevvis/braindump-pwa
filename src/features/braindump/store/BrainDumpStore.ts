@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { BrainDumpState, DeleteResult, EntryDraft, IngestPreview, InsertEntry, ToggleResult } from "../types";
 import { deleteEntry as deleteEntryFromApi, fetchEntries, insertEntries, toggleTaskCompleted as toggleApi } from "../services";
 import { processText } from "../services/processBrainDump";
+import { prioritizeDayTasks as prioritizeApi } from "../services/prioritizeTasks";
 import { showErrorToast } from "../../../hooks/useErrorToast";
 
 /**
@@ -13,7 +14,9 @@ export const useBrainDumpStore = create<BrainDumpState>()((set) => ({
     entries: [],
     isRecording: false,
     isProcessing: false,
+    isPrioritizing: false,
     pendingPreview: null,
+    prioritizedDays: {},
 
     // --- ACTIONS (MUTATIONS) ---
     setRecording: (status: boolean) => {
@@ -86,6 +89,18 @@ export const useBrainDumpStore = create<BrainDumpState>()((set) => ({
         }
 
         return result;
+    },
+
+    prioritizeDayTasks: async (date, tasks) => {
+        set(() => ({ isPrioritizing: true }));
+        try {
+            const result = await prioritizeApi(tasks);
+            set(s => ({ prioritizedDays: { ...s.prioritizedDays, [date]: result.orderedTaskIds } }));
+        } catch (e) {
+            showErrorToast(`Priorisierung fehlgeschlagen: ${(e as Error).message}`);
+        } finally {
+            set(() => ({ isPrioritizing: false }));
+        }
     },
 
     toggleTaskCompleted: async (id: string, completed: boolean): Promise<ToggleResult> => {

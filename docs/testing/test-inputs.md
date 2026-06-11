@@ -1,174 +1,3 @@
-/
-Claude hat die Antwort abgeschlossen
-
-D1:
-
-# **Commit-Typ**
-feat(ingest)!
-# **Ziel**
-Ein BrainDump, der mehrere unabhängige Dinge enthält, erzeugt mehrere flache Entries statt eines einzelnen. Provenienz (welche Entries stammen aus demselben Dump) und Original-Bezug bleiben erhalten, ohne Eltern-/Kind-Hierarchie.
-# **Festlegung**
-- Mehrere Entries werden **flach** angelegt — keine Ober-/Sub-Dump-Tabelle (YAGNI: kein View konsumiert „alle Entries eines Dumps gemeinsam").
-- Die Edge Function gibt ein Entry-Array zurück; das Strukturieren in N Entries passiert im bestehenden LLM-Pass (Ingest-Boundary, kein Extra-Call).
-- Jeder Entry erhält bei Erstellung eine gemeinsame captureId (eine UUID pro Dump) und einen eigenen sourceExcerpt (der für diesen Entry relevante Abschnitt des Transkripts).
-- Persistenz: submitText schreibt N Zeilen in einer Operation; jede Zeile trägt capture_id und source_excerpt.
-- Validierung (Kategorie-Enum, C1-Zeitkontrakte) bleibt an der Ingest-Boundary und gilt pro Entry.
-# **Akzeptanzkriterien**
-- [ ] Ein Dump mit zwei kategorisch verschiedenen Aussagen erzeugt zwei separate Entries.
-- [ ] Alle Entries eines Dumps teilen dieselbe captureId.
-- [ ] Jeder Entry besitzt einen nicht-leeren sourceExcerpt, der ein Ausschnitt des Originaltranskripts ist.
-- [ ] Die Edge Function gibt ein Array zurück (auch bei genau einem Entry → Array der Länge 1).
-- [ ] Ein ungültiger Entry im Batch führt zur Ablehnung dieses Entries gemäß bestehender Validierung, ohne valide Entries zu blockieren.
-- [ ] DB-Tabelle (braindump_entries__test) besitzt Spalten capture_id und source_excerpt.
-# **Schnittstelle (Skizze)**
-ts
-type CaptureId = string; // UUID, eine pro Dump
-interface StructuredEntry {
-  category: EntryCategory;
-  sourceExcerpt: string;
-  // bestehende kategorie-spezifische Felder (startTime/endTime etc.)
-}
-interface IngestResult {
-  captureId: CaptureId;
-  entries: StructuredEntry[];
-}
-
-# **Betroffene Dateien**
-Edge Function (supabase/functions/.../index.ts), _shared-Contract-Typ, Service-Layer (submitText), Store-Action, DB-Migration (braindump_entries__test), docs/edge-function-groq-setup.md.
-# **Definition of Done**
-Ein Dump „Morgen 10 Uhr Zahnarzt, und Milch kaufen" landet als zwei Entries (EVENT + TASK) in der DB, beide mit identischer capture_id und jeweils passendem source_excerpt.
-# **Abhängigkeiten**
-- Vorgänger: keiner (Contract-Fundament dieses Batches).
-- Auswirkungen: Breaking Change am Ingest-Contract — alle Consumer (Store, Views) müssen mit Array statt Einzel-Entry umgehen. D2 baut auf diesem Contract auf.
-
-_____________
-
-D2:
-
-# **Commit-Typ**
-feat(ingest)
-# **Ziel**
-Die KI erzeugt pro Entry ein stichpunktartiges Summary der wichtigsten Inhalte, damit man im DetailPanel die Kernpunkte erfasst, ohne den langen/wirren Originaltext zu lesen.
-# **Festlegung**
-- Das Summary entsteht im selben LLM-Strukturierungs-Pass wie der Entry — kein Extra-Call.
-- Bezugsbasis ist der sourceExcerpt des jeweiligen Entries (aus D1), **nicht** der gesamte Dump — jedes Summary bleibt auf seinen Entry begrenzt.
-- Typ: summary: string[] (eine Liste von Stichpunkten), Teil des Entry-Contracts.
-- Summary ist Pflichtfeld: mind. 1 Stichpunkt pro Entry (auch bei trivialen Einträgen). Leeres Array wird von `isValidEntry` abgelehnt.
-- Das DetailPanel rendert ausschließlich — keine Aufbereitungslogik im View.
-# **Akzeptanzkriterien**
-- [ ] Jeder Entry trägt ein summary-Feld vom Typ string[] mit mind. 1 Stichpunkt.
-- [ ] Das Summary referenziert nur Inhalte aus dem sourceExcerpt des Entries.
-- [ ] Das DetailPanel zeigt das Summary als Stichpunktliste an, wenn vorhanden.
-- [ ] Bei leerem Summary erscheint kein leerer Listen-Container im DetailPanel.
-- [ ] DB-Spalte für summary existiert (braindump_entries__test).
-# **Schnittstelle (Skizze)**
-ts
-interface StructuredEntry {
-  category: EntryCategory;
-  sourceExcerpt: string;
-  summary: string[];
-  // bestehende kategorie-spezifische Felder
-}
-
-# **Betroffene Dateien**
-Edge Function (Prompt + Output-Parsing), _shared-Contract-Typ, DB-Migration, DetailPanel-Komponente (src/features/braindump/...), docs/edge-function-groq-setup.md.
-# **Definition of Done**
-Ein langer, unstrukturierter Dump zeigt im DetailPanel 3–5 prägnante Stichpunkte, die den Kern des Original-Excerpts wiedergeben.
-# **Abhängigkeiten**
-- Vorgänger: **D1** (sourceExcerpt und Array-Contract müssen stehen).
-- Auswirkungen: erweitert denselben Edge-Function-Pass; keine weiteren Consumer betroffen.
-
-________
-
-Müssen wir diese beiden Ticket anhand des aktuallen Projektstands nochmal anpassen?
-12:11
-Identifizierte Vertragsmismatches und konkrete Implementierungshürden in beiden Tickets
-
-Ja, beide brauchen Anpassungen – D1 deutlich, D2 nur kosmetisch. Gegen den realen Code-Stand:
-D1 – muss angepasst werden
-
-1. Schnittstellen-Skizze ist falsch. Der reale Contract hat title + verschachteltes payload (startTime/endTime liegen in payload, nicht top-level). Deine Skizze wirft beides weg. Richtig:
-ts
-
-interface StructuredEntry {
-  category: EntryCategory;
-  title: string;
-  payload: EntryPayload;   // date/startTime/endTime/tags bleiben hier drin
-  sourceExcerpt: string;   // NEU
-}
-
-Sonst brichst du normalizeEntryContract und buildTimelineBuckets, die auf payload.date etc. bauen.
-
-2. Array-Return kollidiert mit response_format: json_object. Groq ist aktuell auf ein Objekt gezwungen (Prompt sagt explizit „EIN JSON-Objekt"). Ein nacktes Array geht im json_object-Mode nicht. Festlegung muss rein: Root bleibt Objekt → { "entries": [...] }, und systemPrompt.ts wird auf Multi-Entry umgeschrieben. Das ist der eigentliche Kern des Tickets und fehlt komplett.
-
-3. original_text vs. source_excerpt ungeklärt. Heute trägt jede Zeile den vollen Rohtext in original_text. Entscheide es explizit: original_text = voller Dump (Provenienz, auf allen N Zeilen identisch), source_excerpt = der Slice. Beide Spalten koexistieren – steht so nicht im Ticket.
-
-4. AK „ungültiger Entry blockiert valide nicht" widerspricht dem Ist-Verhalten. index.ts lehnt heute die ganze Antwort mit 502 ab. Partielle Akzeptanz = neue Verzweigungslogik. Für MVP YAGNI: ganzen Batch verwerfen, wenn ein Entry invalide ist (passt zum bestehenden Fail-Fast). Streich die AK oder schieb sie in ein späteres Ticket.
-
-5. Service-Signatur benennen. submitText nutzt heute insertEntry (Singular) und erwartet StructuredEntry. Mit D1: processText liefert IngestResult, insertEntry → insertEntries (Batch-Insert). Gehört in „Betroffene Dateien" namentlich rein, nicht nur „Service-Layer".
-D2 – nur eine Klärung
-
-title ist laut Contract bereits ein ~15-Wort-Summary-Satz. Dein neues summary: string[] überlappt damit begrifflich. Ergänze in der Festlegung die Abgrenzung: title = Überschrift (ein Satz), summary = Detail-Stichpunkte. Sonst baut die KI Redundanz. Rest passt – hängt sauber an D1s sourceExcerpt.
-
-Fazit: D1 inhaltlich überarbeiten (v.a. Punkte 1–2 sind blockierend), D2 nur ein Festlegungssatz. Soll ich D1 in deinem Ticket-Format neu fassen?
-
-schreib die beiden ticket nochmal für mich neu in markdownformat
-12:22
-Reorganisierte Tickets mit Korrektionen und formatierte als Markdown
-
-Beide Tickets neu gefasst. Kernänderungen ggü. deinen Originalen:
-
-D1 – StructuredEntry bleibt mit title + payload erhalten und wird nur um sourceExcerpt erweitert; Root ist { entries: [...] } wegen json_object-Mode; captureId serverseitig; original_text (voll) + source_excerpt (Slice) koexistieren; insertEntries-Batch; All-or-Nothing statt partieller Akzeptanz; systemPrompt.ts als betroffene Datei ergänzt.
-
-D2 – Festlegung + AK um die Abgrenzung title (Überschrift) vs. summary (Stichpunkte) ergänzt; Contract-Skizze auf den D1-Stand gezogen.
-Epic d tickets
-Dokument · MD 
-
-Wie ist es mit der Beschreibeung von EPIC D?
-
-# Beschreibung
-> Diese Epic erweitert die Ingest-Boundary von „ein Dump = ein Entry" zu „ein Dump = N angereicherte Entries". Ein BrainDump, der mehrere unabhängige Dinge enthält, wird im LLM-Pass in mehrere flache Entries zerlegt (gemeinsame captureId, eigener sourceExcerpt je Entry), und jeder Entry erhält ein stichpunktartiges KI-Summary seines relevanten Abschnitts. Alle Anreicherung passiert am Entstehungspunkt — die Views konsumieren nur.
-Enthält: D1 (Multi-Kategorie-Dump, Contract-Fundament, breaking) · D2 (KI-Summary pro Entry).
-14:04
-Verifizierte Epic-Beschreibung, identifizierte Minor-Ungenauigkeit bei captureId-Zuordnung
-
-Fast passend, ein Detail ist nach der D1-Überarbeitung leicht schief:
-
-„im LLM-Pass … zerlegt (gemeinsame captureId, eigener sourceExcerpt je Entry)" – die Klammer hängt grammatisch am LLM-Pass, aber die captureId wird laut neuem D1 serverseitig vergeben, nicht von der KI. Die KI liefert nur entries + sourceExcerpt. Das sollte sprachlich getrennt sein, sonst liest es sich wie ein KI-Output.
-
-Vorschlag:
-
-    Beschreibung
-
-    Diese Epic erweitert die Ingest-Boundary von „ein Dump = ein Entry" zu „ein Dump = N angereicherte Entries". Ein BrainDump mit mehreren unabhängigen Aussagen wird im LLM-Pass in mehrere flache Entries zerlegt — jeder mit eigenem sourceExcerpt und stichpunktartigem KI-Summary seines Abschnitts. Die gemeinsame captureId (Provenienz) wird serverseitig vergeben; der volle original_text bleibt auf jeder Zeile erhalten. Alle Anreicherung passiert am Entstehungspunkt — die Views konsumieren nur. Enthält: D1 (Multi-Kategorie-Dump, Contract-Fundament, breaking) · D2 (KI-Summary pro Entry).
-
-Sonst inhaltlich korrekt – „flache Entries", „am Entstehungspunkt anreichern, Views konsumieren nur" decken sich mit den Tickets.
-
-formuliere mir mal zum Testen so nen richtig messy BrainDump-Eintrag von nem User, der es gerade richtig eilig hat, gerade nicht tippen kann und deshalb reinspricht. Er spricht mehrere Sachen rein, die er einfach aus seinem Kopf bekommen möchte und speichern möchte.
-14:29
-
-„Ähm okay also… Montag, ne? Montag halb zehn, Steuerberater anrufen wegen der Abrechnung vom letzten Quartal. Und ich muss irgendwie noch — warte — Alina hat heute Abend Geburtstag, ich hab noch gar kein Geschenk, scheiße. Ach ja und Milch kaufen nicht vergessen, und Brot. Hmm, und ich wollte eigentlich noch aufschreiben dass ich die neue Projektstruktur komplett überdenken will, irgendwas mit Feature-Slicing, da hatte ich gestern Abend so ne Idee… ähm ja und Freitag 15 Uhr Zahnarzt, das stand irgendwo."
-
-Mach mir mal in markdownformat so ein paar Test-User-Einträge, die alle Szenarien der App-Nutzung bisher soweit abdecken
-14:38
-Orchestrierte umfassende Test-Szenarien für alle App-Funktionen
-
-6 Gruppen, 16 Test-Cases – decken folgendes ab:
-
-    TASK: undatiert (Off-Grid), datiert ohne Zeit, datiert + Uhrzeit, implizit heute
-    EVENT: explizite Zeitspanne, implizites Ende (+60 Min.), nur Datum
-    NOTE: zeitlos, mit Tags
-    Edge Cases: normalizeEntryContract in allen drei Trigger-Pfaden (EVENT→TASK, NOTE-Zeit-Strip, ungültige endTime)
-    Multi-Part Dumps (D1): zwei Kategorien, alle drei Kategorien, gleiche Kategorie mehrfach
-    Voice-Style: Single messy entry, das große Multi-Part-Monster von vorhin als Referenz
-
-6b kannst du direkt als Gesamt-Smoketest für D1 nach der Implementierung nutzen – wenn der korrekt fünf Entries mit identischer captureId erzeugt, ist der Happy Path durch.
-Test inputs
-Dokument · MD 
-
-
-Claude ist eine KI und kann Fehler machen. Bitte überprüfe die Antworten.
-Test inputs · MD
 # BrainDump – Test-Eingaben
  
 > **Heute:** 2026-06-07 (Sonntag)  
@@ -315,3 +144,59 @@ Test inputs · MD
 → `NOTE` Projektstruktur / Feature-Slicing überdenken  
 → `EVENT` Zahnarzt Freitag 15:00
 
+
+---
+
+## 7 · Priorisierung (feat: prioritization)
+
+> Button `Sparkles` in der Timeline-Ansicht, aktiver Tag. Testet die `prioritize-tasks`-Edge-Function + ephemäre Sortierung.
+
+### 7a – Fünf ungeordnete Tasks, klare Dringlichkeitsunterschiede
+
+**Setup:** Folgenden Dump ingesten, dann auf den entsprechenden Tag navigieren:
+> „Ich muss heute noch: Steuererklärung einreichen Deadline ist heute Abend, kurz Nespresso-Kapseln bestellen, den kritischen Bug im Prod-System fixen den der Kunde gemeldet hat, die Spülmaschine ausräumen, und den Quartalsbericht für das Meeting morgen früh fertigstellen.“
+
+**Erwartetes Ergebnis nach Ingest (5 `TASK`-Entries, undatiert oder heute):**  
+→ Steuererklärung einreichen (Deadline heute)  
+→ Nespresso-Kapseln bestellen  
+→ Kritischen Bug fixen  
+→ Spülmaschine ausräumen  
+→ Quartalsbericht fertigstellen  
+
+**Nach Klick auf Sparkles-Button:**  
+→ Reihenfolge ändert sich sichtbar (plausible Priorität: Bug > Steuererklärung > Quartalsbericht > Nespresso > Spülmaschine o.ä.)  
+→ Kein DB-Write (DevTools → Network: kein `INSERT`/`UPDATE` auf `braindump_entries__test`)  
+→ Button-Icon leuchtet blau (aktive Priorisierung für diesen Tag)
+
+**Nach Reload:**  
+→ Ursprüngliche Reihenfolge wiederhergestellt, Button-Icon wieder grau
+
+---
+
+### 7b – EVENTs und NOTEs bleiben unberührt
+
+**Setup:** Mix aus 3 Tasks + 1 Event + 1 Note auf demselben Tag (aus 5b oder manuell ingesten).
+
+**Nach Klick auf Sparkles:**  
+→ Nur die `TASK`-Entries werden neu sortiert  
+→ `EVENT`- und `NOTE`-Entries erscheinen unverändert am Ende der Ganztags-Liste  
+→ Kein Fehler im UI
+
+---
+
+### 7c – Ein einzelner Task (Trivialfall)
+
+**Setup:** Nur ein `TASK` für den aktiven Tag.
+
+**Nach Klick auf Sparkles:**  
+→ Kein Fehler, kein Flackern, Reihenfolge bleibt identisch
+
+---
+
+### 7d – Kein Task, nur EVENTs / NOTEs
+
+**Setup:** Aktiver Tag hat Entries, aber kein einziges `TASK`.
+
+**Nach Klick auf Sparkles:**  
+→ Button reagiert, kein Fehler, keine sichtbare Änderung  
+→ Edge Function wird **nicht** aufgerufen (Service gibt `{ orderedTaskIds: [] }` zurück, bevor er die Netzwerkanfrage macht)
