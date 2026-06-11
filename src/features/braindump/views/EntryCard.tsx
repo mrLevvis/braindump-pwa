@@ -43,7 +43,7 @@ const FOOTER_CLS = 'px-4 pt-0 text-[10px] text-muted-foreground';
 
 function SelectionIndicator({ isSelected }: Readonly<{ isSelected: boolean }>) {
   return (
-    <div className="pointer-events-none absolute top-3 left-3 z-10">
+    <div className="pointer-events-none absolute top-3 right-3 z-10">
       {isSelected
         ? <CheckCircle2 className="h-5 w-5 text-primary" />
         : <Circle className="h-5 w-5 text-muted-foreground/40" />}
