@@ -51,9 +51,10 @@ function handlePostgrestError<T>(message: string, error: PostgrestError | null, 
  * ------------------------------------------------------------------------------*/
 
 /** Raw DB row returned by Supabase — snake_case column names, nullable new columns. */
-type BrainDumpEntryRow = Omit<BrainDumpEntry, 'captureId' | 'sourceExcerpt'> & {
+type BrainDumpEntryRow = Omit<BrainDumpEntry, 'captureId' | 'sourceExcerpt' | 'completed'> & {
     capture_id?: string | null;
     source_excerpt?: string | null;
+    completed: boolean | null;
 };
 
 /**
@@ -67,8 +68,9 @@ export async function fetchEntries(): Promise<BrainDumpEntry[] | null> {
         .order('created_at', { ascending: false });
     const rows = handlePostgrestError<BrainDumpEntryRow[]>('Error fetching entries:', error, data as BrainDumpEntryRow[] | null);
     if (!rows) return null;
-    return rows.map(({ capture_id, source_excerpt, ...rest }) => ({
+    return rows.map(({ capture_id, source_excerpt, completed, ...rest }) => ({
         ...rest,
+        completed: completed ?? false,
         captureId: capture_id ?? undefined,
         sourceExcerpt: source_excerpt ?? undefined,
     }));

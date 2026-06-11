@@ -69,7 +69,8 @@ export interface BrainDumpEntry {
 
 /**
  * DB-seitige Form eines neuen Eintrags (INSERT) — snake_case, entspricht den Spaltennamen.
- * IDs, Zeitstempel und completed werden von der Datenbank generiert/defaulted.
+ * IDs und Zeitstempel werden von der Datenbank generiert.
+ * completed muss explizit gesetzt werden: false für TASK, null für EVENT/NOTE.
  */
 export interface InsertEntry {
   title?: string;
@@ -79,6 +80,7 @@ export interface InsertEntry {
   capture_id?: string;
   source_excerpt?: string;
   summary?: string[];
+  completed?: boolean | null;
 }
 
 /**

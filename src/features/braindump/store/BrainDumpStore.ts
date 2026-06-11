@@ -68,6 +68,7 @@ export const useBrainDumpStore = create<BrainDumpState>()((set) => ({
             capture_id: d.captureId,
             source_excerpt: d.sourceExcerpt,
             summary: d.summary,
+            completed: d.category === 'TASK' ? false : null,
         }));
 
         await insertEntries(newEntries);
