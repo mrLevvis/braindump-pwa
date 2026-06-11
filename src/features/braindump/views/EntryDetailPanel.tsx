@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Circle, CircleCheck } from 'lucide-react';
+import { Circle, CircleCheck, ChevronDown, ChevronRight } from 'lucide-react';
 import { useDeleteEntry, useErrorToast, useSuccessToast, useToggleTaskCompleted } from '@/hooks';
 import {
   AlertDialog,
@@ -109,6 +109,7 @@ const EntryTimingDetails = ({ date, entryTime, entryEndTime, createdAt }: Readon
 export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{ entry: BrainDumpEntry; open: boolean; onOpenChange: (open: boolean) => void }>) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isOriginalTextOpen, setIsOriginalTextOpen] = useState(false);
   const deleteEntry = useDeleteEntry();
   const toggleTaskCompleted = useToggleTaskCompleted();
   const showSuccessToast = useSuccessToast();
@@ -171,8 +172,18 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{ entry
           <EntryTimingDetails date={date} entryTime={entryTime} entryEndTime={entryEndTime} createdAt={entry.created_at} />
 
           <section className={ORIGINAL_TEXT_SECTION_CLASS_NAME} aria-label="Originaltext">
-            <p className={TIME_LABEL_CLASS_NAME}>Originaltext</p>
-            <p className={ORIGINAL_TEXT_CLASS_NAME}>{entry.original_text}</p>
+            <button
+              type="button"
+              onClick={() => setIsOriginalTextOpen((prev) => !prev)}
+              className="flex items-center gap-1 text-left"
+              aria-expanded={isOriginalTextOpen}
+            >
+              {isOriginalTextOpen
+                ? <ChevronDown className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
+                : <ChevronRight className="h-3 w-3 text-muted-foreground" aria-hidden="true" />}
+              <span className={TIME_LABEL_CLASS_NAME}>Originaltext</span>
+            </button>
+            {isOriginalTextOpen && <p className={ORIGINAL_TEXT_CLASS_NAME}>{entry.original_text}</p>}
           </section>
 
           {hasTags ? (
