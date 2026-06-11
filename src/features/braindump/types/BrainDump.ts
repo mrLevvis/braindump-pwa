@@ -13,9 +13,12 @@ export interface BrainDumpState {
   entries: BrainDumpEntry[];
   isRecording: boolean;
   isProcessing: boolean;
+  pendingPreview: IngestPreview | null;
   setRecording: (status: boolean) => void;
   setProcessing: (status: boolean) => void;
   submitText: (text: string) => Promise<void>;
+  confirmIngest: (preview: IngestPreview) => Promise<void>;
+  discardIngest: (captureId: string) => void;
   deleteEntry: (id: string) => Promise<DeleteResult>;
   toggleTaskCompleted: (id: string, completed: boolean) => Promise<ToggleResult>;
   updateEntryList: () => void;
@@ -100,4 +103,13 @@ export interface StructuredEntry {
 export interface IngestResult {
   captureId: string;
   entries: StructuredEntry[];
+}
+
+/** Ein Entry-Entwurf vor dem DB-Insert — enthält alle Felder außer id und created_at. */
+export type EntryDraft = Omit<BrainDumpEntry, 'id' | 'created_at'>;
+
+/** Zustand der Bestätigungs-Preview nach LLM-Verarbeitung, vor DB-Insert. */
+export interface IngestPreview {
+  captureId: string;
+  drafts: EntryDraft[];
 }

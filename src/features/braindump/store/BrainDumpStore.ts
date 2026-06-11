@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { BrainDumpState, DeleteResult, InsertEntry, ToggleResult } from "../types";
+import type { BrainDumpState, DeleteResult, EntryDraft, IngestPreview, InsertEntry, ToggleResult } from "../types";
 import { deleteEntry as deleteEntryFromApi, fetchEntries, insertEntries, toggleTaskCompleted as toggleApi } from "../services";
 import { processText } from "../services/processBrainDump";
 import { showErrorToast } from "../../../hooks/useErrorToast";
@@ -13,6 +13,7 @@ export const useBrainDumpStore = create<BrainDumpState>()((set) => ({
     entries: [],
     isRecording: false,
     isProcessing: false,
+    pendingPreview: null,
 
     // --- ACTIONS (MUTATIONS) ---
     setRecording: (status: boolean) => {
@@ -35,27 +36,45 @@ export const useBrainDumpStore = create<BrainDumpState>()((set) => ({
             // 1. Text von der KI strukturieren lassen — liefert captureId + entries[].
             const { captureId, entries } = await processText(text);
 
-            // 2. Alle Entries für den Batch-Insert zusammenbauen.
-            //    Jede Zeile trägt denselben captureId + vollen original_text + eigenen source_excerpt.
-            const newEntries: InsertEntry[] = entries.map((e) => ({
+            // 2. Drafts für die Preview zusammenbauen — kein DB-Insert hier.
+            const drafts: EntryDraft[] = entries.map((e) => ({
                 title: e.title,
                 original_text: text,
                 category: e.category,
                 payload: e.payload,
-                capture_id: captureId,
-                source_excerpt: e.sourceExcerpt,
+                captureId,
+                sourceExcerpt: e.sourceExcerpt,
                 summary: e.summary,
+                completed: false,
             }));
 
-            // 3. Batch-Insert, dann Liste neu laden.
-            await insertEntries(newEntries);
-            const data = await fetchEntries();
-            if (data) set(() => ({ entries: data }));
+            set(() => ({ pendingPreview: { captureId, drafts } }));
         } catch (e) {
             throw e;
         } finally {
             set(() => ({ isProcessing: false }));
         }
+    },
+
+    confirmIngest: async (preview: IngestPreview) => {
+        const newEntries: InsertEntry[] = preview.drafts.map((d) => ({
+            title: d.title,
+            original_text: d.original_text,
+            category: d.category,
+            payload: d.payload,
+            capture_id: d.captureId,
+            source_excerpt: d.sourceExcerpt,
+            summary: d.summary,
+        }));
+
+        await insertEntries(newEntries);
+        const data = await fetchEntries();
+        if (data) set(() => ({ entries: data }));
+        set(() => ({ pendingPreview: null }));
+    },
+
+    discardIngest: (_captureId: string) => {
+        set(() => ({ pendingPreview: null }));
     },
 
     deleteEntry: async (id: string): Promise<DeleteResult> => {

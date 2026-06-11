@@ -68,3 +68,15 @@ export function useToggleTaskCompleted() {
 export function useSetProcessing() {
     return useBrainDumpStore((s) => s.setProcessing);
 }
+
+export function usePendingPreview() {
+    return useBrainDumpStore((s) => s.pendingPreview);
+}
+
+export function useConfirmIngest() {
+    return useBrainDumpStore((s) => s.confirmIngest);
+}
+
+export function useDiscardIngest() {
+    return useBrainDumpStore((s) => s.discardIngest);
+}

@@ -8,7 +8,7 @@ import { useRouteSync } from './hooks/useRouteSync';
 import { useSelectedDate } from './hooks/timelineSelectors';
 import { useDaySelectionStore } from './features/timeline/store';
 import { transcribeAudio } from './features/braindump/services/processBrainDump';
-import { InputSection } from './features/braindump/views';
+import { InputSection, IngestPreviewSheet } from './features/braindump/views';
 import { useIsProcessing, useSetProcessing, useSubmitText } from './hooks/braindumpSelectors';
 import { useErrorToast, useSuccessToast } from './hooks/useErrorToast';
 import { useVoiceRecording } from './hooks/useVoiceRecording';
@@ -45,7 +45,7 @@ function App() {
     try {
       await submitText(textValue);
       setTextValue('');
-      showSuccessToast('Eintrag erfolgreich strukturiert und gespeichert.');
+      showSuccessToast('Analyse abgeschlossen – bitte Einträge prüfen.');
     } catch {
       showErrorToast('Beim Strukturieren ist etwas schiefgelaufen. Bitte versuche es gleich erneut.');
     }
@@ -79,6 +79,7 @@ function App() {
         onVoiceClick={toggleRecording}
         disabled={isProcessing}
       />
+      <IngestPreviewSheet />
       <Toaster />
     </div>
   );
