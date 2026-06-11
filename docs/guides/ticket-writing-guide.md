@@ -1,7 +1,5 @@
 # Guide: Tickets schreiben
 
-Der **Ticket-Titel** ist der Issue-/Dateiname (z. B. `A8 -- <FEATURE>: <ticket-title>`) — er steht **nicht** im Body.
-
 ## Sektionen (in dieser Reihenfolge)
 
 1. **Commit-Typ** — der Conventional-Commit-Header für den Abschluss (`feat(timeline)`, `refactor(api)!`). Breaking Change mit `!` am Scope.
@@ -25,6 +23,9 @@ Der **Ticket-Titel** ist der Issue-/Dateiname (z. B. `A8 -- <FEATURE>: <ticket-t
 ## Vorlage (Copy-Paste)
 
 ```md
+# **Ticket-Titel**
+`<FEATURE>: <ticket-title>`
+
 # **Commit-Typ**
 `scope(bereich)`
 
