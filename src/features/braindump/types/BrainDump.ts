@@ -23,6 +23,7 @@ export interface BrainDumpState {
   confirmIngest: (preview: IngestPreview) => Promise<void>;
   discardIngest: (captureId: string) => void;
   deleteEntry: (id: string) => Promise<DeleteResult>;
+  deleteEntries: (ids: readonly string[]) => Promise<void>;
   toggleTaskCompleted: (id: string, completed: boolean) => Promise<ToggleResult>;
   updateEntryList: () => void;
   prioritizeDayTasks: (date: string, tasks: readonly BrainDumpEntry[]) => Promise<void>;

@@ -1,6 +1,7 @@
 import type { BrainDumpEntry } from '../types';
 import { buildDashboardRows } from '../utils/buildDashboardRows';
 import { EntryCard } from './';
+import type { EntryCardSelectionMode } from './EntryCard';
 import { DateDivider } from './DateDivider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -19,7 +20,15 @@ const EmptyEntriesState = () => (
   </Card>
 );
 
-export default function EntryList({ entries }: { entries: readonly BrainDumpEntry[] }) {
+interface ListSelectionMode {
+  selectedIds: ReadonlySet<string>;
+  onToggleSelect: (id: string) => void;
+}
+
+export default function EntryList({ entries, selectionMode }: {
+  entries: readonly BrainDumpEntry[];
+  selectionMode?: ListSelectionMode;
+}) {
   if (!entries || entries.length === 0) return <EmptyEntriesState />;
 
   const rows = buildDashboardRows(entries);
@@ -31,10 +40,22 @@ export default function EntryList({ entries }: { entries: readonly BrainDumpEntr
           <DateDivider key={row.dateIso} dateIso={row.dateIso} />
         ) : (
           <li key={row.entry.id}>
-            <EntryCard entry={row.entry} />
+            <EntryCard
+              entry={row.entry}
+              selectionMode={selectionMode
+                ? buildCardSelectionMode(row.entry.id, selectionMode)
+                : undefined}
+            />
           </li>
         ),
       )}
     </ul>
   );
+}
+
+function buildCardSelectionMode(id: string, mode: ListSelectionMode): EntryCardSelectionMode {
+  return {
+    isSelected: mode.selectedIds.has(id),
+    onToggleSelect: () => mode.onToggleSelect(id),
+  };
 }

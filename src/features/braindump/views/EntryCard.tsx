@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Calendar } from 'lucide-react';
+import { Calendar, CheckCircle2, Circle } from 'lucide-react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { TaskToggle } from '@/components/TaskToggle';
 import type { BrainDumpEntry, EntryCategory } from '../types';
@@ -39,27 +39,50 @@ const CARD_BTN = [
 
 const FOOTER_CLS = 'px-4 pt-0 text-[10px] text-muted-foreground';
 
+// ─── Selection indicator ──────────────────────────────────────────────────────
+
+function SelectionIndicator({ isSelected }: Readonly<{ isSelected: boolean }>) {
+  return (
+    <div className="pointer-events-none absolute top-3 left-3 z-10">
+      {isSelected
+        ? <CheckCircle2 className="h-5 w-5 text-primary" />
+        : <Circle className="h-5 w-5 text-muted-foreground/40" />}
+    </div>
+  );
+}
 
 // ─── Card component props ─────────────────────────────────────────────────────
 
+interface SelectionMode {
+  isSelected: boolean;
+  onToggleSelect: () => void;
+}
+
 interface CardProps {
   entry: BrainDumpEntry;
+  selectionMode?: SelectionMode;
 }
 
 // ─── TaskCard ─────────────────────────────────────────────────────────────────
 
-function TaskCard({ entry }: Readonly<CardProps>) {
+function TaskCard({ entry, selectionMode }: Readonly<CardProps>) {
   const [open, setOpen] = useState(false);
   const toggle = useToggleTaskCompleted();
   const { tintBackground, accent } = CATEGORY_STYLES.TASK;
   const title = entry.title?.trim() || 'Untitled';
   const tags = entry.payload?.tags ?? [];
+  const selectedRing = selectionMode?.isSelected ? 'ring-2 ring-primary ring-offset-1' : '';
+
+  const handleClick = () => {
+    if (selectionMode) selectionMode.onToggleSelect();
+    else setOpen(true);
+  };
 
   return (
     <>
       <div className="relative">
-        <button type="button" className={CARD_BTN} onClick={() => setOpen(true)}>
-          <Card className={[CARD_BASE, tintBackground, entry.completed ? 'opacity-60' : ''].join(' ')} size="sm">
+        <button type="button" className={CARD_BTN} onClick={handleClick}>
+          <Card className={[CARD_BASE, tintBackground, entry.completed ? 'opacity-60' : '', selectedRing].join(' ')} size="sm">
             <CardContent className="space-y-1.5 px-4 pr-12">
               <p className={['text-sm font-semibold leading-snug', entry.completed ? 'line-through text-muted-foreground' : ''].join(' ')}>
                 {title}
@@ -72,88 +95,112 @@ function TaskCard({ entry }: Readonly<CardProps>) {
           </Card>
         </button>
 
-        <TaskToggle
-          completed={entry.completed}
-          accent={accent}
-          size="lg"
-          onToggle={() => toggle(entry.id, !entry.completed)}
-          className="absolute bottom-4 right-4 z-10"
-        />
+        {selectionMode
+          ? <SelectionIndicator isSelected={selectionMode.isSelected} />
+          : (
+            <TaskToggle
+              completed={entry.completed}
+              accent={accent}
+              size="lg"
+              onToggle={() => toggle(entry.id, !entry.completed)}
+              className="absolute bottom-4 right-4 z-10"
+            />
+          )}
       </div>
 
-      <EntryDetailPanel entry={entry} open={open} onOpenChange={setOpen} />
+      {!selectionMode && <EntryDetailPanel entry={entry} open={open} onOpenChange={setOpen} />}
     </>
   );
 }
 
 // ─── EventCard ────────────────────────────────────────────────────────────────
 
-function EventCard({ entry }: Readonly<CardProps>) {
+function EventCard({ entry, selectionMode }: Readonly<CardProps>) {
   const [open, setOpen] = useState(false);
   const { tintBackground, accentBg } = CATEGORY_STYLES.EVENT;
   const title = entry.title?.trim() || 'Untitled';
   const tags = entry.payload?.tags ?? [];
   const dateBlock = entry.payload?.date ? parseDateBlock(entry.payload.date) : null;
   const timeStr = fmtTime(entry.payload?.startTime, entry.payload?.endTime);
+  const selectedRing = selectionMode?.isSelected ? 'ring-2 ring-primary ring-offset-1' : '';
+
+  const handleClick = () => {
+    if (selectionMode) selectionMode.onToggleSelect();
+    else setOpen(true);
+  };
 
   return (
     <>
-      <button type="button" className={CARD_BTN} onClick={() => setOpen(true)}>
-        <Card className={[CARD_BASE, tintBackground].join(' ')} size="sm">
-          <CardContent className="flex items-start gap-3 px-4">
-            <div
-              className={['shrink-0 flex flex-col items-center justify-center rounded-lg px-2.5 py-1.5 min-w-[2.75rem]', accentBg].join(' ')}
-              aria-hidden="true"
-            >
-              {dateBlock ? (
-                <>
-                  <span className="text-base font-bold text-white leading-none">{dateBlock.day}</span>
-                  <span className="text-[10px] font-medium text-white/80 uppercase tracking-wide">{dateBlock.month}</span>
-                </>
-              ) : (
-                <Calendar className="h-5 w-5 text-white" />
-              )}
-            </div>
-            <div className="min-w-0 flex-1 space-y-1.5">
-              <p className="text-sm font-semibold leading-snug">{title}</p>
-              {timeStr && <p className="text-xs text-muted-foreground">{timeStr}</p>}
-              <TagBadgeList tags={tags} />
-            </div>
-          </CardContent>
-          <CardFooter className={FOOTER_CLS}>
-              <time dateTime={entry.created_at}>erstellt am {formatCreatedDateTime(entry.created_at)} um {formatCreatedTime(entry.created_at)} Uhr</time>
-          </CardFooter>
-        </Card>
-      </button>
+      <div className="relative">
+        <button type="button" className={CARD_BTN} onClick={handleClick}>
+          <Card className={[CARD_BASE, tintBackground, selectedRing].join(' ')} size="sm">
+            <CardContent className="flex items-start gap-3 px-4">
+              <div
+                className={['shrink-0 flex flex-col items-center justify-center rounded-lg px-2.5 py-1.5 min-w-[2.75rem]', accentBg].join(' ')}
+                aria-hidden="true"
+              >
+                {dateBlock ? (
+                  <>
+                    <span className="text-base font-bold text-white leading-none">{dateBlock.day}</span>
+                    <span className="text-[10px] font-medium text-white/80 uppercase tracking-wide">{dateBlock.month}</span>
+                  </>
+                ) : (
+                  <Calendar className="h-5 w-5 text-white" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <p className="text-sm font-semibold leading-snug">{title}</p>
+                {timeStr && <p className="text-xs text-muted-foreground">{timeStr}</p>}
+                <TagBadgeList tags={tags} />
+              </div>
+            </CardContent>
+            <CardFooter className={FOOTER_CLS}>
+                <time dateTime={entry.created_at}>erstellt am {formatCreatedDateTime(entry.created_at)} um {formatCreatedTime(entry.created_at)} Uhr</time>
+            </CardFooter>
+          </Card>
+        </button>
 
-      <EntryDetailPanel entry={entry} open={open} onOpenChange={setOpen} />
+        {selectionMode && <SelectionIndicator isSelected={selectionMode.isSelected} />}
+      </div>
+
+      {!selectionMode && <EntryDetailPanel entry={entry} open={open} onOpenChange={setOpen} />}
     </>
   );
 }
 
 // ─── NoteCard ─────────────────────────────────────────────────────────────────
 
-function NoteCard({ entry }: Readonly<CardProps>) {
+function NoteCard({ entry, selectionMode }: Readonly<CardProps>) {
   const [open, setOpen] = useState(false);
   const { tintBackground } = CATEGORY_STYLES.NOTE;
   const title = entry.title?.trim() || 'Untitled';
   const tags = entry.payload?.tags ?? [];
+  const selectedRing = selectionMode?.isSelected ? 'ring-2 ring-primary ring-offset-1' : '';
+
+  const handleClick = () => {
+    if (selectionMode) selectionMode.onToggleSelect();
+    else setOpen(true);
+  };
 
   return (
     <>
-      <button type="button" className={CARD_BTN} onClick={() => setOpen(true)}>
-        <Card className={[CARD_BASE, tintBackground].join(' ')} size="sm">
-          <CardContent className="space-y-1.5 px-4">
-            <p className="text-sm font-semibold leading-snug">{title}</p>
-            <TagBadgeList tags={tags} />
-          </CardContent>
-          <CardFooter className={FOOTER_CLS}>
-              <time dateTime={entry.created_at}>erstellt am {formatCreatedDateTime(entry.created_at)} um {formatCreatedTime(entry.created_at)} Uhr</time>
-          </CardFooter>
-        </Card>
-      </button>
+      <div className="relative">
+        <button type="button" className={CARD_BTN} onClick={handleClick}>
+          <Card className={[CARD_BASE, tintBackground, selectedRing].join(' ')} size="sm">
+            <CardContent className="space-y-1.5 px-4">
+              <p className="text-sm font-semibold leading-snug">{title}</p>
+              <TagBadgeList tags={tags} />
+            </CardContent>
+            <CardFooter className={FOOTER_CLS}>
+                <time dateTime={entry.created_at}>erstellt am {formatCreatedDateTime(entry.created_at)} um {formatCreatedTime(entry.created_at)} Uhr</time>
+            </CardFooter>
+          </Card>
+        </button>
 
-      <EntryDetailPanel entry={entry} open={open} onOpenChange={setOpen} />
+        {selectionMode && <SelectionIndicator isSelected={selectionMode.isSelected} />}
+      </div>
+
+      {!selectionMode && <EntryDetailPanel entry={entry} open={open} onOpenChange={setOpen} />}
     </>
   );
 }
@@ -172,7 +219,12 @@ export function resolveEntryCard(category: EntryCategory): React.ComponentType<C
 
 // ─── EntryCard ────────────────────────────────────────────────────────────────
 
-export function EntryCard({ entry }: Readonly<{ entry: BrainDumpEntry }>) {
+export interface EntryCardSelectionMode {
+  isSelected: boolean;
+  onToggleSelect: () => void;
+}
+
+export function EntryCard({ entry, selectionMode }: Readonly<{ entry: BrainDumpEntry; selectionMode?: EntryCardSelectionMode }>) {
   const CardComponent = resolveEntryCard(entry.category);
-  return <CardComponent entry={entry} />;
+  return <CardComponent entry={entry} selectionMode={selectionMode} />;
 }

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { BrainDumpState, DeleteResult, EntryDraft, IngestPreview, InsertEntry, ToggleResult } from "../types";
-import { deleteEntry as deleteEntryFromApi, fetchEntries, insertEntries, toggleTaskCompleted as toggleApi } from "../services";
+import { deleteEntry as deleteEntryFromApi, deleteEntriesByIds, fetchEntries, insertEntries, toggleTaskCompleted as toggleApi } from "../services";
 import { processText } from "../services/processBrainDump";
 import { prioritizeDayTasks as prioritizeApi } from "../services/prioritizeTasks";
 import { showErrorToast } from "../../../hooks/useErrorToast";
@@ -90,6 +90,12 @@ export const useBrainDumpStore = create<BrainDumpState>()((set) => ({
         }
 
         return result;
+    },
+
+    deleteEntries: async (ids: readonly string[]): Promise<void> => {
+        await deleteEntriesByIds(ids);
+        const data = await fetchEntries();
+        if (data) set(() => ({ entries: data }));
     },
 
     prioritizeDayTasks: async (date, tasks) => {

@@ -119,6 +119,21 @@ export async function deleteEntry(id: string): Promise<DeleteResult> {
 }
 
 /**
+ * Loescht mehrere Eintraege per IDs in einem einzigen DB-Request (all-or-nothing).
+ * Wirft bei DB-Fehler.
+ */
+export async function deleteEntriesByIds(ids: readonly string[]): Promise<void> {
+    const { error } = await supabase
+        .from(BRAINDUMP_ENTRIES_DB)
+        .delete()
+        .in('id', ids as string[]);
+    if (error) {
+        showErrorToast(`Error deleting entries: ${error.message}`);
+        throw new Error(error.message);
+    }
+}
+
+/**
  * Setzt den completed-Status eines Eintrags in der Datenbank.
  * @param id Die UUID des Eintrags.
  * @param completed Der neue completed-Status.

@@ -53,6 +53,10 @@ export function useDeleteEntry() {
     return useBrainDumpStore((s) => s.deleteEntry);
 }
 
+export function useDeleteEntries() {
+    return useBrainDumpStore((s) => s.deleteEntries);
+}
+
 /**
  * Ein React-Hook, der die Toggle-Funktion fuer den completed-Status abruft.
  * @returns Eine Funktion zum Toggeln des completed-Status eines Tasks.
