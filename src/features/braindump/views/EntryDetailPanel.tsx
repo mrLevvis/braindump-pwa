@@ -52,7 +52,7 @@ const SUMMARY_SECTION_CLASS_NAME = ['space-y-2'].join(' ');
 const SUMMARY_LIST_CLASS_NAME = ['space-y-1', 'rounded-lg', 'border', 'bg-muted/30', 'p-3'].join(' ');
 const SUMMARY_ITEM_CLASS_NAME = ['flex', 'items-start', 'gap-2', 'text-sm', 'leading-relaxed'].join(' ');
 const SUMMARY_BULLET_CLASS_NAME = ['mt-1.5', 'h-1.5', 'w-1.5', 'shrink-0', 'rounded-full', 'bg-muted-foreground/60'].join(' ');
-const ACTION_ROW_CLASS_NAME = ['flex', 'items-center', 'pt-2'].join(' ');
+const ACTION_ROW_CLASS_NAME = ['flex', 'items-center', 'justify-end', 'pt-2'].join(' ');
 
 const formatCreatedDateTime = (createdAtIso: string): string => {
   const createdAt = new Date(createdAtIso);
@@ -187,12 +187,14 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{ entry
               <Button
                 type="button"
                 variant="outline"
+                size="icon"
                 onClick={() => toggleTaskCompleted(entry.id, !entry.completed)}
+                aria-label={entry.completed ? 'Als unerledigt markieren' : 'Als erledigt markieren'}
                 className={entry.completed ? 'text-emerald-500 border-emerald-500/40' : ''}
               >
                 {entry.completed
-                  ? <><CircleCheck className="mr-2 h-4 w-4 text-emerald-500" aria-hidden="true" />Erledigt</>
-                  : <><Circle className="mr-2 h-4 w-4" aria-hidden="true" />Abhaken</>}
+                  ? <CircleCheck className="h-5 w-5 text-emerald-500" aria-hidden="true" />
+                  : <Circle className="h-5 w-5" aria-hidden="true" />}
               </Button>
             </div>
           )}
