@@ -135,7 +135,7 @@ export function IngestPreviewSheet() {
     };
 
     return (
-        <Sheet open={isOpen} onOpenChange={handleOpenChange} dismissible={false}>
+        <Sheet open={isOpen} onOpenChange={handleOpenChange}>
             <SheetContent side="bottom" showCloseButton={false} className="max-h-[85dvh] flex flex-col p-0">
                 <SheetHeader className="px-4 pt-4 pb-2 border-b shrink-0">
                     <SheetTitle>

@@ -89,7 +89,7 @@ interface Props {
   isToday: boolean;
   now: Date;
   pxPerHour: number;
-  nowLineRef?: RefObject<HTMLDivElement>;
+  nowLineRef?: RefObject<HTMLDivElement | null>;
   onSelect: (entry: BrainDumpEntry) => void;
   onToggle: (id: string, completed: boolean) => void;
 }

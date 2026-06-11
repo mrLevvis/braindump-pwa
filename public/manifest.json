@@ -1,0 +1,17 @@
+{
+  "name": "Braindump",
+  "short_name": "Braindump",
+  "description": "Capture and organize your thoughts",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#863bff",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
