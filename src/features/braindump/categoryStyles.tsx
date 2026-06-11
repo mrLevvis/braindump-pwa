@@ -8,6 +8,8 @@ interface CategoryStyle {
   accent: string;
   /** Solid fill for identity blocks (e.g. EVENT date tile). */
   accentBg: string;
+  /** Thin border color for active filter tabs. */
+  accentBorder: string;
   /** Badge config — used only in the DetailPanel dialog header. */
   badge: Readonly<{ label: string; variant: 'default' | 'secondary' | 'outline'; className: string }>;
 }
@@ -17,18 +19,21 @@ export const CATEGORY_STYLES: Record<EntryCategory, CategoryStyle> = {
     tintBackground: 'bg-violet-500/10 dark:bg-violet-500/15',
     accent: 'text-violet-500',
     accentBg: 'bg-violet-500',
+    accentBorder: 'border-violet-500/50',
     badge: { label: 'Task', variant: 'default', className: 'bg-violet-500/90 text-white hover:bg-violet-500/80' },
   },
   EVENT: {
     tintBackground: 'bg-sky-500/10 dark:bg-sky-500/15',
     accent: 'text-sky-500',
     accentBg: 'bg-sky-500',
+    accentBorder: 'border-sky-500/50',
     badge: { label: 'Event', variant: 'secondary', className: 'bg-sky-100 text-sky-800 dark:bg-sky-950/50 dark:text-sky-200' },
   },
   NOTE: {
     tintBackground: 'bg-amber-500/10 dark:bg-amber-500/15',
     accent: 'text-amber-500',
     accentBg: 'bg-amber-500',
+    accentBorder: 'border-amber-500/50',
     badge: { label: 'Note', variant: 'outline', className: 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200' },
   },
 };

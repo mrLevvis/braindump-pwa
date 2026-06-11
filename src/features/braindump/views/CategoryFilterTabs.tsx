@@ -12,11 +12,12 @@ const LABEL: Record<EntryCategory, string> = {
 const TAB_BASE = [
   'flex items-center gap-1.5 rounded-lg px-2.5 py-1.5',
   'text-sm font-medium shrink-0 transition-colors select-none',
+  'border',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
 ].join(' ');
 
-const TAB_INACTIVE = [TAB_BASE, 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'].join(' ');
-const TAB_ALL_ACTIVE = [TAB_BASE, 'bg-muted text-foreground'].join(' ');
+const TAB_INACTIVE = [TAB_BASE, 'border-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground'].join(' ');
+const TAB_ALL_ACTIVE = [TAB_BASE, 'border-transparent bg-muted text-foreground'].join(' ');
 
 interface Props {
   activeCategories: readonly EntryCategory[];
@@ -39,9 +40,9 @@ export function CategoryFilterTabs({ activeCategories, onToggle, onClear }: Read
 
       {CATEGORIES.map(cat => {
         const isActive = activeCategories.includes(cat);
-        const { tintBackground, accentBg } = CATEGORY_STYLES[cat];
+        const { tintBackground, accentBorder } = CATEGORY_STYLES[cat];
         const tabClass = isActive
-          ? [TAB_BASE, tintBackground, 'text-foreground'].join(' ')
+          ? [TAB_BASE, tintBackground, accentBorder, 'text-foreground'].join(' ')
           : TAB_INACTIVE;
 
         return (
@@ -52,7 +53,6 @@ export function CategoryFilterTabs({ activeCategories, onToggle, onClear }: Read
             onClick={() => onToggle(cat)}
             aria-pressed={isActive}
           >
-            <span className={['h-2 w-2 rounded-full shrink-0', accentBg].join(' ')} aria-hidden="true" />
             {LABEL[cat]}
           </button>
         );
