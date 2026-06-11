@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Circle, CircleCheck, ChevronDown, ChevronRight } from 'lucide-react';
+import type { EntryCategory } from '../types';
 import { useDeleteEntry, useErrorToast, useSuccessToast, useToggleTaskCompleted } from '@/hooks';
 import {
   AlertDialog,
@@ -53,6 +54,36 @@ const SUMMARY_LIST_CLASS_NAME = ['space-y-1', 'rounded-lg', 'border', 'bg-muted/
 const SUMMARY_ITEM_CLASS_NAME = ['flex', 'items-start', 'gap-2', 'text-sm', 'leading-relaxed'].join(' ');
 const SUMMARY_BULLET_CLASS_NAME = ['mt-1.5', 'h-1.5', 'w-1.5', 'shrink-0', 'rounded-full', 'bg-muted-foreground/60'].join(' ');
 const ACTION_ROW_CLASS_NAME = ['flex', 'items-center', 'justify-end', 'pt-2'].join(' ');
+
+const EXCERPT_HIGHLIGHT: Record<EntryCategory, string> = {
+  TASK:  'bg-violet-500/25 dark:bg-violet-500/30 rounded-sm',
+  EVENT: 'bg-sky-500/25 dark:bg-sky-500/30 rounded-sm',
+  NOTE:  'bg-amber-500/25 dark:bg-amber-500/30 rounded-sm',
+};
+
+function OriginalText({ text, excerpt, category }: Readonly<{ text: string; excerpt?: string; category: EntryCategory }>) {
+  if (!excerpt) {
+    return <p className={ORIGINAL_TEXT_CLASS_NAME}>{text}</p>;
+  }
+
+  const idx = text.indexOf(excerpt);
+
+  if (idx === -1) {
+    return <p className={ORIGINAL_TEXT_CLASS_NAME}>{text}</p>;
+  }
+
+  const before = text.slice(0, idx);
+  const match  = text.slice(idx, idx + excerpt.length);
+  const after  = text.slice(idx + excerpt.length);
+
+  return (
+    <p className={ORIGINAL_TEXT_CLASS_NAME}>
+      {before}
+      <mark className={`not-italic ${EXCERPT_HIGHLIGHT[category]}`}>{match}</mark>
+      {after}
+    </p>
+  );
+}
 
 const formatCreatedDateTime = (createdAtIso: string): string => {
   const createdAt = new Date(createdAtIso);
@@ -183,7 +214,9 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{ entry
                 : <ChevronRight className="h-3 w-3 text-muted-foreground" aria-hidden="true" />}
               <span className={TIME_LABEL_CLASS_NAME}>Originaltext</span>
             </button>
-            {isOriginalTextOpen && <p className={ORIGINAL_TEXT_CLASS_NAME}>{entry.original_text}</p>}
+            {isOriginalTextOpen && (
+              <OriginalText text={entry.original_text} excerpt={entry.sourceExcerpt} category={entry.category} />
+            )}
           </section>
 
           {hasTags ? (
