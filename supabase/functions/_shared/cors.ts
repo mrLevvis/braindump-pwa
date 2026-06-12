@@ -7,6 +7,7 @@
 export const corsHeaders = {
   // SECURITY TODO (vor Produktion): "*" durch die echte Frontend-Domain ersetzen,
   // z.B. "https://meine-app.vercel.app". Sonst darf jede Website die Function aufrufen.
-  "Access-Control-Allow-Origin": "*",
+
+  "Access-Control-Allow-Origin": "https://braindump-pwa.vercel.app",
   "Access-Control-Allow-Headers": "authorization, content-type, apikey",
 };

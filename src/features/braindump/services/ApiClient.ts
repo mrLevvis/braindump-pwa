@@ -23,6 +23,21 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 /** Supabase-Client */
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+/**
+ * Stellt sicher, dass eine authentifizierte Session existiert.
+ * Nutzt Anonymous Auth — kein Login-Dialog nötig, aber Session-JWT statt
+ * rohem Anon-Key → RLS-Policies greifen auf `authenticated`-Rolle.
+ * Muss einmalig beim App-Start aufgerufen werden.
+ * Voraussetzung: Anonymous Sign-ins im Supabase Dashboard aktiviert
+ * (Authentication → Settings → Enable anonymous sign-ins).
+ */
+export async function initAuth(): Promise<void> {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+        await supabase.auth.signInAnonymously();
+    }
+}
+
 
 /**------------------------------------------------------------------------------
  * --- ERROR-HANDLING ---
