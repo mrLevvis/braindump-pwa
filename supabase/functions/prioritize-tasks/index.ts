@@ -5,7 +5,7 @@
  */
 
 import "@supabase/functions-js/edge-runtime.d.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+import { getCorsHeaders } from "../_shared/cors.ts";
 
 const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
 const MODEL = "llama-3.3-70b-versatile";
@@ -28,6 +28,8 @@ Return ONLY a JSON object with an "orderedTaskIds" array containing the task IDs
 Example: { "orderedTaskIds": ["id-a", "id-b", "id-c"] }`;
 
 Deno.serve(async (request) => {
+  const corsHeaders = getCorsHeaders(request);
+
   if (request.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }

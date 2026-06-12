@@ -6,7 +6,7 @@
 
 import "@supabase/functions-js/edge-runtime.d.ts";
 
-import { corsHeaders } from "../_shared/cors.ts";
+import { getCorsHeaders } from "../_shared/cors.ts";
 import { structureText } from "./structureText.ts";
 import type { StructuredEntry } from "../_shared/contract.ts";
 import { ENTRY_CATEGORIES, normalizeEntryContract } from "../_shared/contract.ts";
@@ -26,7 +26,7 @@ function isValidEntry(e: unknown): e is StructuredEntry {
 
 
 Deno.serve(async (request) => {
-
+  const corsHeaders = getCorsHeaders(request);
 
   // 1. CORS-Preflight: Der Browser schickt vor dem echten Request ein "OPTIONS".
   //    Das beantworten wir nur mit den Headern, sonst nichts.

@@ -1,13 +1,17 @@
-/**
- * supabase/functions/_shared/cors.ts
- * * CORS-Header, damit der Browser (andere Origin) die Function aufrufen darf.
- * * Reine Infrastruktur, frei von Geschäftslogik.
- */
+const ALLOWED_ORIGINS = [
+  'https://braindump-pwa.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:4173',
+];
 
-export const corsHeaders = {
-  // SECURITY TODO (vor Produktion): "*" durch die echte Frontend-Domain ersetzen,
-  // z.B. "https://meine-app.vercel.app". Sonst darf jede Website die Function aufrufen.
+const ALLOW_HEADERS = 'authorization, content-type, apikey, x-client-info';
 
-  "Access-Control-Allow-Origin": "https://braindump-pwa.vercel.app",
-  "Access-Control-Allow-Headers": "authorization, content-type, apikey, x-client-info",
-};
+export function getCorsHeaders(request: Request): Record<string, string> {
+  const origin = request.headers.get('Origin') ?? '';
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': ALLOW_HEADERS,
+    'Vary': 'Origin',
+  };
+}
