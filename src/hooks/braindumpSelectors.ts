@@ -65,6 +65,10 @@ export function useToggleTaskCompleted() {
     return useBrainDumpStore((s) => s.toggleTaskCompleted);
 }
 
+export function useUpdateEntry() {
+    return useBrainDumpStore((s) => s.updateEntry);
+}
+
 /**
  * Ein React-Hook, der die Funktion zum Setzen des Verarbeitungs-Status abruft.
  * @returns Eine Funktion zum Setzen von isProcessing.

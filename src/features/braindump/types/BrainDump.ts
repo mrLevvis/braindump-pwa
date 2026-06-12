@@ -25,6 +25,7 @@ export interface BrainDumpState {
   deleteEntry: (id: string) => Promise<DeleteResult>;
   deleteEntries: (ids: readonly string[]) => Promise<void>;
   toggleTaskCompleted: (id: string, completed: boolean) => Promise<ToggleResult>;
+  updateEntry: (id: string, patch: EntryPatch) => Promise<UpdateResult>;
   updateEntryList: () => void;
   prioritizeDayTasks: (date: string, tasks: readonly BrainDumpEntry[]) => Promise<void>;
 }
@@ -101,6 +102,13 @@ export type ToggleResult =
   | { status: 'toggled'; completed: boolean }
   | { status: 'not_found' }
   | { status: 'error'; message: string };
+
+export type UpdateResult =
+  | { status: 'updated' }
+  | { status: 'not_found' }
+  | { status: 'error'; message: string };
+
+export type EntryPatch = Partial<Pick<BrainDumpEntry, 'title' | 'category' | 'payload' | 'summary'>>;
 
 /** Ein strukturierter Eintrag, wie ihn die KI zurückgibt. */
 export interface StructuredEntry {

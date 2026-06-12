@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import type { BrainDumpState, DeleteResult, EntryDraft, IngestPreview, InsertEntry, ToggleResult } from "../types";
-import { deleteEntry as deleteEntryFromApi, deleteEntriesByIds, fetchEntries, insertEntries, toggleTaskCompleted as toggleApi } from "../services";
+import type { BrainDumpState, DeleteResult, EntryDraft, EntryPatch, IngestPreview, InsertEntry, ToggleResult, UpdateResult } from "../types";
+import { deleteEntry as deleteEntryFromApi, deleteEntriesByIds, fetchEntries, insertEntries, toggleTaskCompleted as toggleApi, updateEntry as updateEntryApi } from "../services";
 import { processText } from "../services/processBrainDump";
 import { prioritizeDayTasks as prioritizeApi } from "../services/prioritizeTasks";
 import { showErrorToast } from "../../../hooks/useErrorToast";
@@ -108,6 +108,26 @@ export const useBrainDumpStore = create<BrainDumpState>()((set) => ({
         } finally {
             set(() => ({ isPrioritizing: false }));
         }
+    },
+
+    updateEntry: async (id: string, patch: EntryPatch): Promise<UpdateResult> => {
+        set(s => ({
+            entries: s.entries.map(e =>
+                e.id === id
+                    ? { ...e, ...patch, payload: { ...e.payload, ...(patch.payload ?? {}) } }
+                    : e
+            ),
+        }));
+
+        const result = await updateEntryApi(id, patch);
+
+        if (result.status !== 'updated') {
+            const data = await fetchEntries();
+            if (data) set(() => ({ entries: data }));
+            if (result.status === 'error') showErrorToast(result.message);
+        }
+
+        return result;
     },
 
     toggleTaskCompleted: async (id: string, completed: boolean): Promise<ToggleResult> => {

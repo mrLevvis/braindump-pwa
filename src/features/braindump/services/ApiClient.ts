@@ -1,5 +1,5 @@
 import { createClient, PostgrestError } from '@supabase/supabase-js';
-import type { BrainDumpEntry, DeleteResult, InsertEntry, ToggleResult } from '../types';
+import type { BrainDumpEntry, DeleteResult, EntryPatch, InsertEntry, ToggleResult, UpdateResult } from '../types';
 import { showErrorToast } from '../../../hooks/useErrorToast';
 
 //const BRAINDUMP_ENTRIES = 'braindump_entries';
@@ -146,6 +146,20 @@ export async function deleteEntriesByIds(ids: readonly string[]): Promise<void> 
         showErrorToast(`Error deleting entries: ${error.message}`);
         throw new Error(error.message);
     }
+}
+
+/**
+ * Aktualisiert bearbeitbare Felder eines Eintrags (title, category, payload, summary).
+ */
+export async function updateEntry(id: string, patch: EntryPatch): Promise<UpdateResult> {
+    const { error, count } = await supabase
+        .from(BRAINDUMP_ENTRIES_DB)
+        .update(patch, { count: 'exact' })
+        .eq('id', id);
+
+    if (error) return { status: 'error', message: error.message };
+    if (count === 0) return { status: 'not_found' };
+    return { status: 'updated' };
 }
 
 /**

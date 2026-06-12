@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Circle, CircleCheck, ChevronDown, ChevronRight } from 'lucide-react';
 import type { EntryCategory } from '../types';
-import { useDeleteEntry, useErrorToast, useSuccessToast, useToggleTaskCompleted } from '@/hooks';
+import { useDeleteEntry, useErrorToast, useSuccessToast, useToggleTaskCompleted, useUpdateEntry } from '@/hooks';
+import { formatCreatedDateTime, formatCreatedTime } from '../utils/formatTime';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,6 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import type { BrainDumpEntry, DeleteResult } from '../types';
 import { CategoryBadge, TagBadgeList } from '../categoryStyles';
 import { DetailPanelMenu } from './DetailPanelMenu';
+import { EntryEditForm } from './EntryEditForm';
 
 const DELETE_FEEDBACK: Record<DeleteResult['status'], string> = {
   deleted: 'Eintrag gelöscht.',
@@ -31,16 +33,8 @@ const ENTRY_DATE_FORMATTER = new Intl.DateTimeFormat('de-DE', {
   day: '2-digit',
 });
 
-const CREATED_AT_FORMATTER = new Intl.DateTimeFormat(undefined, {
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-});
-
 const PANEL_CONTENT_CLASS_NAME = ['w-full', 'sm:max-w-xl'].join(' ');
-const PANEL_BODY_CLASS_NAME = ['space-y-6', 'px-6', 'pb-6'].join(' ');
+const PANEL_BODY_CLASS_NAME = ['space-y-6', 'px-6', 'pb-10'].join(' ');
 const META_ROW_CLASS_NAME = ['flex', 'flex-wrap', 'items-center', 'gap-2'].join(' ');
 const ORIGINAL_TEXT_SECTION_CLASS_NAME = ['space-y-2'].join(' ');
 const ORIGINAL_TEXT_CLASS_NAME = ['rounded-lg', 'border', 'bg-muted/30', 'p-3', 'text-sm', 'leading-relaxed', 'whitespace-pre-wrap', 'break-words'].join(' ');
@@ -85,14 +79,6 @@ function OriginalText({ text, excerpt, category }: Readonly<{ text: string; exce
   );
 }
 
-const formatCreatedDateTime = (createdAtIso: string): string => {
-  const createdAt = new Date(createdAtIso);
-
-  if (Number.isNaN(createdAt.getTime())) return '--';
-
-  return CREATED_AT_FORMATTER.format(createdAt);
-};
-
 const formatEntryDate = (entryDateIso?: string): string | null => {
   if (!entryDateIso) return null;
 
@@ -108,30 +94,22 @@ const formatEntryTime = (startTime?: string, endTime?: string): string | null =>
   return endTime ? `${startTime}–${endTime} Uhr` : `${startTime} Uhr`;
 };
 
-const EntryTimingDetails = ({ date, entryTime, entryEndTime, createdAt }: Readonly<{ date?: string; entryTime?: string; entryEndTime?: string; createdAt: string }>) => {
-  const hasEntryDateOrTime = Boolean(date || entryTime);
+const EntryTimingDetails = ({ date, entryTime, entryEndTime }: Readonly<{ date?: string; entryTime?: string; entryEndTime?: string }>) => {
   const formattedDate = formatEntryDate(date);
   const formattedTime = formatEntryTime(entryTime, entryEndTime);
 
+  if (!date && !entryTime) return null;
+
   return (
     <section className={TIME_BLOCK_CLASS_NAME} aria-label="Eintragszeiten">
-      {hasEntryDateOrTime ? (
-        <div className={TIME_ROW_CLASS_NAME}>
-          <p className={TIME_LABEL_CLASS_NAME}>Termin/Faellig</p>
-          <div className={TIME_VALUE_CLASS_NAME}>
-            <span className={APPOINTMENT_LABEL_CLASS_NAME}>Geplanter Termin</span>
-            {formattedDate ? <time dateTime={date}>{formattedDate}</time> : null}
-            {formattedDate && formattedTime ? ' um ' : null}
-            {formattedTime ? <time dateTime={date ? `${date}T${entryTime}` : entryTime}>{formattedTime}</time> : null}
-          </div>
-        </div>
-      ) : null}
-
       <div className={TIME_ROW_CLASS_NAME}>
-        <p className={TIME_LABEL_CLASS_NAME}>Erstellt am</p>
-        <time dateTime={createdAt} className={TIME_VALUE_CLASS_NAME}>
-          {formatCreatedDateTime(createdAt)}
-        </time>
+        <p className={TIME_LABEL_CLASS_NAME}>Termin/Faellig</p>
+        <div className={TIME_VALUE_CLASS_NAME}>
+          <span className={APPOINTMENT_LABEL_CLASS_NAME}>Geplanter Termin</span>
+          {formattedDate ? <time dateTime={date}>{formattedDate}</time> : null}
+          {formattedDate && formattedTime ? ' um ' : null}
+          {formattedTime ? <time dateTime={date ? `${date}T${entryTime}` : entryTime}>{formattedTime}</time> : null}
+        </div>
       </div>
     </section>
   );
@@ -140,8 +118,11 @@ const EntryTimingDetails = ({ date, entryTime, entryEndTime, createdAt }: Readon
 export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{ entry: BrainDumpEntry; open: boolean; onOpenChange: (open: boolean) => void }>) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [isOriginalTextOpen, setIsOriginalTextOpen] = useState(false);
   const deleteEntry = useDeleteEntry();
+  const updateEntry = useUpdateEntry();
   const toggleTaskCompleted = useToggleTaskCompleted();
   const showSuccessToast = useSuccessToast();
   const showErrorToast = useErrorToast();
@@ -151,6 +132,22 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{ entry
   const entryTime = entry.payload?.startTime;
   const entryEndTime = entry.payload?.endTime;
   const hasTags = tags.length > 0;
+
+  const handleSave = async (patch: Parameters<typeof updateEntry>[1]) => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      const result = await updateEntry(entry.id, patch);
+      if (result.status === 'updated') {
+        setIsEditing(false);
+        showSuccessToast('Eintrag gespeichert.');
+      } else {
+        showErrorToast(result.status === 'error' ? result.message : 'Eintrag nicht gefunden.');
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleDeleteConfirm = async () => {
     if (isDeleting) return;
@@ -172,77 +169,94 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{ entry
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) setIsEditing(false); onOpenChange(v); }}>
       <DialogContent className={PANEL_CONTENT_CLASS_NAME}>
-        <div className="absolute top-4 left-4 z-10">
-          <DetailPanelMenu onDeleteClick={() => setIsDeleteDialogOpen(true)} />
+        <div className="absolute top-4 right-10 z-10">
+          <DetailPanelMenu
+            onDeleteClick={() => setIsDeleteDialogOpen(true)}
+            onEditClick={() => setIsEditing(true)}
+          />
         </div>
 
-        <DialogHeader className="pl-8">
+        <DialogHeader className="pr-14">
           <DialogTitle>{title}</DialogTitle>
-          <div className={META_ROW_CLASS_NAME}>
-            <CategoryBadge category={entry.category} />
-          </div>
-        </DialogHeader>
-
-        <div className={PANEL_BODY_CLASS_NAME}>
-          {entry.summary && entry.summary.length > 0 ? (
-            <section className={SUMMARY_SECTION_CLASS_NAME} aria-label="Zusammenfassung">
-              <p className={TIME_LABEL_CLASS_NAME}>Zusammenfassung</p>
-              <ul className={SUMMARY_LIST_CLASS_NAME}>
-                {entry.summary.map((point, i) => (
-                  <li key={i} className={SUMMARY_ITEM_CLASS_NAME}>
-                    <span className={SUMMARY_BULLET_CLASS_NAME} aria-hidden="true" />
-                    <span>{point}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
-          <EntryTimingDetails date={date} entryTime={entryTime} entryEndTime={entryEndTime} createdAt={entry.created_at} />
-
-          <section className={ORIGINAL_TEXT_SECTION_CLASS_NAME} aria-label="Originaltext">
-            <button
-              type="button"
-              onClick={() => setIsOriginalTextOpen((prev) => !prev)}
-              className="flex items-center gap-1 text-left"
-              aria-expanded={isOriginalTextOpen}
-            >
-              {isOriginalTextOpen
-                ? <ChevronDown className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
-                : <ChevronRight className="h-3 w-3 text-muted-foreground" aria-hidden="true" />}
-              <span className={TIME_LABEL_CLASS_NAME}>Originaltext</span>
-            </button>
-            {isOriginalTextOpen && (
-              <OriginalText text={entry.original_text} excerpt={entry.sourceExcerpt} category={entry.category} />
-            )}
-          </section>
-
-          {hasTags ? (
-            <section className={ORIGINAL_TEXT_SECTION_CLASS_NAME} aria-label="Tags">
-              <p className={TIME_LABEL_CLASS_NAME}>Tags</p>
-              <TagBadgeList tags={tags} />
-            </section>
-          ) : null}
-
-          {entry.category === 'TASK' && (
-            <div className={ACTION_ROW_CLASS_NAME}>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => toggleTaskCompleted(entry.id, !entry.completed)}
-                aria-label={entry.completed ? 'Als unerledigt markieren' : 'Als erledigt markieren'}
-                className={entry.completed ? 'text-emerald-500 border-emerald-500/40' : ''}
-              >
-                {entry.completed
-                  ? <CircleCheck className="h-5 w-5 text-emerald-500" aria-hidden="true" />
-                  : <Circle className="h-5 w-5" aria-hidden="true" />}
-              </Button>
+          {!isEditing && (
+            <div className={META_ROW_CLASS_NAME}>
+              <CategoryBadge category={entry.category} />
             </div>
           )}
-        </div>
+        </DialogHeader>
+
+        {isEditing ? (
+          <EntryEditForm
+            entry={entry}
+            onSave={handleSave}
+            onCancel={() => setIsEditing(false)}
+            isSaving={isSaving}
+          />
+        ) : (
+          <div className={PANEL_BODY_CLASS_NAME}>
+            {entry.summary && entry.summary.length > 0 ? (
+              <section className={SUMMARY_SECTION_CLASS_NAME} aria-label="Zusammenfassung">
+                <p className={TIME_LABEL_CLASS_NAME}>Zusammenfassung</p>
+                <ul className={SUMMARY_LIST_CLASS_NAME}>
+                  {entry.summary.map((point, i) => (
+                    <li key={i} className={SUMMARY_ITEM_CLASS_NAME}>
+                      <span className={SUMMARY_BULLET_CLASS_NAME} aria-hidden="true" />
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+
+            <EntryTimingDetails date={date} entryTime={entryTime} entryEndTime={entryEndTime} />
+
+            <section className={ORIGINAL_TEXT_SECTION_CLASS_NAME} aria-label="Originaltext">
+              <button
+                type="button"
+                onClick={() => setIsOriginalTextOpen((prev) => !prev)}
+                className="flex items-center gap-1 text-left"
+                aria-expanded={isOriginalTextOpen}
+              >
+                {isOriginalTextOpen
+                  ? <ChevronDown className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
+                  : <ChevronRight className="h-3 w-3 text-muted-foreground" aria-hidden="true" />}
+                <span className={TIME_LABEL_CLASS_NAME}>Originaltext</span>
+              </button>
+              {isOriginalTextOpen && (
+                <OriginalText text={entry.original_text} excerpt={entry.sourceExcerpt} category={entry.category} />
+              )}
+            </section>
+
+            {hasTags ? (
+              <section className={ORIGINAL_TEXT_SECTION_CLASS_NAME} aria-label="Tags">
+                <p className={TIME_LABEL_CLASS_NAME}>Tags</p>
+                <TagBadgeList tags={tags} />
+              </section>
+            ) : null}
+
+            {entry.category === 'TASK' && (
+              <div className={ACTION_ROW_CLASS_NAME}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => toggleTaskCompleted(entry.id, !entry.completed)}
+                  aria-label={entry.completed ? 'Als unerledigt markieren' : 'Als erledigt markieren'}
+                  className={entry.completed ? 'text-emerald-500 border-emerald-500/40' : ''}
+                >
+                  {entry.completed
+                    ? <CircleCheck className="h-5 w-5 text-emerald-500" aria-hidden="true" />
+                    : <Circle className="h-5 w-5" aria-hidden="true" />}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+        <time dateTime={entry.created_at} className="absolute bottom-3 left-6 text-[10px] text-muted-foreground">
+          erstellt am {formatCreatedDateTime(entry.created_at)} um {formatCreatedTime(entry.created_at)} Uhr
+        </time>
       </DialogContent>
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

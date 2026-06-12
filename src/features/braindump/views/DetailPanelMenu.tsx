@@ -25,9 +25,10 @@ const ITEM_BASE = [
 
 interface Props {
   onDeleteClick: () => void;
+  onEditClick: () => void;
 }
 
-export function DetailPanelMenu({ onDeleteClick }: Readonly<Props>) {
+export function DetailPanelMenu({ onDeleteClick, onEditClick }: Readonly<Props>) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -63,8 +64,8 @@ export function DetailPanelMenu({ onDeleteClick }: Readonly<Props>) {
           <button
             role="menuitem"
             type="button"
-            disabled
-            className={cn(ITEM_BASE, 'text-muted-foreground')}
+            className={ITEM_BASE}
+            onClick={() => { setOpen(false); onEditClick(); }}
           >
             Bearbeiten
           </button>
