@@ -9,5 +9,5 @@ export const corsHeaders = {
   // z.B. "https://meine-app.vercel.app". Sonst darf jede Website die Function aufrufen.
 
   "Access-Control-Allow-Origin": "https://braindump-pwa.vercel.app",
-  "Access-Control-Allow-Headers": "authorization, content-type, apikey",
+  "Access-Control-Allow-Headers": "authorization, content-type, apikey, x-client-info",
 };
