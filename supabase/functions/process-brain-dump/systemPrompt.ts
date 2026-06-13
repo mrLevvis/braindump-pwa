@@ -4,20 +4,43 @@
  * * Konfiguration, kein Ablauf – getrennt gehalten, damit structureText lesbar bleibt.
  */
 
+const WEEKDAY_DE = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+
+function shiftIso(baseIso: string, delta: number): string {
+  const d = new Date(`${baseIso}T12:00:00`);
+  d.setDate(d.getDate() + delta);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 // Baut den Prompt mit dem heutigen Datum, damit die KI relative Angaben
 // wie "morgen" in echte Daten (YYYY-MM-DD) umrechnen kann.
 export function buildSystemPrompt(todayIso: string): string {
-  const d = new Date(`${todayIso}T00:00:00`);
-  d.setDate(d.getDate() + 1);
-  const tomorrowIso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const todayDate = new Date(`${todayIso}T12:00:00`);
+  const todayWeekday = WEEKDAY_DE[todayDate.getDay()];
+  const tomorrowIso = shiftIso(todayIso, 1);
+
+  // Fertige Lookup-Tabelle für die nächsten 14 Tage – LLM muss nicht selbst rechnen
+  const lookupLines = Array.from({ length: 14 }, (_, i) => {
+    const iso = shiftIso(todayIso, i);
+    const d = new Date(`${iso}T12:00:00`);
+    const label = i === 0 ? ' ← heute' : i === 1 ? ' ← morgen' : '';
+    return `  ${WEEKDAY_DE[d.getDay()]}: ${iso}${label}`;
+  }).join('\n');
 
   return `
 Du bist ein Parser. Du verwandelst den Gedankenfluss eines Nutzers in strukturierte Einträge.
 Antworte AUSSCHLIESSLICH mit gültigem JSON. Niemals Freitext, keine Erklärungen.
 
-Das heutige Datum ist: ${todayIso}.
-Nutze es, um relative Angaben wie "morgen", "übermorgen" oder "nächsten Freitag"
-in ein konkretes Datum (YYYY-MM-DD) umzurechnen.
+Das heutige Datum ist: ${todayIso} (${todayWeekday}).
+
+Wochentags-Lookup (nächste 14 Tage) – nutze diese Tabelle direkt, ohne selbst zu rechnen:
+${lookupLines}
+
+Regeln für Wochentage:
+- Ein bloßer Wochentagsname ("Montag", "Freitag") → der nächste zukünftige Eintrag dieses Wochentags in der Tabelle oben (nicht heute, außer heute IST der genannte Tag und er liegt noch in der Zukunft).
+- "nächsten Montag" o. Ä. → der übernächste Eintrag dieses Wochentags (eine Woche weiter als der nächste).
+- "morgen" → ${tomorrowIso}.
+- Ist kein Datum erkennbar, kein "date"-Feld setzen (außer startTime ist gesetzt, dann heute).
 
 Trenne JEDEN eigenständigen Gedanken in einen eigenen Entry. Kriterium:
 Wäre es in einer To-Do-App / einem Kalender ein separater Eintrag? → Eigener Entry.

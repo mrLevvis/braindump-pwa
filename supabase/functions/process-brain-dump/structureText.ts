@@ -66,9 +66,16 @@ export async function structureText(
  * ------------------------------------------------------------------------------*/
 
 /**
- * Gibt das heutige Datum im ISO-Format (YYYY-MM-DD) zurück.
- * @returns {string} Das heutige Datum im ISO-Format.
+ * Gibt das heutige Datum im ISO-Format (YYYY-MM-DD) in der Zeitzone Europe/Berlin zurück.
+ * new Date().toISOString() wäre UTC und kann für deutsche Nutzer kurz nach Mitternacht
+ * den falschen Tag liefern.
  */
 function getTodayIso(): string {
-  return new Date().toISOString().split("T")[0];
+  return new Intl.DateTimeFormat('de-DE', {
+    timeZone: 'Europe/Berlin',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date()).split('.').reverse().join('-');
+  // de-DE liefert "TT.MM.JJJJ" → split+reverse → "JJJJ-MM-TT"
 }
