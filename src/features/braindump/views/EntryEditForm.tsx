@@ -46,9 +46,6 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
       setDate('');
       setStartTime('');
       setEndTime('');
-    } else if (cat === 'TASK') {
-      setStartTime('');
-      setEndTime('');
     }
   };
 
@@ -81,8 +78,8 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
       category,
       payload: {
         ...(category !== 'NOTE' && date ? { date } : {}),
-        ...(category === 'EVENT' && startTime ? { startTime } : {}),
-        ...(category === 'EVENT' && endTime ? { endTime } : {}),
+        ...(category !== 'NOTE' && startTime ? { startTime } : {}),
+        ...(category !== 'NOTE' && endTime ? { endTime } : {}),
         ...(tags.length > 0 ? { tags } : {}),
       },
       summary: summary.filter(s => s.trim()),
@@ -144,7 +141,20 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
       {category === 'TASK' && (
         <div className={SECTION_CLS}>
           <p className={LABEL_CLS}>Fällig am</p>
-          <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
+          <div className={TIME_GRID_CLS}>
+            <div className="space-y-1">
+              <p className="text-[10px] text-muted-foreground">Datum</p>
+              <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] text-muted-foreground">Von</p>
+              <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] text-muted-foreground">Bis</p>
+              <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
+            </div>
+          </div>
         </div>
       )}
 
