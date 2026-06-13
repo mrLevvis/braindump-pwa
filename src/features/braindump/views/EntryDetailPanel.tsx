@@ -188,12 +188,17 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{ entry
         </DialogHeader>
 
         {isEditing ? (
-          <EntryEditForm
-            entry={entry}
-            onSave={handleSave}
-            onCancel={() => setIsEditing(false)}
-            isSaving={isSaving}
-          />
+          <>
+            <EntryEditForm
+              entry={entry}
+              onSave={handleSave}
+              onCancel={() => setIsEditing(false)}
+              isSaving={isSaving}
+            />
+            <time dateTime={entry.created_at} className="px-6 pb-4 text-[10px] text-muted-foreground">
+              erstellt am {formatCreatedDateTime(entry.created_at)} um {formatCreatedTime(entry.created_at)} Uhr
+            </time>
+          </>
         ) : (
           <div className={PANEL_BODY_CLASS_NAME}>
             {entry.summary && entry.summary.length > 0 ? (
@@ -252,11 +257,11 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{ entry
                 </Button>
               </div>
             )}
+            <time dateTime={entry.created_at} className="text-[10px] text-muted-foreground">
+              erstellt am {formatCreatedDateTime(entry.created_at)} um {formatCreatedTime(entry.created_at)} Uhr
+            </time>
           </div>
         )}
-        <time dateTime={entry.created_at} className="absolute bottom-3 left-6 text-[10px] text-muted-foreground">
-          erstellt am {formatCreatedDateTime(entry.created_at)} um {formatCreatedTime(entry.created_at)} Uhr
-        </time>
       </DialogContent>
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
