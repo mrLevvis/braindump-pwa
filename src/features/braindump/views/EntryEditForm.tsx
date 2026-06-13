@@ -40,6 +40,18 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
 
   const tagInputRef = useRef<HTMLInputElement>(null);
 
+  const handleCategoryChange = (cat: EntryCategory) => {
+    setCategory(cat);
+    if (cat === 'NOTE') {
+      setDate('');
+      setStartTime('');
+      setEndTime('');
+    } else if (cat === 'TASK') {
+      setStartTime('');
+      setEndTime('');
+    }
+  };
+
   const addTag = () => {
     const trimmed = tagInput.trim();
     if (trimmed && !tags.includes(trimmed)) {
@@ -68,9 +80,9 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
       title: title.trim() || undefined,
       category,
       payload: {
-        ...(date ? { date } : {}),
-        ...(startTime ? { startTime } : {}),
-        ...(endTime ? { endTime } : {}),
+        ...(category !== 'NOTE' && date ? { date } : {}),
+        ...(category === 'EVENT' && startTime ? { startTime } : {}),
+        ...(category === 'EVENT' && endTime ? { endTime } : {}),
         ...(tags.length > 0 ? { tags } : {}),
       },
       summary: summary.filter(s => s.trim()),
@@ -97,7 +109,7 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
             <button
               key={cat}
               type="button"
-              onClick={() => setCategory(cat)}
+              onClick={() => handleCategoryChange(cat)}
               className={cn(CAT_BTN_BASE, category === cat
                 ? CATEGORY_ACTIVE[cat]
                 : 'border-border text-muted-foreground hover:bg-muted'
@@ -109,23 +121,32 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
         </div>
       </div>
 
-      <div className={SECTION_CLS}>
-        <p className={LABEL_CLS}>Datum &amp; Uhrzeit</p>
-        <div className={TIME_GRID_CLS}>
-          <div className="space-y-1">
-            <p className="text-[10px] text-muted-foreground">Datum</p>
-            <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
-          </div>
-          <div className="space-y-1">
-            <p className="text-[10px] text-muted-foreground">Von</p>
-            <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
-          </div>
-          <div className="space-y-1">
-            <p className="text-[10px] text-muted-foreground">Bis</p>
-            <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
+      {category === 'EVENT' && (
+        <div className={SECTION_CLS}>
+          <p className={LABEL_CLS}>Datum &amp; Uhrzeit</p>
+          <div className={TIME_GRID_CLS}>
+            <div className="space-y-1">
+              <p className="text-[10px] text-muted-foreground">Datum</p>
+              <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] text-muted-foreground">Von</p>
+              <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] text-muted-foreground">Bis</p>
+              <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {category === 'TASK' && (
+        <div className={SECTION_CLS}>
+          <p className={LABEL_CLS}>Fällig am</p>
+          <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
+        </div>
+      )}
 
       <div className={SECTION_CLS}>
         <p className={LABEL_CLS}>Tags</p>
