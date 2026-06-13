@@ -25,9 +25,10 @@ interface Props {
   onSave: (patch: EntryPatch) => void;
   onCancel: () => void;
   isSaving: boolean;
+  bottomSlot?: React.ReactNode;
 }
 
-export function EntryEditForm({ entry, onSave, onCancel, isSaving }: Readonly<Props>) {
+export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }: Readonly<Props>) {
   const [title, setTitle] = useState(entry.title ?? '');
   const [category, setCategory] = useState<EntryCategory>(entry.category);
   const [date, setDate] = useState(entry.payload?.date ?? '');
@@ -191,6 +192,8 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving }: Readonly<Pr
           </button>
         </div>
       </div>
+
+      {bottomSlot}
 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="outline" size="sm" onClick={onCancel} disabled={isSaving}>
