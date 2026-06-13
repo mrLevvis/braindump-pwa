@@ -1,9 +1,29 @@
-import { useState, useRef, type KeyboardEvent } from 'react';
+import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
 import { X, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import type { BrainDumpEntry, EntryCategory, EntryPatch } from '../types';
+
+// Matches Input's visual style but grows with content instead of clipping.
+const AUTOGROW_CLS = [
+  'flex w-full rounded-4xl border border-input bg-background px-3 py-1 text-base shadow-sm transition-colors outline-none',
+  'placeholder:text-muted-foreground',
+  'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30',
+  'disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
+  'resize-none overflow-hidden leading-normal',
+].join(' ');
+
+function AutoGrowTextarea({ value, className, ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [value]);
+  return <textarea ref={ref} value={value} rows={1} className={cn(AUTOGROW_CLS, className)} {...props} />;
+}
 
 const LABEL_CLS = 'text-xs font-medium uppercase tracking-wide text-muted-foreground';
 const SECTION_CLS = 'space-y-1.5';
@@ -91,7 +111,7 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
     <div className="space-y-5 px-6 pb-10">
       <div className={SECTION_CLS}>
         <p className={LABEL_CLS}>Titel</p>
-        <Input
+        <AutoGrowTextarea
           value={title}
           onChange={e => setTitle(e.target.value)}
           placeholder="Titel"
@@ -164,10 +184,10 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
           {summary.map((line, i) => (
             <div key={i} className="flex items-center gap-2">
               <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/50" aria-hidden="true" />
-              <Input
+              <AutoGrowTextarea
                 value={line}
                 onChange={e => updateSummaryLine(i, e.target.value)}
-                className="h-7 text-sm"
+                className="py-0.5 text-sm"
               />
               <button
                 type="button"
