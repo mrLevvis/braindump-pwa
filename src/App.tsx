@@ -20,6 +20,7 @@ function App() {
   const setSelectedDate = useDaySelectionStore(s => s.setSelectedDate);
 
   const [view, setView] = useState<AppView>(() => parseAppRoute().view);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
 
   const handlePop = useCallback((newView: AppView, date: string | null) => {
     setView(newView);
@@ -67,18 +68,20 @@ function App() {
   return (
     <div>
       {view === 'dashboard' ? (
-        <BrainDumpDashboard onOpenTimeline={() => setView('timeline')} />
+        <BrainDumpDashboard onOpenTimeline={() => setView('timeline')} onSelectionModeChange={setIsSelectionMode} />
       ) : (
         <TimelineView onBack={() => setView('dashboard')} />
       )}
-      <InputSection
-        textValue={textValue}
-        onTextChange={setTextValue}
-        onTextSubmit={handleTextSubmit}
-        status={buttonStatus}
-        onVoiceClick={toggleRecording}
-        disabled={isProcessing}
-      />
+      {!isSelectionMode && (
+        <InputSection
+          textValue={textValue}
+          onTextChange={setTextValue}
+          onTextSubmit={handleTextSubmit}
+          status={buttonStatus}
+          onVoiceClick={toggleRecording}
+          disabled={isProcessing}
+        />
+      )}
       <IngestPreviewSheet />
       <Toaster />
     </div>
