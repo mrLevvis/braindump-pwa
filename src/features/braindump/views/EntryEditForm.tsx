@@ -159,6 +159,37 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
       )}
 
       <div className={SECTION_CLS}>
+        <p className={LABEL_CLS}>Zusammenfassung</p>
+        <div className="space-y-1.5">
+          {summary.map((line, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/50" aria-hidden="true" />
+              <Input
+                value={line}
+                onChange={e => updateSummaryLine(i, e.target.value)}
+                className="h-7 text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => removeSummaryLine(i)}
+                aria-label="Punkt entfernen"
+                className="shrink-0 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addSummaryLine}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <Plus className="h-3 w-3" /> Punkt hinzufügen
+          </button>
+        </div>
+      </div>
+
+      <div className={SECTION_CLS}>
         <p className={LABEL_CLS}>Tags</p>
         <div className="flex flex-wrap gap-1.5">
           {tags.map(tag => (
@@ -190,37 +221,6 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
           <Button type="button" variant="outline" size="sm" onClick={addTag} className="h-7 px-2">
             <Plus className="h-3.5 w-3.5" />
           </Button>
-        </div>
-      </div>
-
-      <div className={SECTION_CLS}>
-        <p className={LABEL_CLS}>Zusammenfassung</p>
-        <div className="space-y-1.5">
-          {summary.map((line, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/50" aria-hidden="true" />
-              <Input
-                value={line}
-                onChange={e => updateSummaryLine(i, e.target.value)}
-                className="h-7 text-sm"
-              />
-              <button
-                type="button"
-                onClick={() => removeSummaryLine(i)}
-                aria-label="Punkt entfernen"
-                className="shrink-0 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={addSummaryLine}
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-          >
-            <Plus className="h-3 w-3" /> Punkt hinzufügen
-          </button>
         </div>
       </div>
 
