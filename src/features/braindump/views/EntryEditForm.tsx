@@ -115,7 +115,6 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
           value={title}
           onChange={e => setTitle(e.target.value)}
           placeholder="Titel"
-          autoFocus
         />
       </div>
 
