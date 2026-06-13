@@ -171,14 +171,16 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{ entry
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) setIsEditing(false); onOpenChange(v); }}>
       <DialogContent className={PANEL_CONTENT_CLASS_NAME}>
-        <div className="absolute top-4 right-10 z-10">
-          <DetailPanelMenu
-            onDeleteClick={() => setIsDeleteDialogOpen(true)}
-            onEditClick={() => setIsEditing(true)}
-          />
-        </div>
+        {!isEditing && (
+          <div className="absolute top-4 right-10 z-10">
+            <DetailPanelMenu
+              onDeleteClick={() => setIsDeleteDialogOpen(true)}
+              onEditClick={() => setIsEditing(true)}
+            />
+          </div>
+        )}
 
-        <DialogHeader className="pr-14">
+        <DialogHeader className={isEditing ? 'sr-only' : 'pr-14'}>
           <DialogTitle>{title}</DialogTitle>
           {!isEditing && (
             <div className={META_ROW_CLASS_NAME}>
