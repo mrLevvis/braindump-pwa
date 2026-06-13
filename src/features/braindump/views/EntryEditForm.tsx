@@ -27,7 +27,7 @@ function AutoGrowTextarea({ value, className, ...props }: React.TextareaHTMLAttr
 
 const LABEL_CLS = 'text-xs font-medium uppercase tracking-wide text-muted-foreground';
 const SECTION_CLS = 'space-y-1.5';
-const TIME_GRID_CLS = 'grid grid-cols-2 sm:grid-cols-3 gap-2';
+const TIME_GRID_CLS = 'grid grid-cols-1 sm:grid-cols-3 gap-2';
 
 const CATEGORIES: EntryCategory[] = ['TASK', 'EVENT', 'NOTE'];
 const CATEGORY_LABEL: Record<EntryCategory, string> = { TASK: 'Aufgabe', EVENT: 'Termin', NOTE: 'Notiz' };
@@ -141,7 +141,7 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
         <div className={SECTION_CLS}>
           <p className={LABEL_CLS}>Datum &amp; Uhrzeit</p>
           <div className={TIME_GRID_CLS}>
-            <div className="col-span-2 sm:col-span-1 space-y-1">
+            <div className="space-y-1">
               <p className="text-[10px] text-muted-foreground">Datum</p>
               <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
             </div>
@@ -161,7 +161,7 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
         <div className={SECTION_CLS}>
           <p className={LABEL_CLS}>Fällig am</p>
           <div className={TIME_GRID_CLS}>
-            <div className="col-span-2 sm:col-span-1 space-y-1">
+            <div className="space-y-1">
               <p className="text-[10px] text-muted-foreground">Datum</p>
               <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
             </div>
