@@ -27,6 +27,29 @@ CREATE POLICY "Allow public read/write access" ON public.braindump_entries FOR A
 > `FOR ALL USING (true)` deckt alle Commands (SELECT, INSERT, UPDATE, **DELETE**) ab.
 > Wenn du für Tests separate Policies anlegst (z. B. „Allow all inserts for test", „Allow all selects for test"), musst du zwingend auch eine **DELETE-Policy** anlegen — sonst blockt RLS DELETE-Anfragen still ohne Fehlermeldung (`count: 0` statt `error`).
 
+### 2b. Tabelle `shopping_items` anlegen (Migration 007)
+```sql
+CREATE TABLE public.shopping_items (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+    label TEXT NOT NULL,
+    is_done BOOLEAN NOT NULL DEFAULT false,
+    source_dump UUID  -- nullable, informative FK auf braindump_entries.id
+);
+
+ALTER TABLE public.shopping_items ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "deny all anon" ON public.shopping_items
+  FOR ALL TO anon USING (false);
+
+CREATE POLICY "allow authenticated" ON public.shopping_items
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
+```
+
+> [!IMPORTANT]
+> Die Policy `allow authenticated` deckt `SELECT`, `INSERT`, `UPDATE` **und** `DELETE` ab.
+> Fehlende DELETE-Policy führt bei Supabase zu stillem Blockieren (`count: 0` statt Fehlermeldung).
+
 ### 3. Dependencies & Environment
 1. Im Terminal installieren: 
    ```bash
