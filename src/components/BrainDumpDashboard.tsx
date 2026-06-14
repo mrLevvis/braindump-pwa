@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CalendarDays, ListChecks, Trash2, X } from 'lucide-react';
+import { ShoppingSection } from '../features/shopping/components/ShoppingSection';
 import { useCategoryFilterStore } from '../features/braindump/store/CategoryFilterStore';
 import { applyCategoryFilter } from '../features/braindump/utils/applyCategoryFilter';
 import { CategoryFilterTabs } from '../features/braindump/views/CategoryFilterTabs';
@@ -158,6 +159,10 @@ export const BrainDumpDashboard = ({ onOpenTimeline, onSelectionModeChange }: Re
                                 ? { selectedIds, onToggleSelect: handleToggleSelect }
                                 : undefined}
                         />
+                    </div>
+
+                    <div className="mt-6">
+                        <ShoppingSection />
                     </div>
                 </div>
             </main>

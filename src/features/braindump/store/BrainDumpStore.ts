@@ -13,6 +13,7 @@ import type { ShoppingSlice } from "../../shopping/store/shoppingSlice";
  */
 export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a) => {
   const set = a[0];
+  const get = a[1];
   return {
     ...createShoppingSlice((partial) => set(partial)),
     // --- INITIAL STATE ---
@@ -80,6 +81,7 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a)
         const data = await fetchEntries();
         if (data) set(() => ({ entries: data }));
         set(() => ({ pendingPreview: null }));
+        get().loadItems();
     },
 
     discardIngest: (_captureId: string) => {
