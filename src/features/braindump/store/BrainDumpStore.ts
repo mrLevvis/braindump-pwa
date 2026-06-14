@@ -4,12 +4,17 @@ import { deleteEntry as deleteEntryFromApi, deleteEntriesByIds, fetchEntries, in
 import { processText } from "../services/processBrainDump";
 import { prioritizeDayTasks as prioritizeApi } from "../services/prioritizeTasks";
 import { showErrorToast } from "../../../hooks/useErrorToast";
+import { createShoppingSlice } from "../../shopping/store/shoppingSlice";
+import type { ShoppingSlice } from "../../shopping/store/shoppingSlice";
 
 /**
  * Globaler Zustand-Store für das BrainDump-Feature.
- * Hält Einträge + Statusflags.
+ * Hält Einträge + Statusflags. ShoppingSlice ist per Zustand-Slice-Pattern eingemischt.
  */
-export const useBrainDumpStore = create<BrainDumpState>()((set) => ({
+export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a) => {
+  const set = a[0];
+  return {
+    ...createShoppingSlice((partial) => set(partial)),
     // --- INITIAL STATE ---
     entries: [],
     isRecording: false,
@@ -148,4 +153,5 @@ export const useBrainDumpStore = create<BrainDumpState>()((set) => ({
 
         return result;
     },
-}));
+  };
+});
