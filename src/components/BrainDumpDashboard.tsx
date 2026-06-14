@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { CalendarDays, ListChecks, Trash2, X } from 'lucide-react';
-import { ShoppingSection } from '../features/shopping/components/ShoppingSection';
+import { CalendarDays, ListChecks, ShoppingCart, Trash2, X } from 'lucide-react';
 import { useCategoryFilterStore } from '../features/braindump/store/CategoryFilterStore';
 import { applyCategoryFilter } from '../features/braindump/utils/applyCategoryFilter';
 import { CategoryFilterTabs } from '../features/braindump/views/CategoryFilterTabs';
@@ -65,7 +64,7 @@ const DELETE_BTN_CLASS_NAME = [
   'focus-visible:outline-none', 'focus-visible:ring-2', 'focus-visible:ring-ring',
 ].join(' ');
 
-export const BrainDumpDashboard = ({ onOpenTimeline, onSelectionModeChange }: Readonly<{ onOpenTimeline: () => void; onSelectionModeChange?: (active: boolean) => void }>) => {
+export const BrainDumpDashboard = ({ onOpenTimeline, onOpenShopping, onSelectionModeChange }: Readonly<{ onOpenTimeline: () => void; onOpenShopping: () => void; onSelectionModeChange?: (active: boolean) => void }>) => {
     const allEntries = useEntries();
     const activeCategories = useCategoryFilterStore(s => s.activeCategories);
     const toggleCategory   = useCategoryFilterStore(s => s.toggleCategory);
@@ -135,6 +134,14 @@ export const BrainDumpDashboard = ({ onOpenTimeline, onSelectionModeChange }: Re
                         <button
                             type="button"
                             className={ICON_BTN_CLASS_NAME}
+                            onClick={onOpenShopping}
+                            aria-label="Einkaufsliste öffnen"
+                        >
+                            <ShoppingCart className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                        <button
+                            type="button"
+                            className={ICON_BTN_CLASS_NAME}
                             onClick={onOpenTimeline}
                             aria-label="Timeline öffnen"
                         >
@@ -161,9 +168,6 @@ export const BrainDumpDashboard = ({ onOpenTimeline, onSelectionModeChange }: Re
                         />
                     </div>
 
-                    <div className="mt-6">
-                        <ShoppingSection />
-                    </div>
                 </div>
             </main>
 

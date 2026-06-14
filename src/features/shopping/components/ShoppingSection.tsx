@@ -4,11 +4,6 @@ import { ShoppingItemRow } from './ShoppingItemRow';
 
 const SECTION_CLS = ['space-y-2'].join(' ');
 
-const HEADING_CLS = [
-  'text-xs', 'font-medium', 'uppercase', 'tracking-wide',
-  'text-emerald-600', 'dark:text-emerald-400',
-].join(' ');
-
 const LIST_CLS = [
   'rounded-xl', 'border', 'bg-emerald-500/5',
   'divide-y', 'divide-border', 'px-3',
@@ -29,8 +24,6 @@ export function ShoppingSection() {
 
   return (
     <section className={SECTION_CLS} aria-label="Einkaufsliste">
-      <h2 className={HEADING_CLS}>Einkaufsliste</h2>
-
       {items.length === 0 ? (
         <p className={EMPTY_CLS}>
           Noch keine Artikel. Schreib einen Dump mit einer Einkaufsliste.

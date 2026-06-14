@@ -9,6 +9,7 @@ import { useSelectedDate } from './hooks/timelineSelectors';
 import { useDaySelectionStore } from './features/timeline/store';
 import { transcribeAudio } from './features/braindump/services/processBrainDump';
 import { InputSection, IngestPreviewSheet } from './features/braindump/views';
+import { ShoppingView } from './features/shopping/components/ShoppingView';
 import { useIsProcessing, useSetProcessing, useSubmitText } from './hooks/braindumpSelectors';
 import { useErrorToast, useSuccessToast } from './hooks/useErrorToast';
 import { useVoiceRecording } from './hooks/useVoiceRecording';
@@ -67,10 +68,16 @@ function App() {
 
   return (
     <div>
-      {view === 'dashboard' ? (
-        <BrainDumpDashboard onOpenTimeline={() => setView('timeline')} onSelectionModeChange={setIsSelectionMode} />
-      ) : (
+      {view === 'shopping' ? (
+        <ShoppingView onBack={() => setView('dashboard')} />
+      ) : view === 'timeline' ? (
         <TimelineView onBack={() => setView('dashboard')} />
+      ) : (
+        <BrainDumpDashboard
+          onOpenTimeline={() => setView('timeline')}
+          onOpenShopping={() => setView('shopping')}
+          onSelectionModeChange={setIsSelectionMode}
+        />
       )}
       {!isSelectionMode && (
         <InputSection
