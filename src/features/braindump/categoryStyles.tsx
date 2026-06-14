@@ -36,6 +36,13 @@ export const CATEGORY_STYLES: Record<EntryCategory, CategoryStyle> = {
     accentBorder: 'border-amber-500/50',
     badge: { label: 'Note', variant: 'outline', className: 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200' },
   },
+  SHOPPING: {
+    tintBackground: 'bg-emerald-500/10 dark:bg-emerald-500/15',
+    accent: 'text-emerald-500',
+    accentBg: 'bg-emerald-500',
+    accentBorder: 'border-emerald-500/50',
+    badge: { label: 'Shopping', variant: 'outline', className: 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200' },
+  },
 };
 
 const TAG_BADGE_CLASS_NAME = [

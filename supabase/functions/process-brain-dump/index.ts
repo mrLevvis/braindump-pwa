@@ -6,11 +6,17 @@
 
 import "@supabase/functions-js/edge-runtime.d.ts";
 
+import { createClient } from "@supabase/supabase-js";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { structureText } from "./structureText.ts";
 import type { StructuredEntry } from "../_shared/contract.ts";
 import { ENTRY_CATEGORIES, normalizeEntryContract } from "../_shared/contract.ts";
 import { transcribeAudio } from "./transcribeAudio.ts";
+
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL") ?? "",
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+);
 
 function isValidEntry(e: unknown): e is StructuredEntry {
   if (!e || typeof e !== "object" || Array.isArray(e)) return false;
@@ -136,8 +142,27 @@ Deno.serve(async (request) => {
   // 7. captureId serverseitig vergeben — verbindet alle Entries dieses Dumps.
   const captureId = crypto.randomUUID();
 
-  // 8. Alles gut -> { captureId, entries } zurückgeben.
-  return new Response(JSON.stringify({ captureId, entries: normalizedEntries }), {
+  // 8. SHOPPING-Entries direkt in shopping_items schreiben, nicht nach braindump_entries.
+  const shoppingEntries = normalizedEntries.filter(e => e.category === 'SHOPPING');
+  const regularEntries  = normalizedEntries.filter(e => e.category !== 'SHOPPING');
+
+  if (shoppingEntries.length > 0) {
+    const rows = shoppingEntries.flatMap(e =>
+      (e.payload.items ?? []).map((label: string) => ({ label, is_done: false }))
+    );
+    if (rows.length > 0) {
+      const { error: dbError } = await supabase.from('shopping_items').insert(rows);
+      if (dbError) {
+        return new Response(
+          JSON.stringify({ error: "Failed to insert shopping items", details: dbError.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+  }
+
+  // 9. Nur TASK/EVENT/NOTE-Entries zurückgeben — SHOPPING ist bereits persistiert.
+  return new Response(JSON.stringify({ captureId, entries: regularEntries }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 });

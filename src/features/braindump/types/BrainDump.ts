@@ -38,7 +38,7 @@ export interface PriorityResult {
 /**
  * Das strikte Enum für die Kern-Kategorien (SRP & KISS Prinzip)
  */
-export type EntryCategory = 'TASK' | 'EVENT' | 'NOTE';
+export type EntryCategory = 'TASK' | 'EVENT' | 'NOTE' | 'SHOPPING';
 
 /**
  * Der strukturierte Inhalt des JSONB-Feldes in Supabase.
@@ -48,7 +48,8 @@ export interface EntryPayload {
   date?: string;       // ISO Datum (YYYY-MM-DD), falls im Text impliziert/erwähnt
   startTime?: string;  // HH:MM (Beginn), falls im Text erwähnt
   endTime?: string;    // HH:MM (Ende), nur wenn Zeitspanne und > startTime
-  tags?: string[];     // Flexibler Kontext (z.B. ["Einkauf"])
+  tags?: string[];     // Flexibler Kontext (z.B. ["Arbeit"])
+  items?: string[];    // SHOPPING: Liste der Einkaufsartikel
 }
 
 /**

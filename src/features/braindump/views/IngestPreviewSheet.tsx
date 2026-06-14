@@ -41,9 +41,10 @@ const ORIGINAL_TEXT_CLS = [
 const LABEL_CLS = 'text-xs font-medium uppercase tracking-wide text-muted-foreground';
 
 const EXCERPT_HIGHLIGHT: Record<EntryCategory, string> = {
-  TASK:  'bg-violet-500/25 dark:bg-violet-500/30 rounded-sm',
-  EVENT: 'bg-sky-500/25 dark:bg-sky-500/30 rounded-sm',
-  NOTE:  'bg-amber-500/25 dark:bg-amber-500/30 rounded-sm',
+  TASK:     'bg-violet-500/25 dark:bg-violet-500/30 rounded-sm',
+  EVENT:    'bg-sky-500/25 dark:bg-sky-500/30 rounded-sm',
+  NOTE:     'bg-amber-500/25 dark:bg-amber-500/30 rounded-sm',
+  SHOPPING: 'bg-emerald-500/25 dark:bg-emerald-500/30 rounded-sm',
 };
 
 function OriginalTextBlock({ text, excerpt, category }: Readonly<{ text: string; excerpt?: string; category: EntryCategory }>) {

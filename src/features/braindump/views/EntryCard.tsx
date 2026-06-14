@@ -211,6 +211,7 @@ const CARD_REGISTRY: Record<EntryCategory, React.ComponentType<CardProps>> = {
   TASK: TaskCard,
   EVENT: EventCard,
   NOTE: NoteCard,
+  SHOPPING: NoteCard, // SHOPPING-Entries landen in shopping_items, nicht hier
 };
 
 export function resolveEntryCard(category: EntryCategory): React.ComponentType<CardProps> {

@@ -7,6 +7,7 @@ const LABEL: Record<EntryCategory, string> = {
   TASK: 'Task',
   EVENT: 'Event',
   NOTE: 'Note',
+  SHOPPING: 'Shopping',
 };
 
 const TAB_BASE = [

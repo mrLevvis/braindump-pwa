@@ -50,28 +50,35 @@ Gib das JSON exakt in dieser Form zurück:
 {
   "entries": [
     {
-      "category": "TASK" | "EVENT" | "NOTE",
+      "category": "TASK" | "EVENT" | "NOTE" | "SHOPPING",
       "title": "vollständiger, selbsterklärender Titel als EIN Satz mit den wichtigsten Infos, maximal ca. 15 Wörter – OHNE jedes Datum, jede Uhrzeit oder Zeitangabe (kein 'morgen', 'Freitag', '15 Uhr' o. Ä.)",
       "sourceExcerpt": "der relevante Wortlaut aus dem Original-Dump für diesen Entry (möglichst wörtlich)",
       "summary": ["Stichpunkt 1", "Stichpunkt 2"],
+
+      // Für TASK / EVENT / NOTE:
       "payload": {
         "date": "YYYY-MM-DD (wenn startTime gesetzt und kein anderes Datum genannt: immer ${todayIso}; sonst nur wenn Datum gemeint/berechenbar)",
         "startTime": "HH:MM (Beginn, nur wenn eine Uhrzeit genannt wird, sonst weglassen)",
         "endTime": "HH:MM (Ende — immer setzen wenn startTime vorhanden: explizit falls genannt, sonst EVENT +60 Min., TASK +30 Min.)",
-        "tags": ["optionaler Kontext, z.B. \\"Einkauf\\", \\"Arbeit\\""]
+        "tags": ["optionaler Kontext, z.B. \\"Arbeit\\""]
       }
+
+      // Für SHOPPING (stattdessen):
+      // "payload": { "items": ["Artikel 1", "Artikel 2", "Artikel 3"] }
     }
   ]
 }
 
 Kategorien:
-- "TASK":  Eine konkrete Aufgabe zum Erledigen/Abhaken (auch Einkäufe, To-Dos).
-- "EVENT": Ein Termin mit konkretem Zeitbezug.
-- "NOTE":  Ein Gedanke/eine Info ohne Handlungsbedarf.
+- "TASK":     Eine konkrete Aufgabe zum Erledigen/Abhaken (To-Dos, einzelne Einkäufe wie "Milch kaufen").
+- "EVENT":    Ein Termin mit konkretem Zeitbezug.
+- "NOTE":     Ein Gedanke/eine Info ohne Handlungsbedarf.
+- "SHOPPING": Eine Einkaufsliste mit mehreren Artikeln. Genau EIN Entry für die gesamte Liste; alle Artikel kommen als String-Array in payload.items. Kein date/startTime/endTime/tags im payload.
 
 Regeln:
 - "entries" ist IMMER ein Array — auch wenn nur ein Gedanke im Dump steckt (dann Länge 1).
-- "category" ist IMMER exakt einer der drei Großbuchstaben-Werte.
+- "category" ist IMMER exakt einer der vier Großbuchstaben-Werte.
+- SHOPPING: Eine zusammenhängende Einkaufsliste → EIN Entry, alle Artikel in payload.items. payload.items ist ein Array von Strings (je ein Artikel). Kein date, startTime, endTime, tags im SHOPPING-payload.
 - "sourceExcerpt" enthält den relevanten Wortlaut aus dem Original möglichst wörtlich, niemals leer.
 - "summary" ist ein Array von Stichpunkten (kurze Sätze/Fragmente) die Details aus dem sourceExcerpt aufschlüsseln. Kein Stichpunkt wiederholt bloß den title. IMMER mindestens 1 Stichpunkt — auch bei trivialen Entries fasst du den Kern in einem Satz zusammen.
 - Felder in "payload", die nicht im Text vorkommen, lässt du komplett weg.
@@ -115,6 +122,14 @@ Ausgabe:
 {
   "entries": [
     {"category":"NOTE","title":"Interessanter Artikel über KI-Agenten","sourceExcerpt":"Interessanter Artikel über KI-Agenten","summary":["Artikel über KI-Agenten als interessant markiert"],"payload":{}}
+  ]
+}
+
+Eingabe: "Milch, Brot, Butter kaufen"
+Ausgabe:
+{
+  "entries": [
+    {"category":"SHOPPING","title":"Einkaufsliste","sourceExcerpt":"Milch, Brot, Butter kaufen","summary":["3 Artikel: Milch, Brot, Butter"],"payload":{"items":["Milch","Brot","Butter"]}}
   ]
 }
 `;

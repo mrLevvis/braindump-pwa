@@ -50,9 +50,10 @@ const SUMMARY_BULLET_CLASS_NAME = ['mt-1.5', 'h-1.5', 'w-1.5', 'shrink-0', 'roun
 const ACTION_ROW_CLASS_NAME = ['flex', 'items-center', 'justify-end', 'pt-2'].join(' ');
 
 const EXCERPT_HIGHLIGHT: Record<EntryCategory, string> = {
-  TASK:  'bg-violet-500/25 dark:bg-violet-500/30 rounded-sm',
-  EVENT: 'bg-sky-500/25 dark:bg-sky-500/30 rounded-sm',
-  NOTE:  'bg-amber-500/25 dark:bg-amber-500/30 rounded-sm',
+  TASK:     'bg-violet-500/25 dark:bg-violet-500/30 rounded-sm',
+  EVENT:    'bg-sky-500/25 dark:bg-sky-500/30 rounded-sm',
+  NOTE:     'bg-amber-500/25 dark:bg-amber-500/30 rounded-sm',
+  SHOPPING: 'bg-emerald-500/25 dark:bg-emerald-500/30 rounded-sm',
 };
 
 function OriginalText({ text, excerpt, category }: Readonly<{ text: string; excerpt?: string; category: EntryCategory }>) {

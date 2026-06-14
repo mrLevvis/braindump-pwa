@@ -30,12 +30,13 @@ const SECTION_CLS = 'space-y-1.5';
 const TIME_GRID_CLS = 'grid grid-cols-1 sm:grid-cols-3 gap-2';
 
 const CATEGORIES: EntryCategory[] = ['TASK', 'EVENT', 'NOTE'];
-const CATEGORY_LABEL: Record<EntryCategory, string> = { TASK: 'Aufgabe', EVENT: 'Termin', NOTE: 'Notiz' };
+const CATEGORY_LABEL: Record<EntryCategory, string> = { TASK: 'Aufgabe', EVENT: 'Termin', NOTE: 'Notiz', SHOPPING: 'Einkauf' };
 
 const CATEGORY_ACTIVE: Record<EntryCategory, string> = {
-  TASK: 'bg-violet-500/20 text-violet-700 dark:text-violet-300 border-violet-500/40',
-  EVENT: 'bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-500/40',
-  NOTE: 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40',
+  TASK:     'bg-violet-500/20 text-violet-700 dark:text-violet-300 border-violet-500/40',
+  EVENT:    'bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-500/40',
+  NOTE:     'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40',
+  SHOPPING: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40',
 };
 
 const CAT_BTN_BASE = 'flex-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors';

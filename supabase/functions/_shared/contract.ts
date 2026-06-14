@@ -6,7 +6,7 @@
 
 
 /** Die erlaubten Kategorien als Array (= die eine Wahrheit, zur Laufzeit nutzbar). */
-export const ENTRY_CATEGORIES = ["TASK", "EVENT", "NOTE"] as const;
+export const ENTRY_CATEGORIES = ["TASK", "EVENT", "NOTE", "SHOPPING"] as const;
 
 /** Der Typ wird aus dem Array ABGELEITET – ändert sich das Array, ändert sich der Typ automatisch. */
 export type EntryCategory = typeof ENTRY_CATEGORIES[number];
@@ -14,11 +14,14 @@ export type EntryCategory = typeof ENTRY_CATEGORIES[number];
 /**
  * Zeitbezug-Vertrag der Kategorien (erzwungen von normalizeEntryContract):
  *
- * EVENT — per Definition datiert. Ein Event ohne `date` ist ein KI-Fehler;
- *         wird deterministisch zu TASK herabgestuft (bleibt so sichtbar).
- * TASK  — optional datiert. Der einzige flexible Typ.
- * NOTE  — per Definition zeitlos. Datum/Uhrzeit aus der KI-Antwort werden
- *         stillschweigend gestripped; Kategorie bleibt NOTE.
+ * EVENT    — per Definition datiert. Ein Event ohne `date` ist ein KI-Fehler;
+ *            wird deterministisch zu TASK herabgestuft (bleibt so sichtbar).
+ * TASK     — optional datiert. Der einzige flexible Typ.
+ * NOTE     — per Definition zeitlos. Datum/Uhrzeit aus der KI-Antwort werden
+ *            stillschweigend gestripped; Kategorie bleibt NOTE.
+ * SHOPPING — kein Zeitbezug, kein DB-Insert in braindump_entries.
+ *            payload.items enthält die Artikel; die Edge Function schreibt sie
+ *            direkt in shopping_items und filtert den Entry aus der Response.
  *
  * Konsumenten downstream (z.B. buildTimelineBuckets) dürfen sich auf diesen
  * Vertrag verlassen, ohne eigene Abwehrlogik zu duplizieren.
@@ -30,6 +33,7 @@ export interface EntryPayload {
   startTime?: string;  // HH:MM (Beginn)
   endTime?: string;    // HH:MM (Ende, nur wenn Zeitspanne, > startTime)
   tags?: string[];
+  items?: string[];    // SHOPPING: Liste der Einkaufsartikel
 }
 
 /** Ein strukturierter Eintrag, wie ihn die KI zurückgibt. */
@@ -60,6 +64,9 @@ export interface IngestResult {
  * Muss am Ingest-Boundary aufgerufen werden, bevor der Eintrag persistiert wird.
  */
 export function normalizeEntryContract(entry: StructuredEntry): StructuredEntry {
+  // SHOPPING hat keinen Zeitbezug — direkt durchreichen, nichts normalisieren.
+  if (entry.category === 'SHOPPING') return entry;
+
   // EVENT ohne Datum ist kein valider Zustand — zu TASK herabstufen.
   if (entry.category === 'EVENT' && !entry.payload.date) {
     return { ...entry, category: 'TASK' };
