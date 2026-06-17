@@ -27,6 +27,7 @@ export function DetailPanelMenu({ onDeleteClick, onEditClick }: Readonly<Props>)
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
 
   const handleOpen = () => {
     if (!open && triggerRef.current) {
@@ -40,7 +41,10 @@ export function DetailPanelMenu({ onDeleteClick, onEditClick }: Readonly<Props>)
     if (!open) return;
     const close = (e: MouseEvent | KeyboardEvent) => {
       if (e instanceof KeyboardEvent) { if (e.key === 'Escape') setOpen(false); return; }
-      if (!triggerRef.current?.contains(e.target as Node)) setOpen(false);
+      if (
+        !triggerRef.current?.contains(e.target as Node) &&
+        !popupRef.current?.contains(e.target as Node)
+      ) setOpen(false);
     };
     document.addEventListener('mousedown', close);
     document.addEventListener('keydown', close);
@@ -66,6 +70,7 @@ export function DetailPanelMenu({ onDeleteClick, onEditClick }: Readonly<Props>)
 
       {open && pos && createPortal(
         <div
+          ref={popupRef}
           role="menu"
           // eslint-disable-next-line react/forbid-component-props
           style={{ top: pos.top, right: pos.right }}
