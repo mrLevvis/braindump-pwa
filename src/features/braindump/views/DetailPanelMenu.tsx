@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { EllipsisVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -8,12 +9,6 @@ const TRIGGER_CLASS = [
   'text-muted-foreground hover:text-foreground hover:bg-muted/50',
   'transition-colors',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-].join(' ');
-
-const POPUP_CLASS = [
-  'absolute top-full left-0 mt-1 z-10',
-  'min-w-[9rem] overflow-hidden rounded-xl border bg-popover',
-  'p-1 shadow-md text-sm text-popover-foreground outline-none',
 ].join(' ');
 
 const ITEM_BASE = [
@@ -30,13 +25,22 @@ interface Props {
 
 export function DetailPanelMenu({ onDeleteClick, onEditClick }: Readonly<Props>) {
   const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  const handleOpen = () => {
+    if (!open && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    }
+    setOpen(v => !v);
+  };
 
   useEffect(() => {
     if (!open) return;
     const close = (e: MouseEvent | KeyboardEvent) => {
       if (e instanceof KeyboardEvent) { if (e.key === 'Escape') setOpen(false); return; }
-      if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
+      if (!triggerRef.current?.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener('mousedown', close);
     document.addEventListener('keydown', close);
@@ -47,20 +51,26 @@ export function DetailPanelMenu({ onDeleteClick, onEditClick }: Readonly<Props>)
   }, [open]);
 
   return (
-    <div ref={containerRef} className="relative">
+    <>
       <button
+        ref={triggerRef}
         type="button"
         aria-label="Aktionen"
         aria-haspopup="menu"
-        aria-expanded={open}
+        aria-expanded={open ? 'true' : 'false'}
         className={TRIGGER_CLASS}
-        onClick={() => setOpen(v => !v)}
+        onClick={handleOpen}
       >
         <EllipsisVertical className="h-4 w-4" aria-hidden="true" />
       </button>
 
-      {open && (
-        <div role="menu" className={POPUP_CLASS}>
+      {open && pos && createPortal(
+        <div
+          role="menu"
+          // eslint-disable-next-line react/forbid-component-props
+          style={{ top: pos.top, right: pos.right }}
+          className="fixed z-[9999] min-w-[9rem] overflow-hidden rounded-xl border bg-popover p-1 shadow-md text-sm text-popover-foreground outline-none"
+        >
           <button
             role="menuitem"
             type="button"
@@ -77,8 +87,9 @@ export function DetailPanelMenu({ onDeleteClick, onEditClick }: Readonly<Props>)
           >
             Löschen
           </button>
-        </div>
+        </div>,
+        document.body,
       )}
-    </div>
+    </>
   );
 }
