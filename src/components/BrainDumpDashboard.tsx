@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CalendarDays, ListChecks, ShoppingCart, Trash2, X } from 'lucide-react';
+import { CalendarDays, ListChecks, ShieldCheck, ShoppingCart, Trash2, X } from 'lucide-react';
 import { useCategoryFilterStore } from '../features/braindump/store/CategoryFilterStore';
 import { applyCategoryFilter } from '../features/braindump/utils/applyCategoryFilter';
 import { CategoryFilterTabs } from '../features/braindump/views/CategoryFilterTabs';
@@ -64,7 +64,7 @@ const DELETE_BTN_CLASS_NAME = [
   'focus-visible:outline-none', 'focus-visible:ring-2', 'focus-visible:ring-ring',
 ].join(' ');
 
-export const BrainDumpDashboard = ({ onOpenTimeline, onOpenShopping, onSelectionModeChange }: Readonly<{ onOpenTimeline: () => void; onOpenShopping: () => void; onSelectionModeChange?: (active: boolean) => void }>) => {
+export const BrainDumpDashboard = ({ onOpenTimeline, onOpenShopping, onOpenAdmin, onSelectionModeChange }: Readonly<{ onOpenTimeline: () => void; onOpenShopping: () => void; onOpenAdmin?: () => void; onSelectionModeChange?: (active: boolean) => void }>) => {
     const allEntries = useEntries();
     const activeCategories = useCategoryFilterStore(s => s.activeCategories);
     const toggleCategory   = useCategoryFilterStore(s => s.toggleCategory);
@@ -147,6 +147,16 @@ export const BrainDumpDashboard = ({ onOpenTimeline, onOpenShopping, onSelection
                         >
                             <CalendarDays className="h-4 w-4" aria-hidden="true" />
                         </button>
+                        {onOpenAdmin && (
+                            <button
+                                type="button"
+                                className={ICON_BTN_CLASS_NAME}
+                                onClick={onOpenAdmin}
+                                aria-label="Admin-View öffnen"
+                            >
+                                <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                            </button>
+                        )}
                     </div>
                 </div>
             </header>

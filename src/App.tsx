@@ -96,6 +96,7 @@ function AuthenticatedApp() {
         <BrainDumpDashboard
           onOpenTimeline={() => setView('timeline')}
           onOpenShopping={() => setView('shopping')}
+          onOpenAdmin={isAdmin ? () => setView('admin') : undefined}
           onSelectionModeChange={setIsSelectionMode}
         />
       )}
