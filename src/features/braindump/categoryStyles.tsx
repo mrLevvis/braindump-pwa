@@ -46,7 +46,7 @@ export const CATEGORY_STYLES: Record<EntryCategory, CategoryStyle> = {
 };
 
 const TAG_BADGE_CLASS_NAME = [
-  'text-[11px]', 'font-normal', 'bg-white', 'border-0', 'text-foreground/70', 'dark:bg-white/10',
+  'text-[11px]', 'font-normal', 'bg-white', 'border', 'border-border/50', 'text-foreground/70', 'dark:bg-white/10',
 ].join(' ');
 
 export const TagBadgeList = ({ tags }: Readonly<{ tags: readonly string[] }>) => {
