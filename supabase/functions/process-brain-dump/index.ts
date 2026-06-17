@@ -142,9 +142,8 @@ Deno.serve(async (request) => {
   // 7. captureId serverseitig vergeben — verbindet alle Entries dieses Dumps.
   const captureId = crypto.randomUUID();
 
-  // 8. SHOPPING-Entries direkt in shopping_items schreiben, nicht nach braindump_entries.
+  // 8. SHOPPING-Items direkt in shopping_items schreiben (als sofort verfügbare Einkaufsliste).
   const shoppingEntries = normalizedEntries.filter(e => e.category === 'SHOPPING');
-  const regularEntries  = normalizedEntries.filter(e => e.category !== 'SHOPPING');
 
   if (shoppingEntries.length > 0) {
     const rows = shoppingEntries.flatMap(e =>
@@ -161,8 +160,8 @@ Deno.serve(async (request) => {
     }
   }
 
-  // 9. Nur TASK/EVENT/NOTE-Entries zurückgeben — SHOPPING ist bereits persistiert.
-  return new Response(JSON.stringify({ captureId, entries: regularEntries }), {
+  // 9. Alle Entries zurückgeben — SHOPPING-Entries erscheinen als EntryCard im Dashboard.
+  return new Response(JSON.stringify({ captureId, entries: normalizedEntries }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 });

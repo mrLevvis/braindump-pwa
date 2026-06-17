@@ -19,9 +19,9 @@ export type EntryCategory = typeof ENTRY_CATEGORIES[number];
  * TASK     — optional datiert. Der einzige flexible Typ.
  * NOTE     — per Definition zeitlos. Datum/Uhrzeit aus der KI-Antwort werden
  *            stillschweigend gestripped; Kategorie bleibt NOTE.
- * SHOPPING — kein Zeitbezug, kein DB-Insert in braindump_entries.
- *            payload.items enthält die Artikel; die Edge Function schreibt sie
- *            direkt in shopping_items und filtert den Entry aus der Response.
+ * SHOPPING — kein Zeitbezug. payload.items enthält die Artikel; die Edge Function
+ *            schreibt sie direkt in shopping_items UND gibt den Entry an den Client
+ *            zurück, damit er als EntryCard im Dashboard erscheint.
  *
  * Konsumenten downstream (z.B. buildTimelineBuckets) dürfen sich auf diesen
  * Vertrag verlassen, ohne eigene Abwehrlogik zu duplizieren.
