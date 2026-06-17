@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CalendarDays, Circle, CircleCheck, ChevronDown, ChevronRight, Clock, ShoppingCart, Square, SquareCheck } from 'lucide-react';
+import { Circle, CircleCheck, ChevronDown, ChevronRight, Clock, ShoppingCart, Square, SquareCheck } from 'lucide-react';
 import type { ShoppingItem } from '../../shopping/types/ShoppingItem';
 import { fetchShoppingItemsBySourceDump } from '../../shopping/services/shoppingItemsService';
 import { useBrainDumpStore } from '../store';
@@ -110,8 +110,8 @@ function TimingCard({ date, startTime, endTime, accentBg, borderClass, bgClass, 
     ? endTime ? `${startTime} – ${endTime} Uhr` : `${startTime} Uhr`
     : null;
 
-  return (
-    <div className={`flex items-center gap-4 rounded-xl border ${borderClass} ${bgClass} p-3`}>
+  const inner = (
+    <>
       {parsed && (
         <div className={[
           'shrink-0 flex flex-col items-center justify-center rounded-lg',
@@ -121,7 +121,7 @@ function TimingCard({ date, startTime, endTime, accentBg, borderClass, bgClass, 
           <span className="text-[10px] font-semibold text-white/75 uppercase tracking-wider mt-0.5">{monthS}</span>
         </div>
       )}
-      <div className="min-w-0 flex-1 space-y-0.5">
+      <div className="min-w-0 flex-1 space-y-0.5 text-left">
         {weekday && <p className="text-sm font-semibold text-foreground">{weekday}</p>}
         {dateLong && <p className="text-xs text-muted-foreground">{dateLong}</p>}
         {timeStr && (
@@ -131,18 +131,25 @@ function TimingCard({ date, startTime, endTime, accentBg, borderClass, bgClass, 
           </span>
         )}
       </div>
-      {onNavigate && (
-        <button
-          type="button"
-          onClick={onNavigate}
-          aria-label="Zur Timeline"
-          className="shrink-0 rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-background/60 transition-colors"
-        >
-          <CalendarDays className="h-4 w-4" aria-hidden="true" />
-        </button>
-      )}
-    </div>
+    </>
   );
+
+  const cardCls = `flex items-center gap-4 rounded-xl border ${borderClass} ${bgClass} p-3`;
+
+  if (onNavigate) {
+    return (
+      <button
+        type="button"
+        onClick={onNavigate}
+        aria-label="Zur Timeline navigieren"
+        className={`${cardCls} w-full transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
+      >
+        {inner}
+      </button>
+    );
+  }
+
+  return <div className={cardCls}>{inner}</div>;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
