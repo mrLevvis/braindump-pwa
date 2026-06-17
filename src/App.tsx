@@ -14,8 +14,11 @@ import { useIsProcessing, useSetProcessing, useSubmitText } from './hooks/braind
 import { useErrorToast, useSuccessToast } from './hooks/useErrorToast';
 import { useVoiceRecording } from './hooks/useVoiceRecording';
 import { LoginPage, AuthCallbackPage } from './features/auth';
+import { FeedbackButton, AdminView } from './features/issues';
 import { useAuthStore } from './store/authSlice';
 import { supabase } from './features/braindump/services/ApiClient';
+
+const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL ?? '';
 
 // ─── Authenticated shell ──────────────────────────────────────────────────────
 // Only rendered when a valid session exists. Runs all data bootstrapping.
@@ -72,6 +75,17 @@ function AuthenticatedApp() {
     }
   };
 
+  const user = useAuthStore(s => s.user);
+  const isAdmin = ADMIN_EMAIL !== '' && user?.email === ADMIN_EMAIL;
+
+  useEffect(() => {
+    if (view === 'admin' && !isAdmin) setView('dashboard');
+  }, [view, isAdmin, setView]);
+
+  if (view === 'admin' && isAdmin) {
+    return <AdminView onBack={() => setView('dashboard')} />;
+  }
+
   return (
     <div>
       {view === 'shopping' ? (
@@ -95,6 +109,7 @@ function AuthenticatedApp() {
           disabled={isProcessing}
         />
       )}
+      <FeedbackButton />
       <IngestPreviewSheet />
       <Toaster />
     </div>

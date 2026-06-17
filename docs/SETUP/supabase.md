@@ -77,6 +77,26 @@ CREATE POLICY "allow authenticated" ON public.<tabelle>
 
 Vollständiges SQL: [`supabase/migrations/008_scope_entries_by_user.sql`](../../supabase/migrations/008_scope_entries_by_user.sql)
 
+### 2d. Issues-Tabelle anlegen (Migration 009)
+
+```sql
+CREATE TABLE public.issues (
+    id          UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+    created_at  TIMESTAMPTZ DEFAULT now() NOT NULL,
+    user_id     UUID        NOT NULL DEFAULT auth.uid() REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_email  TEXT        NOT NULL DEFAULT auth.email(),
+    type        VARCHAR(20) NOT NULL CHECK (type IN ('bug', 'suggestion')),
+    title       TEXT        NOT NULL,
+    description TEXT,
+    status      VARCHAR(20) NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'in_progress', 'done'))
+);
+```
+
+Vollständiges SQL inkl. RLS: [`supabase/migrations/009_add_issues.sql`](../../supabase/migrations/009_add_issues.sql)
+
+> [!IMPORTANT]
+> `VITE_ADMIN_EMAIL=deine@email.de` in `.env.local` eintragen, damit der Admin-View unter `/admin` freigeschaltet wird.
+
 ### 3. Dependencies & Environment
 1. Im Terminal installieren: 
    ```bash
