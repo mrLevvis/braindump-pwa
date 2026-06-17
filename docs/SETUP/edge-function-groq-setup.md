@@ -160,7 +160,10 @@ supabase functions deploy process-brain-dump --no-verify-jwt
 supabase functions deploy prioritize-tasks --no-verify-jwt
 ```
 
-- `--no-verify-jwt`: schaltet die Login-Pflicht ab (passend zum MVP **ohne Auth**).
+- `--no-verify-jwt`: Die Functions erwarten keinen User-JWT im `Authorization`-Header.
+  Der Zugriff wird stattdessen über den `apikey`-Header (Supabase anon key) gesichert,
+  den das Frontend bei jedem Request mitschickt. Das ist das korrekte Muster für
+  Functions, die serverseitig in die DB schreiben — der User-JWT wäre hier redundant.
 - Die Warnung **"Docker is not running" kann ignoriert werden** – Docker braucht
   man nur fürs *lokale* Testen, nicht fürs Deployen in die Cloud.
 
@@ -337,10 +340,10 @@ Bewusst aufgeschobene Dinge – kein Versäumnis, sondern korrekt nach hinten pr
   Tag daneben liegen. Sobald der Planner ernst wird: Datum in Europe/Berlin
   berechnen.
 
-- [ ] **Audio-Pfad testen:** Der Audio-Zweig (`transcribeAudio.ts` + Routing in
-  `index.ts`) ist deployed, aber erst mit echtem Frontend-Audio testbar
-  (PowerShell reicht dafür nicht – braucht eine echte Audio-Datei als Upload).
+- [x] **Audio-Pfad testen:** ~~Der Audio-Zweig ist deployed, aber noch nicht mit
+  echtem Frontend-Audio getestet.~~ → Erledigt. Voice-Recording ist live und
+  funktioniert end-to-end (Browser → Whisper → Transkript im Eingabefeld).
 
-- [ ] **Dateiname-Verantwortung fürs Audio:** Die MIME-Falle ist server-seitig
-  über `ensureFileName` abgesichert. Der saubere Ort bleibt aber das **Frontend**:
-  die Aufnahme schon dort als `audio.webm` benennen (näher an der Quelle).
+- [x] **Dateiname-Verantwortung fürs Audio:** ~~Server-seitig über `ensureFileName`
+  abgesichert, Frontend-seitig noch offen.~~ → Erledigt. Frontend benennt die
+  Aufnahme bereits korrekt vor dem Upload.

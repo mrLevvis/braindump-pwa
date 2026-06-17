@@ -14,37 +14,121 @@ Zustand ist eine schlanke State-Management-Library für React. Im Gegensatz zu `
 
 ---
 
-## Wo liegt unser Store?
+## Alle Stores im Überblick
 
-Das Projekt hat **zwei eigenständige Stores** — aufgeteilt nach Feature-Grenze, nicht nach technischem Muster.
+Das Projekt hat fünf eigenständige Stores — aufgeteilt nach Feature-Grenze, nicht nach technischem Muster. Für häufig gebrauchte State-Slices gibt es Selektoren-Hooks in `src/hooks/`.
 
-### BrainDump-Store
+| Store | Datei | Zuständigkeit |
+| :--- | :--- | :--- |
+| `useBrainDumpStore` | `features/braindump/store/BrainDumpStore.ts` | Einträge, KI-Verarbeitung, Preview, Priorisierung |
+| `useDaySelectionStore` | `features/timeline/store/DaySelectionStore.ts` | Ausgewählter Tag der Timeline |
+| `useZoomStore` | `features/timeline/store/ZoomStore.ts` | Zoom-Level der Timeline (px/Stunde) |
+| `useCategoryFilterStore` | `features/braindump/store/CategoryFilterStore.ts` | Aktive Kategorie-Filter im Dashboard |
+| `useAuthStore` | `store/authSlice.ts` | Eingeloggter Supabase-User |
+
+---
+
+## BrainDump-Store
 
 ```
 src/features/braindump/store/BrainDumpStore.ts
 ```
 
-Enthält den globalen Eintrags-State: Einträge laden, speichern, verarbeiten. Der Aufnahme-Teil ist als eigener Slice ausgelagert (`recordingSliceStore.ts`) und wird in den Haupt-Store gemischt.
+Der Haupt-Store des Kern-Features. Bündelt Eintrags-State, KI-Verarbeitungs-State und die Ingest-Preview.
 
-### Day-Selection-Store (Timeline)
+### State & Actions
+
+| Name | Typ | Bedeutung |
+| :--- | :--- | :--- |
+| `entries` | `BrainDumpEntry[]` | Alle Einträge aus der DB |
+| `isRecording` | `boolean` | Ist die Sprachaufnahme aktiv? |
+| `isProcessing` | `boolean` | Wird ein Eintrag von der KI verarbeitet? |
+| `isPrioritizing` | `boolean` | Läuft eine KI-Priorisierung? |
+| `pendingPreview` | `IngestPreview \| null` | KI-Ergebnis, das auf Bestätigung wartet |
+| `prioritizedDays` | `Record<string, readonly string[]>` | Ephemere Priorisierung: Datum → geordnete Entry-IDs |
+| `setRecording(bool)` | Action | Setzt `isRecording` |
+| `setProcessing(bool)` | Action | Setzt `isProcessing` |
+| `submitText(text)` | Action (async) | Text → Edge Function → `pendingPreview` setzen |
+| `confirmIngest(preview)` | Action (async) | Preview-Drafts in DB schreiben, Preview schließen |
+| `discardIngest(captureId)` | Action | Preview verwerfen ohne DB-Write |
+| `deleteEntry(id)` | Action (async) → `DeleteResult` | Einzelnen Eintrag löschen |
+| `deleteEntries(ids)` | Action (async) | Mehrere Einträge löschen (Auswahl-Modus) |
+| `toggleTaskCompleted(id, completed)` | Action (async) → `ToggleResult` | `completed`-Feld toggeln |
+| `updateEntry(id, patch)` | Action (async) → `UpdateResult` | Titel, Kategorie oder Payload bearbeiten |
+| `updateEntryList()` | Action (async) | Frisch aus DB laden |
+| `prioritizeDayTasks(date, tasks)` | Action (async) | Tasks eines Tages per KI priorisieren (kein DB-Write) |
+
+### Selektoren-Hooks (bevorzugen!)
+
+Für die am häufigsten genutzten State-Slices gibt es fertige Selektoren in `src/hooks/braindumpSelectors.ts`:
+
+```typescript
+import { useEntries, useIsProcessing, useSubmitText } from '../hooks/braindumpSelectors';
+```
+
+---
+
+## Day-Selection-Store
 
 ```
 src/features/timeline/store/DaySelectionStore.ts
 ```
 
-Hält ausschließlich den ausgewählten Tag der Timeline-Ansicht. Er ist bewusst vom BrainDump-Store getrennt, weil er keinen Eintrags-State braucht und auch außerhalb der Timeline-View konsumiert werden kann (z.B. in Selektoren).
-
-```typescript
-import { useDaySelectionStore } from '../store';
-```
+Hält ausschließlich den ausgewählten Tag der Timeline-Ansicht. Initialisiert sich beim ersten Laden aus der URL (via `parseAppRoute`), um einen Flash zu vermeiden.
 
 | Name | Typ | Bedeutung |
 | :--- | :--- | :--- |
-| `selectedDate` | `string` (YYYY-MM-DD) | Der aktuell angezeigte Tag |
+| `selectedDate` | `string` (YYYY-MM-DD) | Aktuell angezeigter Tag |
 | `goToToday()` | Action | Setzt `selectedDate` auf heute |
 | `setSelectedDate(date)` | Action | Setzt einen beliebigen Tag direkt |
 
-Der Store initialisiert sich beim ersten Laden aus der URL (via `parseAppRoute`), um einen Flash zu vermeiden. In der Praxis wird er meistens über die Selektoren in `hooks/timelineSelectors.ts` konsumiert, nicht direkt.
+In der Praxis wird er meistens über die Selektoren in `hooks/timelineSelectors.ts` konsumiert.
+
+---
+
+## Zoom-Store
+
+```
+src/features/timeline/store/ZoomStore.ts
+```
+
+Steuert den vertikalen Zoom des Timeline-Grids (Pixel pro Stunde). Wird per Pinch-Geste auf Mobile oder per Scroll-Event auf Desktop verändert.
+
+| Name | Typ | Bedeutung |
+| :--- | :--- | :--- |
+| `pxPerHour` | `number` | Aktuelle Höhe einer Stunde in Pixeln |
+| `setPxPerHour(next)` | Action | Setzt neuen Wert, geclampt auf [MIN, MAX] |
+
+---
+
+## Category-Filter-Store
+
+```
+src/features/braindump/store/CategoryFilterStore.ts
+```
+
+Hält die aktiven Kategorie-Filter im Dashboard (TASK, EVENT, NOTE, SHOPPING). Leeres Array = kein Filter aktiv = alle Einträge werden angezeigt.
+
+| Name | Typ | Bedeutung |
+| :--- | :--- | :--- |
+| `activeCategories` | `readonly EntryCategory[]` | Aktuell aktive Kategorie-Filter |
+| `toggleCategory(category)` | Action | Kategorie an/abschalten |
+| `clearFilter()` | Action | Alle Filter zurücksetzen |
+
+---
+
+## Auth-Store
+
+```
+src/store/authSlice.ts
+```
+
+Hält den aktuell eingeloggten Supabase-User. Wird in `App.tsx` beim Session-Start gesetzt und bei `onAuthStateChange` aktuell gehalten.
+
+| Name | Typ | Bedeutung |
+| :--- | :--- | :--- |
+| `user` | `User \| null` | Aktueller Supabase-User (oder null wenn ausgeloggt) |
+| `setUser(user)` | Action | Setzt den User (intern von App.tsx aufgerufen) |
 
 ---
 
@@ -52,13 +136,11 @@ Der Store initialisiert sich beim ersten Laden aus der URL (via `parseAppRoute`)
 
 ### Der Hook
 
-```typescript
-import { useBrainDumpStore } from '../store';
-```
-
 Man übergibt eine **Selector-Funktion**, die genau das aus dem Store herausholt, was die Komponente braucht:
 
 ```typescript
+import { useBrainDumpStore } from '../store';
+
 const entries = useBrainDumpStore((state) => state.entries);
 ```
 
@@ -74,70 +156,17 @@ const store = useBrainDumpStore((state) => state);
 
 ---
 
-## Aktueller State & Actions
-
-| Name | Typ | Bedeutung |
-| :--- | :--- | :--- |
-| `entries` | `BrainDumpEntry[]` | Liste aller Einträge im Dashboard |
-| `isRecording` | `boolean` | Ist die Sprachaufnahme gerade aktiv? |
-| `isProcessing` | `boolean` | Wird ein Eintrag gerade von der KI verarbeitet? |
-| `setRecording(bool)` | Action | Setzt `isRecording` auf true/false |
-| `setProcessing(bool)` | Action | Setzt `isProcessing` auf true/false |
-| `submitText(text)` | Action (async) | Schickt den Text an die Edge Function, speichert das strukturierte Ergebnis in der DB und lädt die Liste neu. Steuert dabei `isProcessing`. |
-| `deleteEntry(id)` | Action (async) → `Promise<DeleteResult>` | Löscht einen Eintrag per UUID. Gibt eine diskriminierte Union zurück: `{ status: 'deleted' \| 'not_found' \| 'error' }`. Lädt die Einträge nur bei `deleted` neu. |
-| `updateEntryList()` | Action (async) | Lädt alle Einträge frisch aus der DB in `entries` |
-
----
-
-## Beispiele
-
-### State lesen
+## Wie `set` funktioniert
 
 ```typescript
-export const EntryCounter = () => {
-  const entries = useBrainDumpStore((state) => state.entries);
+// Variante 1 — einfache Überschreibung:
+set(() => ({ isProcessing: true }));
 
-  return <p>{entries.length} Einträge</p>;
-};
+// Variante 2 — basierend auf dem aktuellen State:
+set((state) => ({ entries: [newEntry, ...state.entries] }));
 ```
 
-### Action aufrufen
-
-```typescript
-export const LoadingIndicator = () => {
-  const isProcessing = useBrainDumpStore((state) => state.isProcessing);
-
-  if (!isProcessing) return null;
-  return <p>KI analysiert...</p>;
-};
-```
-
-### Async-Action aufrufen (submitText)
-
-```typescript
-export const QuickSubmit = () => {
-  const submitText = useBrainDumpStore((state) => state.submitText);
-
-  // submitText kümmert sich selbst um isProcessing (Spinner an/aus).
-  // Die Komponente muss nichts await-en, kann es aber, wenn sie auf das Ende reagieren will.
-  return <button onClick={() => submitText('Brot kaufen')}>Senden</button>;
-};
-```
-
-### Mehreres auf einmal (wenn eng zusammengehörig)
-
-```typescript
-export const RecordButton = () => {
-  const isRecording = useBrainDumpStore((state) => state.isRecording);
-  const setRecording = useBrainDumpStore((state) => state.setRecording);
-
-  return (
-    <button onClick={() => setRecording(!isRecording)}>
-      {isRecording ? 'Stopp' : 'Aufnahme starten'}
-    </button>
-  );
-};
-```
+Variante 2 braucht man immer dann, wenn der neue Wert vom alten abhängt.
 
 ---
 
@@ -159,35 +188,3 @@ clearEntries: () => {
 ```
 
 `set(...)` überschreibt **nur** die angegebenen Felder — alles andere bleibt unverändert.
-
----
-
-## Wie `set` funktioniert
-
-```typescript
-// Variante 1 — einfache Überschreibung:
-set(() => ({ isProcessing: true }));
-
-// Variante 2 — basierend auf dem aktuellen State:
-set((state) => ({ entries: [newEntry, ...state.entries] }));
-```
-
-Variante 2 braucht man immer dann, wenn der neue Wert vom alten abhängt (z.B. ein Element zur Liste hinzufügen).
-
----
-
-## Schreibweise im Store: `set` benennen
-
-Der Store wird über `create(...)` aufgebaut. Die Factory bekommt drei Argumente
-mit — wir benennen sie explizit, damit der Code lesbar bleibt:
-
-```typescript
-export const useBrainDumpStore = create<BrainDumpState>()((set) => ({
-  setProcessing: (status) => { set(() => ({ isProcessing: status })); },
-  // ...
-}));
-```
-
-- `set` → State ändern (brauchst du fast immer)
-- `get` → aktuellen State lesen (z.B. in async-Actions)
-- `store` → selten gebraucht, v.a. zum Durchreichen an Slices

@@ -1,91 +1,108 @@
-Wir müssen messerscharf eingrenzen, was die Anwendung können soll.
-Was ist die absolute Minimal-Version der App, die deinen Alltag bereits messbar erleichtert?
-Wir streichen gnadenlos alles raus, was nur "nice to have" ist (z. B. aufwendige Animationen, Multi-Device-Syncing oder komplexe Filter).
-
-```
-Wir fokussieren uns nur auf den Kernprozess.
-```
+# MVP Scope & KI-Vertrag
 
 ---
 
-# Finales MVP
-
 ## Primäre User Story
 
-- "Als Nutzer möchte ich meinen unstrukturierten Gedankenstrom in ein einziges Eingabefeld abladen können (Text/Sprache), damit die KI diesen automatisch in fest definierte Kategorien (Aufgabe, Termin, Notiz) übersetzt und strukturiert in meiner Datenbank ablegt, ohne dass ich mich um die Formatierung kümmern muss."
+> "Als Nutzer möchte ich meinen unstrukturierten Gedankenstrom in ein einziges Eingabefeld abladen können (Text/Sprache), damit die KI diesen automatisch in fest definierte Kategorien (Aufgabe, Termin, Notiz) übersetzt und strukturiert in meiner Datenbank ablegt, ohne dass ich mich um die Formatierung kümmern muss."
+
+---
 
 ## Happy Path
 
 ### Pfad A: Voice Input
 
-| **SCHRITT**      | **USER AKTION**                | **UI / FEEDBACK**                                                     |
-| :--------------- | :----------------------------- | :-------------------------------------------------------------------- |
-| **1. EINSTIEG**  | Öffnet die PWA.                | Minimalistisches Dashboard mit dominantem Aufnahme-Button.            |
-| **2. START**     | Tippt auf den Aufnahme-Button. | Visuelles Feedback (pulsierender Kreis) signalisiert aktive Aufnahme. |
-| **3. INPUT**     | Spricht Gedanken flüssig ein.  | Audio wird im Hintergrund erfasst.                                    |
-| **4. ABSCHLUSS** | Tippt erneut auf den Button.   | Pulsieren stoppt, Lade-Spinner ("KI analysiert") erscheint.           |
-| **5. ERGEBNIS**  | Wartet.                        | Spinner verschwindet, strukturierter Eintrag ploppt in der Liste auf. |
+| **SCHRITT**      | **USER AKTION**                | **UI / FEEDBACK**                                                         |
+| :--------------- | :----------------------------- | :------------------------------------------------------------------------ |
+| **1. EINSTIEG**  | Öffnet die PWA, ist eingeloggt. | Dashboard mit Eintrags-Liste und fixierter Input-Leiste.                  |
+| **2. START**     | Tippt auf den Aufnahme-Button. | Visuelles Feedback (pulsierender Kreis) signalisiert aktive Aufnahme.     |
+| **3. INPUT**     | Spricht Gedanken flüssig ein.  | Audio wird im Hintergrund erfasst.                                        |
+| **4. ABSCHLUSS** | Tippt erneut auf den Button.   | Transkription läuft, Text erscheint im Eingabefeld.                       |
+| **5. ERGEBNIS**  | Drückt Senden.                 | KI analysiert → Ingest-Preview öffnet sich zum Review.                    |
+| **6. BESTÄTIGEN**| Prüft Preview, bestätigt.      | Einträge landen in der DB und erscheinen im Dashboard.                    |
 
 ### Pfad B: Text Input
 
-| **SCHRITT**      | **USER AKTION**                      | **UI / FEEDBACK**                                                       |
-| :--------------- | :----------------------------------- | :---------------------------------------------------------------------- |
-| **1. EINSTIEG**  | Öffnet die PWA.                      | Dashboard zeigt schlichtes Texteingabefeld über dem Aufnahme-Button.    |
-| **2. INPUT**     | Tippt unstrukturierten Gedanken ein. | Text wird im Eingabefeld angezeigt.                                     |
-| **3. ABSCHLUSS** | Drückt `Enter` oder "Senden"-Icon.   | Textfeld leert sich, Lade-Spinner ("KI analysiert") erscheint.          |
-| **4. ERGEBNIS**  | Wartet.                              | Spinner verschwindet, exakt gleicher strukturierter Eintrag ploppt auf. |
+| **SCHRITT**      | **USER AKTION**                      | **UI / FEEDBACK**                                                   |
+| :--------------- | :----------------------------------- | :------------------------------------------------------------------ |
+| **1. EINSTIEG**  | Öffnet die PWA, ist eingeloggt.      | Dashboard zeigt schlichtes Texteingabefeld über dem Aufnahme-Button. |
+| **2. INPUT**     | Tippt unstrukturierten Gedanken ein. | Text wird im Eingabefeld angezeigt.                                 |
+| **3. ABSCHLUSS** | Drückt `Enter` oder Senden-Icon.     | Spinner erscheint, KI analysiert.                                   |
+| **4. REVIEW**    | Prüft den Ingest-Preview.            | Strukturierte Einträge werden vor dem Speichern angezeigt.          |
+| **5. ERGEBNIS**  | Bestätigt oder verwirft.             | Bei Bestätigung: Einträge in DB; bei Verwerfen: nichts gespeichert. |
+
+---
 
 ## KI-Input-Output-Vertrag
 
-Die Kommunikation mit dem KI-Anbieter folgt einem strikten Vertrag (Contract). Die KI darf niemals Freitext antworten, sondern muss ein typsicheres JSON-Objekt zurückliefern, das direkt in die Supabase-Datenbank geschrieben werden kann.
+Die Kommunikation mit dem KI-Anbieter folgt einem strikten Vertrag. Die KI darf niemals Freitext antworten, sondern muss ein typsicheres JSON-Objekt zurückliefern.
 
-Der Anbieter ist über eine Edge Function (sicheres BFF) gekapselt und dadurch austauschbar. Für die MVP-Version nutzen wir **Groq** (kostenloser Free-Tier, OpenAI-kompatibel): Whisper für die Transkription, ein Llama-Modell für die Strukturierung. Der API-Key liegt ausschließlich in den Supabase Secrets und verlässt nie die Cloud.
+Der Anbieter ist über eine Edge Function (sicheres BFF) gekapselt und dadurch austauschbar. Wir nutzen **Groq** (Free-Tier, OpenAI-kompatibel): Whisper für die Transkription, ein Llama-Modell für die Strukturierung. Der API-Key liegt ausschließlich in den Supabase Secrets.
 
 ### Ablauf (Pipeline)
 
-1. **Audio-Input:** Browser-Aufnahme → Whisper (`/audio/transcriptions`) → reiner Text.
+1. **Audio-Input:** Browser-Aufnahme → Whisper (`/audio/transcriptions`) → reiner Text → Eingabefeld.
 2. **Text-Input:** überspringt Schritt 1 und geht direkt weiter.
-3. **Strukturierung:** reiner Text → Llama (JSON-Mode) → JSON-Objekt.
-4. **Validierung:** Die Edge Function prüft das JSON gegen den Vertrag, *bevor* es zurückgeht. (JSON-Mode garantiert gültiges JSON, aber nicht unsere Felder.)
+3. **Strukturierung:** reiner Text → Llama (JSON-Mode) → JSON-Array.
+4. **Validierung:** Die Edge Function prüft jeden Entry gegen den Vertrag.
+5. **Preview:** Frontend zeigt Entwürfe; User bestätigt oder wirft sie weg.
+6. **Persist:** `confirmIngest` schreibt alle Drafts in die DB.
 
-### 1. Input (Was die KI bekommt)
+### Die 4 Kategorien
 
-- **System-Prompt:** Eine unveränderliche Anweisung, die das JSON-Ausgabeformat und die Evaluierungsregeln strikt vorschreibt.
-- **User-Payload:** Der Rohtext des Nutzers (Tastatur-Eingabe oder Whisper-Transkript).
+| Kategorie | Kriterium | Beispiel |
+| :-------- | :--------- | :------- |
+| **TASK** | Konkrete Aufgabe, die abgehakt werden muss. | *"Projekt-Doku fertigstellen"* |
+| **EVENT** | Termin mit spezifischem Zeitbezug. | *"Meeting Freitag 14 Uhr"* |
+| **NOTE** | Allgemeine Gedanken ohne direkten Handlungsbedarf. | *"Clean Code ≠ abstrakter Code"* |
+| **SHOPPING** | Einkaufsartikel — werden automatisch als Items extrahiert. | *"Brot, Milch und Käse kaufen"* |
 
-### 2. Die 3 Kern-Kategorien (Das strikte Enum)
-
-| Kategorie | Kriterium                                                                          | Beispiel-Input                                                       |
-| :-------- | :--------------------------------------------------------------------------------- | :------------------------------------------------------------------- |
-| **TASK**  | Eine konkrete Aufgabe, die erledigt/abgehakt werden muss (inkl. Einkäufe, To-Dos). | _"Ich muss morgen Brot kaufen."_ oder _"Projekt-Doku fertigstellen"_ |
-| **EVENT** | Ein Termin mit einem spezifischen Zeitbezug.                                       | _"Meeting mit dem KI-Team am Freitag um 14 Uhr."_                    |
-| **NOTE**  | Allgemeine Gedanken, Ideen oder Infos ohne direkten Handlungsbedarf.               | _"Clean Code bedeutet nicht, abstrakten Code zu schreiben."_         |
-
-### 3. Output (Der TypeScript-Vertrag)
-
-Spezifische Kontexte (wie Einkäufe) werden flexibel über das `tags`-Array abgebildet, um das Haupt-Enum schlank zu halten (KISS-Prinzip). Dieser Typ lebt geteilt unter `supabase/functions/_shared/contract.ts`.
+### TypeScript-Vertrag (Frontend-Seite)
 
 ```typescript
+// src/features/braindump/types/BrainDump.ts
+
 interface StructuredEntry {
-  category: "TASK" | "EVENT" | "NOTE";
-  title: string; // Kurz zusammengefasster Titel (max. 5 Wörter)
+  category: 'TASK' | 'EVENT' | 'NOTE' | 'SHOPPING';
+  title: string;
+  sourceExcerpt: string;       // Relevanter Wortlaut aus dem Original-Text
+  summary: string[];           // Stichpunkte (mind. 1)
   payload: {
-    date?: string; // ISO-Datum (YYYY-MM-DD), falls im Text impliziert
-    time?: string; // Uhrzeit (HH:MM), falls im Text erwähnt
-    tags?: string[]; // Flexibler Kontext (z.B. ["Einkauf"], ["Arbeit"], ["Privat"])
+    date?: string;             // ISO-Datum (YYYY-MM-DD)
+    startTime?: string;        // HH:MM
+    endTime?: string;          // HH:MM, nur wenn > startTime
+    tags?: string[];           // Flexibler Kontext (z.B. ["Arbeit"])
+    items?: string[];          // SHOPPING: einzelne Artikel
   };
+}
+
+// Edge-Function-Antwort:
+interface IngestResult {
+  captureId: string;           // UUID für alle Entries dieses Dumps
+  entries: StructuredEntry[];
 }
 ```
 
-## Rote Linie
+Der geteilte Typ lebt in `supabase/functions/_shared/contract.ts`.
 
-Um Feature Creep zu verhindern und den Fokus auf die Kernfunktionalität (Chaos rein -> Strukturierte Daten in Supabase raus) zu behalten, werden folgende Funktionen für die Version 1.0 explizit **NICHT** umgesetzt:
+---
 
-> [!CAUTION]
-> | AUSGESCHLOSSENES FEATURE | WARUM (Begründung & Overhead) |
-> | :--- | :--- |
-> | **User-Accounts & Login (Auth)** | Verursacht massiven Overhead im UI (Registrierung, Passwort-Reset). Die PWA läuft vorerst als reine Single-User-Anwendung. |
-> | **Kalender-Synchronisation** | Erfordert komplexe OAuth-Flows und API-Fehlerbehandlung. Termine verbleiben vorerst isoliert im PWA-Dashboard. |
-> | **Push-Benachrichtigungen** | Zuverlässige Benachrichtigungen erfordern komplexe Service-Worker-Logik und Browser-Permissions. |
-> | **Nachträgliches Editieren** | Erfordert UI-Modals und aufwendiges State-Management (Laden, Speichern, Fehler). Im MVP gilt: Erstellen, Lesen und Löschen. |
-> | **Komplexe Filter & Suche** | Reines "Nice-to-have". Eine einfache chronologische Liste reicht zur MVP-Validierung völlig aus. |
+## Feature-Status
+
+| Feature | Status | Anmerkung |
+| :--- | :--- | :--- |
+| Text-Input | ✅ Implementiert | |
+| Voice-Input (Whisper) | ✅ Implementiert | |
+| Ingest-Preview (Review-Sheet) | ✅ Implementiert | |
+| Supabase Auth (Magic Link) | ✅ Implementiert | Ursprünglich für v1 ausgeschlossen |
+| Einträge löschen | ✅ Implementiert | |
+| Einträge bearbeiten | ✅ Implementiert | Ursprünglich für v1 ausgeschlossen |
+| Aufgaben abhaken (completed) | ✅ Implementiert | |
+| Kategorie-Filter | ✅ Implementiert | Ursprünglich für v1 ausgeschlossen |
+| KI-Priorisierung (ephemer) | ✅ Implementiert | |
+| Timeline-Ansicht | ✅ Implementiert | |
+| Shopping-Feature | ✅ Implementiert | |
+| Feedback/Issues-System | ✅ Implementiert | |
+| Admin-View | ✅ Implementiert | |
+| Kalender-Synchronisation | ❌ Nicht geplant | OAuth-Overhead zu hoch |
+| Push-Benachrichtigungen | ❌ Nicht geplant | Service-Worker-Komplexität |

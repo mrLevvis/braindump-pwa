@@ -1,5 +1,12 @@
 # BrainDump UI Style Guide – Glassmorphismus (MVP-UI-Mockup-2)
 
+> [!NOTE]
+> Dies ist das **visuelle Design-Konzept** (Tokens, Farben, Prinzipien) — kein Abbild der Implementierung.
+> Die App verwendet **shadcn/ui**-Komponenten (`Card`, `Sheet`, `Dialog`, `Button` etc.) als Basis.
+> Die Komponentennamen in diesem Dokument (z.B. `<GlassCard>`, `<GlassPill>`) beschreiben die
+> Design-Intention, nicht den React-Komponentennamen im Code. Die CSS-Tokens und Farbpalette
+> sind aber direkt in `src/index.css` übertragbar.
+
 ## 1. Visuelles Design-Prinzip
 
 Das definierende Prinzip ist moderner **Glassmorphismus** im **Light Mode**. Ziel: Saubere, luftige, beruhigende UI mit klarer Informationshierarchie durch Tiefe und subtile Farbakzente.

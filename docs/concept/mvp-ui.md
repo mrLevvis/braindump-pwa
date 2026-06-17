@@ -1,9 +1,10 @@
-# UI Konzept & Component Tree (MVP)
+# UI Konzept (Mockups)
 
-Hier ist das visuelle Layout für unser MVP:
+Frühe Wireframes und Glassmorphismus-Entwürfe aus der Konzeptphase.
 
-![MVP UI Mockup](../assets/mvp-ui-mockup.png)
+![MVP UI Mockup 1](../assets/mvp-ui-mockup.png)
+![MVP UI Mockup 2](../assets/mvp-ui-mockup-2.png)
+![UI Konzept Glassmorphismus](../assets/ui-concept-glassmorphism.png)
 
-## Component Tree
-Aus diesem Mockup leitet sich folgende React-Architektur ab:
-... (hier kommt der Baum rein)
+Die daraus abgeleiteten Design-Tokens und Komponenten-Vorgaben sind im [Design Styleguide](./design-styleguide.md) dokumentiert.  
+Die aktuelle React-Komponentenstruktur findest du im [Component Tree](./component-tree.md).
