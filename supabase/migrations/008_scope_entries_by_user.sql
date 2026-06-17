@@ -11,7 +11,7 @@ ALTER TABLE public.braindump_entries
   ADD COLUMN user_id UUID NOT NULL DEFAULT auth.uid()
   REFERENCES auth.users(id) ON DELETE CASCADE;
 
-DROP POLICY "allow authenticated" ON public.braindump_entries;
+DROP POLICY IF EXISTS "allow authenticated" ON public.braindump_entries;
 CREATE POLICY "allow authenticated" ON public.braindump_entries
   FOR ALL TO authenticated
   USING (auth.uid() = user_id)
@@ -23,7 +23,7 @@ ALTER TABLE public.braindump_entries__mock
   ADD COLUMN user_id UUID NOT NULL DEFAULT auth.uid()
   REFERENCES auth.users(id) ON DELETE CASCADE;
 
-DROP POLICY "allow authenticated" ON public.braindump_entries__mock;
+DROP POLICY IF EXISTS "allow authenticated" ON public.braindump_entries__mock;
 CREATE POLICY "allow authenticated" ON public.braindump_entries__mock
   FOR ALL TO authenticated
   USING (auth.uid() = user_id)
@@ -35,7 +35,7 @@ ALTER TABLE public.braindump_entries__test
   ADD COLUMN user_id UUID NOT NULL DEFAULT auth.uid()
   REFERENCES auth.users(id) ON DELETE CASCADE;
 
-DROP POLICY "allow authenticated" ON public.braindump_entries__test;
+DROP POLICY IF EXISTS "allow authenticated" ON public.braindump_entries__test;
 CREATE POLICY "allow authenticated" ON public.braindump_entries__test
   FOR ALL TO authenticated
   USING (auth.uid() = user_id)
@@ -47,7 +47,7 @@ ALTER TABLE public.shopping_items
   ADD COLUMN user_id UUID NOT NULL DEFAULT auth.uid()
   REFERENCES auth.users(id) ON DELETE CASCADE;
 
-DROP POLICY "allow authenticated" ON public.shopping_items;
+DROP POLICY IF EXISTS "allow authenticated" ON public.shopping_items;
 CREATE POLICY "allow authenticated" ON public.shopping_items
   FOR ALL TO authenticated
   USING (auth.uid() = user_id)
