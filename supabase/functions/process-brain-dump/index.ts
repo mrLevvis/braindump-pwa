@@ -143,11 +143,26 @@ Deno.serve(async (request) => {
   const captureId = crypto.randomUUID();
 
   // 8. SHOPPING-Items direkt in shopping_items schreiben (als sofort verfügbare Einkaufsliste).
+  //    user_id muss explizit aus dem JWT geholt werden — im Service-Role-Kontext ist
+  //    auth.uid() immer NULL und würde den NOT NULL-Constraint auf user_id verletzen.
   const shoppingEntries = normalizedEntries.filter(e => e.category === 'SHOPPING');
 
   if (shoppingEntries.length > 0) {
+    const userId = getUserIdFromJWT(request);
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized: no user session for shopping insert" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const rows = shoppingEntries.flatMap(e =>
-      (e.payload.items ?? []).map((label: string) => ({ label, is_done: false, source_dump: captureId }))
+      (e.payload.items ?? []).map((label: string) => ({
+        label,
+        is_done: false,
+        source_dump: captureId,
+        user_id: userId,
+      }))
     );
     if (rows.length > 0) {
       const { error: dbError } = await supabase.from('shopping_items').insert(rows);
@@ -170,6 +185,26 @@ Deno.serve(async (request) => {
 /**------------------------------------------------------------------------------ 
  * --- INTERNAL HELPER FUNCTIONS ---
  * ------------------------------------------------------------------------------*/
+
+/**
+ * Extrahiert die user_id (sub-Claim) aus dem Supabase-JWT im Authorization-Header.
+ * Nötig, weil der Service-Role-Client kein auth.uid() liefert und wir user_id
+ * beim Insert in user-isolierte Tabellen explizit setzen müssen.
+ * JWT nutzt base64url (- und _), atob() erwartet standard base64 (+ und /).
+ */
+function getUserIdFromJWT(request: Request): string | null {
+  const auth = request.headers.get('Authorization');
+  if (!auth?.startsWith('Bearer ')) return null;
+  try {
+    const base64Payload = auth.slice(7).split('.')[1]
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+    const payload = JSON.parse(atob(base64Payload));
+    return typeof payload.sub === 'string' ? payload.sub : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Stellt sicher, dass die Datei einen gültigen Namen hat.
