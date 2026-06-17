@@ -1,7 +1,7 @@
 import { CATEGORY_STYLES } from '../categoryStyles';
 import type { EntryCategory } from '../types';
 
-const CATEGORIES: readonly EntryCategory[] = ['TASK', 'EVENT', 'NOTE'];
+const CATEGORIES: readonly EntryCategory[] = ['TASK', 'EVENT', 'NOTE', 'SHOPPING'];
 
 const LABEL: Record<EntryCategory, string> = {
   TASK: 'Task',
