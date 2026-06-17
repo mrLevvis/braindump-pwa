@@ -50,6 +50,33 @@ CREATE POLICY "allow authenticated" ON public.shopping_items
 > Die Policy `allow authenticated` deckt `SELECT`, `INSERT`, `UPDATE` **und** `DELETE` ab.
 > Fehlende DELETE-Policy führt bei Supabase zu stillem Blockieren (`count: 0` statt Fehlermeldung).
 
+### 2c. Pro-User-Isolation aktivieren (Migration 008)
+
+> [!IMPORTANT]
+> Vor dem Ausführen die DB zurücksetzen — kein Backfill für bestehende Rows.
+
+Fügt `user_id` auf allen vier Tabellen hinzu und verschärft die `allow authenticated`-Policies
+von Vollzugriff auf `auth.uid() = user_id`. Das `DEFAULT auth.uid()` sorgt dafür, dass die
+`user_id` beim INSERT automatisch auf DB-Ebene gesetzt wird — kein Service-Code muss sie
+explizit mitgeben.
+
+```sql
+-- Gleiches Muster für braindump_entries, braindump_entries__mock,
+-- braindump_entries__test und shopping_items:
+
+ALTER TABLE public.<tabelle>
+  ADD COLUMN user_id UUID NOT NULL DEFAULT auth.uid()
+  REFERENCES auth.users(id) ON DELETE CASCADE;
+
+DROP POLICY "allow authenticated" ON public.<tabelle>;
+CREATE POLICY "allow authenticated" ON public.<tabelle>
+  FOR ALL TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+```
+
+Vollständiges SQL: [`supabase/migrations/008_scope_entries_by_user.sql`](../../supabase/migrations/008_scope_entries_by_user.sql)
+
 ### 3. Dependencies & Environment
 1. Im Terminal installieren: 
    ```bash
