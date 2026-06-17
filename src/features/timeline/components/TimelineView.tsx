@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Clock, Sparkles, ZoomIn, ZoomOut } from 'lucide-react';
+import { ArrowLeft, Clock, Sparkles } from 'lucide-react';
 import { EntryDetailPanel } from '../../braindump/views/EntryDetailPanel';
-import { MIN_PX_PER_HOUR, MAX_PX_PER_HOUR } from '../getBlockGeometry';
 import { useZoomStore } from '../store';
 import {
   useDatedTimelessEntries,
@@ -109,7 +108,49 @@ export function TimelineView({ onBack }: Readonly<Props>) {
 
   const pxPerHour    = useZoomStore(s => s.pxPerHour);
   const setPxPerHour = useZoomStore(s => s.setPxPerHour);
-  const ZOOM_STEP = 20;
+
+  const mainRef = useRef<HTMLDivElement>(null);
+  const pinchInitialDist = useRef(0);
+  const pinchInitialPx   = useRef(0);
+  const pxPerHourRef     = useRef(pxPerHour);
+  useEffect(() => { pxPerHourRef.current = pxPerHour; }, [pxPerHour]);
+
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+
+    const verticalDist = (t: TouchList) => Math.abs(t[0].clientY - t[1].clientY);
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 2) return;
+      pinchInitialDist.current = verticalDist(e.touches);
+      pinchInitialPx.current   = pxPerHourRef.current;
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 2) return;
+      e.preventDefault();
+      if (pinchInitialDist.current === 0) return;
+      const scale = verticalDist(e.touches) / pinchInitialDist.current;
+      setPxPerHour(Math.round(pinchInitialPx.current * scale));
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) pinchInitialDist.current = 0;
+    };
+
+    el.addEventListener('touchstart',  onTouchStart, { passive: true });
+    el.addEventListener('touchmove',   onTouchMove,  { passive: false });
+    el.addEventListener('touchend',    onTouchEnd,   { passive: true });
+    el.addEventListener('touchcancel', onTouchEnd,   { passive: true });
+
+    return () => {
+      el.removeEventListener('touchstart',  onTouchStart);
+      el.removeEventListener('touchmove',   onTouchMove);
+      el.removeEventListener('touchend',    onTouchEnd);
+      el.removeEventListener('touchcancel', onTouchEnd);
+    };
+  }, [setPxPerHour]);
 
   const now = useNow();
   const todayStr = todayLocal();
@@ -188,24 +229,6 @@ export function TimelineView({ onBack }: Readonly<Props>) {
             </button>
             <button
               type="button"
-              className={ICON_BTN}
-              onClick={() => setPxPerHour(pxPerHour - ZOOM_STEP)}
-              disabled={pxPerHour <= MIN_PX_PER_HOUR}
-              aria-label="Zoom verringern"
-            >
-              <ZoomOut className="h-4 w-4" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              className={ICON_BTN}
-              onClick={() => setPxPerHour(pxPerHour + ZOOM_STEP)}
-              disabled={pxPerHour >= MAX_PX_PER_HOUR}
-              aria-label="Zoom erhöhen"
-            >
-              <ZoomIn className="h-4 w-4" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
               className={JETZT_BTN}
               onClick={handleNowClick}
               aria-label="Zur aktuellen Uhrzeit springen"
@@ -232,7 +255,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
         </div>
       </header>
 
-      <main className={MAIN}>
+      <main ref={mainRef} className={MAIN}>
         <div className={MAIN_INNER}>
           <DayGrid
             date={selectedDate}
