@@ -39,6 +39,7 @@ export function GridBlock({ entry, status, topPx, heightPx, onSelect, onToggle }
   return (
     // Outer div: the positioned block container (two sibling buttons inside — valid HTML)
     <div
+      data-entry-id={entry.id}
       className={[
         'absolute inset-x-1 rounded-lg overflow-hidden shadow-md',
         'bg-card',

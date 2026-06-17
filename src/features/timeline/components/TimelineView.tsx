@@ -12,6 +12,7 @@ import {
   useSetSelectedDate,
   useTimelineBuckets,
 } from '../../../hooks/timelineSelectors';
+import { useDaySelectionStore } from '../store/DaySelectionStore';
 import { useEntries, useIsPrioritizing, usePrioritizeDayTasks, usePrioritizedDays, useToggleTaskCompleted } from '../../../hooks/braindumpSelectors';
 import { useNow } from '../../../hooks/useNow';
 import { todayLocal } from '../../../lib/dateUtils';
@@ -114,6 +115,9 @@ export function TimelineView({ onBack }: Readonly<Props>) {
   const todayStr = todayLocal();
   const isToday = selectedDate === todayStr;
 
+  const pendingScrollEntryId    = useDaySelectionStore(s => s.pendingScrollEntryId);
+  const setPendingScrollEntryId = useDaySelectionStore(s => s.setPendingScrollEntryId);
+
   const nowLineRef = useRef<HTMLDivElement>(null);
   const pendingScrollRef = useRef(false);
 
@@ -140,6 +144,18 @@ export function TimelineView({ onBack }: Readonly<Props>) {
       nowLineRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, [isToday]);
+
+  // After "Zur Timeline" navigation: scroll to and open the target entry.
+  useEffect(() => {
+    if (!pendingScrollEntryId) return;
+    const id = pendingScrollEntryId;
+    const raf = requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-entry-id="${id}"]`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setPendingScrollEntryId(null);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [pendingScrollEntryId, timedEntries, datedTimeless, setPendingScrollEntryId]);
 
   return (
     <div className={VIEW}>

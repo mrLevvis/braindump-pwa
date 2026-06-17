@@ -50,7 +50,7 @@ function AllDayEntry({ entry, onSelect, onToggle }: Readonly<AllDayEntryProps>) 
   const { tintBackground, accent } = CATEGORY_STYLES[entry.category];
 
   return (
-    <div className="relative">
+    <div data-entry-id={entry.id} className="relative">
       <button
         type="button"
         className={ALL_DAY_ENTRY_BTN}

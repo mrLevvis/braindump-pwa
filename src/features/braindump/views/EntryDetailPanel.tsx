@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { BrainDumpEntry, DeleteResult } from '../types';
 import { CATEGORY_STYLES, CategoryBadge, TagBadgeList } from '../categoryStyles';
+import { useDaySelectionStore } from '../../timeline/store/DaySelectionStore';
 import { DetailPanelMenu } from './DetailPanelMenu';
 import { EntryEditForm } from './EntryEditForm';
 
@@ -158,7 +159,8 @@ const EXCERPT_HIGHLIGHT: Record<EntryCategory, string> = {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function navigateTimeline(date?: string) {
+function navigateTimeline(date?: string, entryId?: string) {
+  if (entryId) useDaySelectionStore.getState().setPendingScrollEntryId(entryId);
   const path = date ? `/timeline/${date}` : '/timeline';
   window.history.pushState(null, '', path);
   window.dispatchEvent(new PopStateEvent('popstate'));
@@ -310,7 +312,7 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
                   borderClass={s.timingBorder}
                   bgClass={s.timingBg}
                   onNavigate={(entry.category === 'TASK' || entry.category === 'EVENT')
-                    ? () => navigateTimeline(date)
+                    ? () => navigateTimeline(date, entry.id)
                     : undefined}
                 />
               </section>
