@@ -207,11 +207,6 @@ function NoteCard({ entry, selectionMode }: Readonly<CardProps>) {
 
 // ─── ShoppingCard ─────────────────────────────────────────────────────────────
 
-const ITEM_PILL_CLS = [
-  'rounded-full', 'border', 'border-emerald-200', 'bg-emerald-50',
-  'px-2', 'py-0.5', 'text-[11px]', 'text-emerald-800',
-  'dark:border-emerald-800', 'dark:bg-emerald-950/40', 'dark:text-emerald-200',
-].join(' ');
 
 function ShoppingCard({ entry, selectionMode }: Readonly<CardProps>) {
   const [open, setOpen] = useState(false);
@@ -235,13 +230,7 @@ function ShoppingCard({ entry, selectionMode }: Readonly<CardProps>) {
                 <ShoppingCart className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
                 <p className="text-sm font-semibold leading-snug">{title}</p>
               </div>
-              {items.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {items.map((item, i) => (
-                    <span key={`${item}-${i}`} className={ITEM_PILL_CLS}>{item}</span>
-                  ))}
-                </div>
-              )}
+              {items.length > 0 && <TagBadgeList tags={items} />}
             </CardContent>
             <CardFooter className={FOOTER_CLS}>
               <time dateTime={entry.created_at}>erstellt am {formatCreatedDateTime(entry.created_at)} um {formatCreatedTime(entry.created_at)} Uhr</time>
