@@ -9,6 +9,17 @@ import type { ShoppingItem, DeleteResult, ToggleResult } from '../types/Shopping
 
 const TABLE = 'shopping_items';
 
+export async function fetchShoppingItemsBySourceDump(captureId: string): Promise<ShoppingItem[]> {
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('*')
+    .eq('source_dump', captureId)
+    .order('created_at', { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as ShoppingItem[];
+}
+
 export async function fetchShoppingItems(): Promise<ShoppingItem[]> {
   const { data, error } = await supabase
     .from(TABLE)

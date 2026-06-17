@@ -1,5 +1,8 @@
-import { useState } from 'react';
-import { CalendarDays, Circle, CircleCheck, ChevronDown, ChevronRight, Clock, ShoppingCart } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { CalendarDays, Circle, CircleCheck, ChevronDown, ChevronRight, Clock, ShoppingCart, Square, SquareCheck } from 'lucide-react';
+import type { ShoppingItem } from '../../shopping/types/ShoppingItem';
+import { fetchShoppingItemsBySourceDump } from '../../shopping/services/shoppingItemsService';
+import { useBrainDumpStore } from '../store';
 import type { EntryCategory } from '../types';
 import { useDeleteEntry, useErrorToast, useSuccessToast, useToggleTaskCompleted, useUpdateEntry } from '@/hooks';
 import { formatCreatedDateTime, formatCreatedTime } from '../utils/formatTime';
@@ -184,6 +187,50 @@ function OriginalText({ text, excerpt, category, borderClass, bgClass }: Readonl
   );
 }
 
+// ─── ShoppingItemsSection ────────────────────────────────────────────────────
+
+function ShoppingItemsSection({ captureId, labelCls, sectionCls }: Readonly<{
+  captureId: string; labelCls: string; sectionCls: string;
+}>) {
+  const [items, setItems] = useState<ShoppingItem[]>([]);
+  const toggleItem = useBrainDumpStore(s => s.toggleItem);
+
+  useEffect(() => {
+    fetchShoppingItemsBySourceDump(captureId).then(setItems).catch(() => {});
+  }, [captureId]);
+
+  const handleToggle = async (id: string, isDone: boolean) => {
+    setItems(prev => prev.map(it => it.id === id ? { ...it, is_done: isDone } : it));
+    await toggleItem(id, isDone);
+  };
+
+  if (items.length === 0) return null;
+
+  return (
+    <section className="space-y-2" aria-label="Einkaufsartikel">
+      <p className={labelCls}>Artikel</p>
+      <ul className={sectionCls}>
+        {items.map(item => (
+          <li key={item.id}>
+            <button
+              type="button"
+              role="checkbox"
+              aria-checked={item.is_done ? 'true' : 'false'}
+              onClick={() => handleToggle(item.id, !item.is_done)}
+              className="flex w-full items-center gap-2.5 rounded-md px-0.5 py-0.5 text-left text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+            >
+              {item.is_done
+                ? <SquareCheck className="h-4 w-4 shrink-0 text-emerald-500" aria-hidden="true" />
+                : <Square className="h-4 w-4 shrink-0 text-muted-foreground/50" aria-hidden="true" />}
+              <span className={item.is_done ? 'line-through text-muted-foreground' : ''}>{item.label}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 // ─── EntryDetailPanel ─────────────────────────────────────────────────────────
 
 export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
@@ -319,23 +366,13 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
             )}
 
             {/* Shopping items */}
-            {entry.category === 'SHOPPING' && (() => {
-              const items = entry.payload?.items ?? [];
-              if (items.length === 0) return null;
-              return (
-                <section className="space-y-2" aria-label="Einkaufsartikel">
-                  <p className={labelCls}>Artikel</p>
-                  <ul className={sectionCls}>
-                    {items.map((item, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm leading-relaxed">
-                        <span className={bulletCls} aria-hidden="true" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              );
-            })()}
+            {entry.category === 'SHOPPING' && entry.captureId && (
+              <ShoppingItemsSection
+                captureId={entry.captureId}
+                labelCls={labelCls}
+                sectionCls={sectionCls}
+              />
+            )}
 
             {/* Originaltext (collapsible) */}
             <section className="space-y-2" aria-label="Originaltext">

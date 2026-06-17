@@ -147,7 +147,7 @@ Deno.serve(async (request) => {
 
   if (shoppingEntries.length > 0) {
     const rows = shoppingEntries.flatMap(e =>
-      (e.payload.items ?? []).map((label: string) => ({ label, is_done: false }))
+      (e.payload.items ?? []).map((label: string) => ({ label, is_done: false, source_dump: captureId }))
     );
     if (rows.length > 0) {
       const { error: dbError } = await supabase.from('shopping_items').insert(rows);
