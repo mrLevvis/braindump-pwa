@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Calendar, CheckCircle2, Circle } from 'lucide-react';
+import { Calendar, CheckCircle2, Circle, ShoppingCart } from 'lucide-react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { TaskToggle } from '@/components/TaskToggle';
 import type { BrainDumpEntry, EntryCategory } from '../types';
@@ -205,13 +205,65 @@ function NoteCard({ entry, selectionMode }: Readonly<CardProps>) {
   );
 }
 
+// ─── ShoppingCard ─────────────────────────────────────────────────────────────
+
+const ITEM_PILL_CLS = [
+  'rounded-full', 'border', 'border-emerald-200', 'bg-emerald-50',
+  'px-2', 'py-0.5', 'text-[11px]', 'text-emerald-800',
+  'dark:border-emerald-800', 'dark:bg-emerald-950/40', 'dark:text-emerald-200',
+].join(' ');
+
+function ShoppingCard({ entry, selectionMode }: Readonly<CardProps>) {
+  const [open, setOpen] = useState(false);
+  const { tintBackground } = CATEGORY_STYLES.SHOPPING;
+  const title = entry.title?.trim() || 'Einkaufsliste';
+  const items = entry.payload?.items ?? [];
+  const selectedRing = selectionMode?.isSelected ? 'ring-2 ring-primary ring-offset-1' : '';
+
+  const handleClick = () => {
+    if (selectionMode) selectionMode.onToggleSelect();
+    else setOpen(true);
+  };
+
+  return (
+    <>
+      <div className="relative">
+        <button type="button" className={CARD_BTN} onClick={handleClick}>
+          <Card className={[CARD_BASE, tintBackground, selectedRing].join(' ')} size="sm">
+            <CardContent className="space-y-2 px-4">
+              <div className="flex items-center gap-2">
+                <ShoppingCart className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+                <p className="text-sm font-semibold leading-snug">{title}</p>
+              </div>
+              {items.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {items.map((item, i) => (
+                    <span key={`${item}-${i}`} className={ITEM_PILL_CLS}>{item}</span>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+            <CardFooter className={FOOTER_CLS}>
+              <time dateTime={entry.created_at}>erstellt am {formatCreatedDateTime(entry.created_at)} um {formatCreatedTime(entry.created_at)} Uhr</time>
+            </CardFooter>
+          </Card>
+        </button>
+
+        {selectionMode && <SelectionIndicator isSelected={selectionMode.isSelected} />}
+      </div>
+
+      {!selectionMode && <EntryDetailPanel entry={entry} open={open} onOpenChange={setOpen} />}
+    </>
+  );
+}
+
 // ─── Dispatcher ───────────────────────────────────────────────────────────────
 
 const CARD_REGISTRY: Record<EntryCategory, React.ComponentType<CardProps>> = {
   TASK: TaskCard,
   EVENT: EventCard,
   NOTE: NoteCard,
-  SHOPPING: NoteCard, // SHOPPING-Entries landen in shopping_items, nicht hier
+  SHOPPING: ShoppingCard,
 };
 
 export function resolveEntryCard(category: EntryCategory): React.ComponentType<CardProps> {
