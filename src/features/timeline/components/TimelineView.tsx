@@ -16,7 +16,7 @@ import { useEntries, useIsPrioritizing, usePrioritizeDayTasks, usePrioritizedDay
 import { useTaskCompletionFlow } from '../../braindump/views/TaskCompletionDialog';
 import type { BrainDumpEntry } from '../../braindump/types';
 import { useNow } from '../../../hooks/useNow';
-import { todayLocal } from '../../../lib/dateUtils';
+import { shiftDate, todayLocal } from '../../../lib/dateUtils';
 import { DayGrid } from './DayGrid';
 import { DayTabs } from './DayTabs';
 import { UntimedSection } from './UntimedSection';
@@ -121,6 +121,11 @@ export function TimelineView({ onBack }: Readonly<Props>) {
   const pxPerHourRef     = useRef(pxPerHour);
   useEffect(() => { pxPerHourRef.current = pxPerHour; }, [pxPerHour]);
 
+  const swipeStartX = useRef(0);
+  const swipeStartY = useRef(0);
+  const selectedDateRef = useRef(selectedDate);
+  useEffect(() => { selectedDateRef.current = selectedDate; }, [selectedDate]);
+
   useEffect(() => {
     const el = mainRef.current;
     if (!el) return;
@@ -128,9 +133,13 @@ export function TimelineView({ onBack }: Readonly<Props>) {
     const verticalDist = (t: TouchList) => Math.abs(t[0].clientY - t[1].clientY);
 
     const onTouchStart = (e: TouchEvent) => {
-      if (e.touches.length !== 2) return;
-      pinchInitialDist.current = verticalDist(e.touches);
-      pinchInitialPx.current   = pxPerHourRef.current;
+      if (e.touches.length === 2) {
+        pinchInitialDist.current = verticalDist(e.touches);
+        pinchInitialPx.current   = pxPerHourRef.current;
+      } else if (e.touches.length === 1) {
+        swipeStartX.current = e.touches[0].clientX;
+        swipeStartY.current = e.touches[0].clientY;
+      }
     };
 
     const onTouchMove = (e: TouchEvent) => {
@@ -143,6 +152,14 @@ export function TimelineView({ onBack }: Readonly<Props>) {
 
     const onTouchEnd = (e: TouchEvent) => {
       if (e.touches.length < 2) pinchInitialDist.current = 0;
+
+      if (e.changedTouches.length === 1 && e.touches.length === 0) {
+        const dx = e.changedTouches[0].clientX - swipeStartX.current;
+        const dy = e.changedTouches[0].clientY - swipeStartY.current;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+          setSelectedDate(shiftDate(selectedDateRef.current, dx < 0 ? 1 : -1));
+        }
+      }
     };
 
     el.addEventListener('touchstart',  onTouchStart, { passive: true });
@@ -156,7 +173,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
       el.removeEventListener('touchend',    onTouchEnd);
       el.removeEventListener('touchcancel', onTouchEnd);
     };
-  }, [setPxPerHour]);
+  }, [setPxPerHour, setSelectedDate]);
 
   const now = useNow();
   const todayStr = todayLocal();
