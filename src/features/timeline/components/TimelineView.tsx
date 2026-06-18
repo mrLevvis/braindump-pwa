@@ -12,7 +12,8 @@ import {
   useTimelineBuckets,
 } from '../../../hooks/timelineSelectors';
 import { useDaySelectionStore } from '../store/DaySelectionStore';
-import { useEntries, useIsPrioritizing, usePrioritizeDayTasks, usePrioritizedDays, useToggleTaskCompleted } from '../../../hooks/braindumpSelectors';
+import { useEntries, useIsPrioritizing, usePrioritizeDayTasks, usePrioritizedDays } from '../../../hooks/braindumpSelectors';
+import { useTaskCompletionFlow } from '../../braindump/views/TaskCompletionDialog';
 import type { BrainDumpEntry } from '../../braindump/types';
 import { useNow } from '../../../hooks/useNow';
 import { todayLocal } from '../../../lib/dateUtils';
@@ -85,7 +86,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
   }, [selectedEntry, allEntries]);
 
   const { undated } = useTimelineBuckets();
-  const toggleTaskCompleted = useToggleTaskCompleted();
+  const { triggerToggle, dialogs } = useTaskCompletionFlow();
   const selectedDate = useSelectedDate();
   const goToToday = useGoToToday();
   const setSelectedDate = useSetSelectedDate();
@@ -244,7 +245,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
             <UntimedSection
               undated={undated}
               onSelect={setSelectedEntry}
-              onToggle={toggleTaskCompleted}
+              onToggle={triggerToggle}
             />
           </div>
         </div>
@@ -271,7 +272,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
             pxPerHour={pxPerHour}
             nowLineRef={nowLineRef}
             onSelect={setSelectedEntry}
-            onToggle={toggleTaskCompleted}
+            onToggle={triggerToggle}
           />
         </div>
       </main>
@@ -283,6 +284,8 @@ export function TimelineView({ onBack }: Readonly<Props>) {
           onOpenChange={(open) => { if (!open) setSelectedEntry(null); }}
         />
       )}
+
+      {dialogs}
     </div>
   );
 }

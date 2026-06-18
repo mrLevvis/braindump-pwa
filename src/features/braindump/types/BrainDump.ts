@@ -81,6 +81,17 @@ export type EntryCategory = 'TASK' | 'EVENT' | 'NOTE' | 'SHOPPING';
 /** Grobe Tageszeit — gesetzt wenn keine konkrete Uhrzeit genannt, aber ein Tageszeitfenster erkennbar ist. */
 export type TimeOfDay = 'morgens' | 'vormittags' | 'mittags' | 'nachmittags' | 'abends' | 'nachts';
 
+export const TIME_OF_DAY_OPTIONS: readonly TimeOfDay[] = ['morgens', 'vormittags', 'mittags', 'nachmittags', 'abends', 'nachts'];
+
+export const TIME_OF_DAY_LABEL: Record<TimeOfDay, string> = {
+  morgens:     'Morgens',
+  vormittags:  'Vormittags',
+  mittags:     'Mittags',
+  nachmittags: 'Nachmittags',
+  abends:      'Abends',
+  nachts:      'Nachts',
+};
+
 export interface EntryPayload {
   date?: string;         // ISO Datum (YYYY-MM-DD), falls im Text impliziert/erwähnt
   startTime?: string;    // HH:MM (Beginn), falls im Text erwähnt

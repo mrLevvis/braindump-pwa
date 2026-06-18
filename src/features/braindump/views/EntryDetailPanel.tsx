@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Circle, CircleCheck, ChevronDown, ChevronRight, Clock, Pencil, Plus, RefreshCw, ShoppingCart, Square, SquareCheck } from 'lucide-react';
+import { Circle, CircleCheck, ChevronDown, ChevronRight, Clock, Pencil, Plus, RefreshCw, ShoppingCart, Square, SquareCheck, Timer, Sun } from 'lucide-react';
+import { useNow } from '@/hooks';
 import type { ShoppingItem } from '../../shopping/types/ShoppingItem';
 import { useBrainDumpStore } from '../store';
 import type { EntryCategory } from '../types';
-import { useDeleteEntry, useDeleteOccurrence, useErrorToast, useSuccessToast, useToggleTaskCompleted, useUpdateEntry, useUpdateOccurrence } from '@/hooks';
+import { useDeleteEntry, useDeleteOccurrence, useErrorToast, useSuccessToast, useUpdateEntry, useUpdateOccurrence } from '@/hooks';
+import { useTaskCompletionFlow } from './TaskCompletionDialog';
 import { formatCreatedDateTime, formatCreatedTime } from '../utils/formatTime';
 import {
   AlertDialog,
@@ -18,6 +20,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { BrainDumpEntry, DeleteResult, RecurrenceScope, UpdateResult } from '../types';
+import { TIME_OF_DAY_LABEL } from '../types/BrainDump';
 import { CATEGORY_STYLES, CategoryBadge, TagBadgeList } from '../categoryStyles';
 import { RecurrenceScopeDialog } from './RecurrenceScopeDialog';
 import { formatRecurrenceRule } from '../../timeline/recurrenceUtils';
@@ -95,8 +98,8 @@ function parseLocalDate(iso: string): Date | null {
 
 // ─── TimingCard ───────────────────────────────────────────────────────────────
 
-function TimingCard({ date, startTime, endTime, accentBg, borderClass, bgClass, onNavigate }: Readonly<{
-  date?: string; startTime?: string; endTime?: string;
+function TimingCard({ date, startTime, endTime, timeOfDay, accentBg, borderClass, bgClass, onNavigate }: Readonly<{
+  date?: string; startTime?: string; endTime?: string; timeOfDay?: string;
   accentBg: string; borderClass: string; bgClass: string;
   onNavigate?: () => void;
 }>) {
@@ -129,6 +132,12 @@ function TimingCard({ date, startTime, endTime, accentBg, borderClass, bgClass, 
           <span className="inline-flex items-center gap-1 mt-1 rounded-full border bg-background/60 px-2 py-0.5 text-xs font-medium text-foreground">
             <Clock className="h-3 w-3 shrink-0 opacity-60" aria-hidden="true" />
             {timeStr}
+          </span>
+        )}
+        {!timeStr && timeOfDay && (
+          <span className="inline-flex items-center gap-1 mt-1 rounded-full border bg-background/60 px-2 py-0.5 text-xs font-medium text-foreground">
+            <Sun className="h-3 w-3 shrink-0 opacity-60" aria-hidden="true" />
+            {timeOfDay}
           </span>
         )}
       </div>
@@ -167,6 +176,116 @@ const EXCERPT_HIGHLIGHT: Record<EntryCategory, string> = {
   NOTE:     'bg-amber-500/25 dark:bg-amber-500/30 rounded-sm',
   SHOPPING: 'bg-emerald-500/25 dark:bg-emerald-500/30 rounded-sm',
 };
+
+// ─── DeadlineCountdown ───────────────────────────────────────────────────────
+
+const DEADLINE_STEPS = {
+  overdue:  { container: 'bg-rose-900/10 border-rose-700/40 dark:bg-rose-900/25 dark:border-rose-600/50', text: 'text-rose-900 dark:text-rose-300', sub: 'text-rose-800/60 dark:text-rose-400/70', barColor: 'hsl(0,65%,38%)' },
+  critical: { container: 'bg-rose-500/10 border-rose-400/40 dark:bg-rose-500/20 dark:border-rose-400/50', text: 'text-rose-700 dark:text-rose-400',   sub: 'text-rose-600/60 dark:text-rose-400/70',    barColor: 'hsl(5,80%,55%)' },
+  warning:  { container: 'bg-orange-500/10 border-orange-400/40 dark:bg-orange-500/20 dark:border-orange-400/50', text: 'text-orange-700 dark:text-orange-400', sub: 'text-orange-600/60 dark:text-orange-400/70', barColor: 'hsl(28,90%,55%)' },
+  caution:  { container: 'bg-yellow-500/10 border-yellow-400/40 dark:bg-yellow-500/20 dark:border-yellow-400/50', text: 'text-yellow-700 dark:text-yellow-400',  sub: 'text-yellow-600/60 dark:text-yellow-400/70',  barColor: 'hsl(50,90%,48%)' },
+  safe:     { container: 'bg-emerald-500/10 border-emerald-400/40 dark:bg-emerald-500/20 dark:border-emerald-400/50', text: 'text-emerald-700 dark:text-emerald-400', sub: 'text-emerald-600/60 dark:text-emerald-400/70', barColor: 'hsl(145,65%,45%)' },
+} as const;
+
+type DeadlineStep = keyof typeof DEADLINE_STEPS;
+
+function getDeadlineStep(diffMs: number): DeadlineStep {
+  if (diffMs <= 0) return 'overdue';
+  const h = diffMs / 3_600_000;
+  if (h <= 3) return 'critical';
+  if (h <= 12) return 'warning';
+  if (h <= 48) return 'caution';
+  return 'safe';
+}
+
+function fmtDuration(ms: number): string {
+  const totalMin = Math.floor(Math.abs(ms) / 60_000);
+  const days  = Math.floor(totalMin / (60 * 24));
+  const hours = Math.floor((totalMin % (60 * 24)) / 60);
+  const min   = totalMin % 60;
+  if (days > 0) return `${days} Tag${days !== 1 ? 'e' : ''} ${hours} Std`;
+  if (hours > 0) return `${hours} Std ${min} Min`;
+  return `${min} Min`;
+}
+
+function DeadlineCountdown({ date, deadline, completed }: Readonly<{ date?: string; deadline: string; completed: boolean }>) {
+  const now = useNow();
+
+  const diffMs = (() => {
+    if (!date) return null;
+    const [hh, mm] = deadline.split(':').map(Number);
+    const target = new Date(`${date}T00:00:00`);
+    target.setHours(hh, mm, 0, 0);
+    return target.getTime() - now.getTime();
+  })();
+
+  const isOverdue = diffMs !== null && diffMs <= 0;
+
+  // ── Completed on time ────────────────────────────────────────────────────
+  if (completed && !isOverdue) {
+    return (
+      <div className="rounded-xl border border-emerald-400/40 bg-emerald-500/10 dark:bg-emerald-500/20 dark:border-emerald-400/50 flex items-center gap-2.5 px-3 py-2.5">
+        <CircleCheck className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Rechtzeitig erledigt</p>
+          <p className="text-xs mt-0.5 text-emerald-600/60 dark:text-emerald-400/70">Deadline war {deadline} Uhr</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Completed but was already overdue ────────────────────────────────────
+  if (completed && isOverdue) {
+    return (
+      <div className="rounded-xl border border-rose-700/40 bg-rose-900/10 dark:bg-rose-900/25 dark:border-rose-600/50 flex items-center gap-2.5 px-3 py-2.5">
+        <CircleCheck className="h-4 w-4 shrink-0 text-rose-700 dark:text-rose-400" aria-hidden="true" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-rose-800 dark:text-rose-300">Erledigt – Deadline überschritten</p>
+          <p className="text-xs mt-0.5 text-rose-700/60 dark:text-rose-400/70">
+            Deadline war {deadline} Uhr
+            {diffMs !== null && ` · ${fmtDuration(diffMs)} überfällig`}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Active countdown ──────────────────────────────────────────────────────
+  const step = diffMs !== null ? getDeadlineStep(diffMs) : 'safe';
+  const cls  = DEADLINE_STEPS[step];
+
+  const urgencyPct = diffMs === null ? 0
+    : isOverdue ? 100
+    : Math.max(3, Math.round(100 - Math.min(diffMs / (72 * 3_600_000), 1) * 100));
+
+  const countdownLabel = diffMs === null ? null
+    : isOverdue ? `Überfällig – seit ${fmtDuration(diffMs)}`
+    : `Noch ${fmtDuration(diffMs)}`;
+
+  return (
+    <div className={`rounded-xl border overflow-hidden ${cls.container}`}>
+      {diffMs !== null && (
+        <div className="relative h-1 bg-black/5 dark:bg-white/5">
+          <div
+            className="absolute inset-y-0 left-0 transition-[width,background-color] duration-700"
+            style={{ width: `${urgencyPct}%`, backgroundColor: cls.barColor }}
+          />
+        </div>
+      )}
+      <div className="flex items-center gap-2.5 px-3 py-2.5">
+        <Timer className={`h-4 w-4 shrink-0 ${cls.text}`} aria-hidden="true" />
+        <div className="flex-1 min-w-0">
+          {countdownLabel && (
+            <p className={`text-sm font-semibold leading-snug ${cls.text}`}>{countdownLabel}</p>
+          )}
+          <p className={`text-xs mt-0.5 ${cls.sub}`}>
+            {isOverdue ? 'War fällig' : 'Fällig'} bis {deadline} Uhr
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -312,13 +431,13 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
 
   const isRecurring = entry._isVirtualOccurrence === true || entry.recurrence != null;
 
-  const deleteEntry         = useDeleteEntry();
-  const deleteOccurrence    = useDeleteOccurrence();
-  const updateEntry         = useUpdateEntry();
-  const updateOccurrence    = useUpdateOccurrence();
-  const toggleTaskCompleted = useToggleTaskCompleted();
-  const showSuccessToast    = useSuccessToast();
-  const showErrorToast      = useErrorToast();
+  const deleteEntry                  = useDeleteEntry();
+  const deleteOccurrence             = useDeleteOccurrence();
+  const updateEntry                  = useUpdateEntry();
+  const updateOccurrence             = useUpdateOccurrence();
+  const { triggerToggle, dialogs }   = useTaskCompletionFlow();
+  const showSuccessToast             = useSuccessToast();
+  const showErrorToast               = useErrorToast();
 
   const s     = PANEL_STYLES[entry.category];
   const title = entry.title?.trim() || 'Untitled';
@@ -394,6 +513,7 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={(v) => { if (!v) setIsEditing(false); onOpenChange(v); }}>
       <DialogContent className="w-full sm:max-w-xl">
 
@@ -464,20 +584,26 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
             )}
 
             {/* Timing (TASK / EVENT) */}
-            {(date || entry.payload?.startTime) && (
+            {(date || entry.payload?.startTime || entry.payload?.timeOfDay || entry.payload?.deadline) && (
               <section className="space-y-2" aria-label="Eintragszeiten">
                 <p className={labelCls}>Termin / Fällig</p>
-                <TimingCard
-                  date={date}
-                  startTime={entry.payload?.startTime}
-                  endTime={entry.payload?.endTime}
-                  accentBg={CATEGORY_STYLES[entry.category].accentBg}
-                  borderClass={s.timingBorder}
-                  bgClass={s.timingBg}
-                  onNavigate={(entry.category === 'TASK' || entry.category === 'EVENT')
-                    ? () => navigateTimeline(date, entry.id)
-                    : undefined}
-                />
+                {(date || entry.payload?.startTime || entry.payload?.timeOfDay) && (
+                  <TimingCard
+                    date={date}
+                    startTime={entry.payload?.startTime}
+                    endTime={entry.payload?.endTime}
+                    timeOfDay={entry.payload?.timeOfDay ? TIME_OF_DAY_LABEL[entry.payload.timeOfDay] : undefined}
+                    accentBg={CATEGORY_STYLES[entry.category].accentBg}
+                    borderClass={s.timingBorder}
+                    bgClass={s.timingBg}
+                    onNavigate={(entry.category === 'TASK' || entry.category === 'EVENT')
+                      ? () => navigateTimeline(date, entry.id)
+                      : undefined}
+                  />
+                )}
+                {entry.category === 'TASK' && entry.payload?.deadline && (
+                  <DeadlineCountdown date={date} deadline={entry.payload.deadline} completed={entry.completed} />
+                )}
               </section>
             )}
 
@@ -527,7 +653,7 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
               <div className="flex items-center justify-end pt-1">
                 <Button
                   type="button" variant="outline" size="icon"
-                  onClick={() => toggleTaskCompleted(entry.id, !entry.completed)}
+                  onClick={() => triggerToggle(entry.id, !entry.completed)}
                   aria-label={entry.completed ? 'Als unerledigt markieren' : 'Als erledigt markieren'}
                   className={entry.completed ? 'text-emerald-500 border-emerald-500/40' : ''}
                 >
@@ -590,5 +716,8 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
         onConfirm={handleScopeEditConfirm}
       />
     </Dialog>
+
+    {dialogs}
+    </>
   );
 }

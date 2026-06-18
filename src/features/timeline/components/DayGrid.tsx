@@ -1,4 +1,6 @@
 import { useMemo, useState, type RefObject } from 'react';
+import { AlarmClock, Sun } from 'lucide-react';
+import { TIME_OF_DAY_LABEL } from '../../braindump/types/BrainDump';
 import { Card, CardContent } from '../../../components/ui/card';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../../../components/ui/sheet';
 import { TaskToggle } from '../../../components/TaskToggle';
@@ -47,6 +49,8 @@ interface AllDayEntryProps {
 
 function AllDayEntry({ entry, onSelect, onToggle }: Readonly<AllDayEntryProps>) {
   const isTask = entry.category === 'TASK';
+  const deadline = entry.payload.deadline;
+  const timeOfDay = entry.payload.timeOfDay;
   const title = entry.title ?? entry.original_text;
   const { tintBackground, accent } = CATEGORY_STYLES[entry.category];
 
@@ -60,9 +64,25 @@ function AllDayEntry({ entry, onSelect, onToggle }: Readonly<AllDayEntryProps>) 
       >
         <Card size="sm" className={['rounded-lg py-2 transition hover:border-foreground/20', tintBackground, entry.completed ? 'opacity-60' : ''].join(' ')}>
           <CardContent className={['px-3 min-w-0', isTask ? 'pr-10' : ''].join(' ')}>
-            <p className={['text-xs font-medium truncate min-w-0', entry.completed ? 'line-through text-muted-foreground' : ''].join(' ')}>
-              {title}
-            </p>
+            <div className="flex items-center gap-1.5 min-w-0">
+              {deadline && (
+                <AlarmClock className="h-3 w-3 shrink-0 text-rose-500" aria-hidden="true" />
+              )}
+              <p className={['text-xs font-medium truncate flex-1 min-w-0', entry.completed ? 'line-through text-muted-foreground' : ''].join(' ')}>
+                {title}
+              </p>
+            </div>
+            {deadline && (
+              <p className="text-[10px] font-medium text-rose-500/80 mt-0.5">
+                bis {deadline} Uhr
+              </p>
+            )}
+            {!deadline && timeOfDay && (
+              <p className="flex items-center gap-1 text-[10px] text-muted-foreground/70 mt-0.5">
+                <Sun className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
+                {TIME_OF_DAY_LABEL[timeOfDay]}
+              </p>
+            )}
           </CardContent>
         </Card>
       </button>
@@ -197,12 +217,10 @@ export function DayGrid({ date, entries, allDay, isToday, now, pxPerHour, nowLin
     ? (now.getHours() * 60 + now.getMinutes()) * (pxPerHour / 60)
     : null;
 
-  // Split allDay: regular entries (ganztags) vs. deadline entries (badge in grid)
-  const cleanAllDay = useMemo(() => allDay.filter(e => e.payload.deadline == null), [allDay]);
   const deadlineByTime = useMemo(() => {
     const map = new Map<string, BrainDumpEntry[]>();
     for (const e of allDay) {
-      if (!e.payload.deadline) continue;
+      if (!e.payload.deadline || e.completed) continue;
       const t = e.payload.deadline;
       const group = map.get(t) ?? [];
       group.push(e);
@@ -217,12 +235,12 @@ export function DayGrid({ date, entries, allDay, isToday, now, pxPerHour, nowLin
 
   return (
     <div className="flex flex-col gap-3">
-      {/* ── All-day entries (dated, no startTime, no deadline) ──────────────── */}
-      {cleanAllDay.length > 0 && (
+      {/* ── All-day entries (dated, no startTime) ───────────────────────────── */}
+      {allDay.length > 0 && (
         <div>
           <p className={ALL_DAY_LABEL}>Ganztags</p>
           <div className="space-y-1.5">
-            {cleanAllDay.map(entry => (
+            {allDay.map(entry => (
               <AllDayEntry key={entry.id} entry={entry} onSelect={onSelect} onToggle={onToggle} />
             ))}
           </div>

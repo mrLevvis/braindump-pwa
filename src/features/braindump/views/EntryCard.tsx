@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { Calendar, CheckCircle2, Circle, ShoppingCart } from 'lucide-react';
+import { Calendar, CheckCircle2, Circle, Clock, ShoppingCart } from 'lucide-react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { TaskToggle } from '@/components/TaskToggle';
 import type { BrainDumpEntry, EntryCategory } from '../types';
+import { TIME_OF_DAY_LABEL } from '../types/BrainDump';
 import { formatCreatedTime, formatCreatedDateTime } from '../utils';
 import { CATEGORY_STYLES, TagBadgeList } from '../categoryStyles';
 import { EntryDetailPanel } from './EntryDetailPanel';
-import { useToggleTaskCompleted } from '@/hooks';
+import { useTaskCompletionFlow } from './TaskCompletionDialog';
 import { useBrainDumpStore } from '../store';
 
 // ─── Date/time helpers ────────────────────────────────────────────────────────
@@ -68,14 +69,15 @@ interface CardProps {
 
 function TaskCard({ entry, selectionMode }: Readonly<CardProps>) {
   const [open, setOpen] = useState(false);
-  const toggle = useToggleTaskCompleted();
+  const { triggerToggle, dialogs } = useTaskCompletionFlow();
   const { tintBackground, accent, accentBg } = CATEGORY_STYLES.TASK;
   const title = entry.title?.trim() || 'Untitled';
   const tags = entry.payload?.tags ?? [];
   const selectedRing = selectionMode?.isSelected ? 'ring-2 ring-primary ring-offset-1' : '';
   const dateBlock = entry.payload?.date ? parseDateBlock(entry.payload.date) : null;
   const timeStr = fmtTime(entry.payload?.startTime, entry.payload?.endTime);
-  const hasTiming = dateBlock !== null || timeStr !== null;
+  const timeOfDayLabel = !timeStr && entry.payload?.timeOfDay ? TIME_OF_DAY_LABEL[entry.payload.timeOfDay] : null;
+  const hasTiming = dateBlock !== null || timeStr !== null || timeOfDayLabel !== null;
 
   const handleClick = () => {
     if (selectionMode) selectionMode.onToggleSelect();
@@ -108,6 +110,12 @@ function TaskCard({ entry, selectionMode }: Readonly<CardProps>) {
                   {title}
                 </p>
                 {timeStr && <p className="text-xs text-muted-foreground">{timeStr}</p>}
+                {timeOfDayLabel && (
+                  <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Clock className="h-3 w-3 shrink-0 opacity-60" aria-hidden="true" />
+                    {timeOfDayLabel}
+                  </p>
+                )}
                 <TagBadgeList tags={tags} />
               </div>
             </CardContent>
@@ -124,13 +132,14 @@ function TaskCard({ entry, selectionMode }: Readonly<CardProps>) {
               completed={entry.completed}
               accent={accent}
               size="lg"
-              onToggle={() => toggle(entry.id, !entry.completed)}
+              onToggle={() => triggerToggle(entry.id, !entry.completed)}
               className="absolute bottom-4 right-4 z-10"
             />
           )}
       </div>
 
       {!selectionMode && <EntryDetailPanel entry={entry} open={open} onOpenChange={setOpen} />}
+      {!selectionMode && dialogs}
     </>
   );
 }
@@ -144,6 +153,7 @@ function EventCard({ entry, selectionMode }: Readonly<CardProps>) {
   const tags = entry.payload?.tags ?? [];
   const dateBlock = entry.payload?.date ? parseDateBlock(entry.payload.date) : null;
   const timeStr = fmtTime(entry.payload?.startTime, entry.payload?.endTime);
+  const timeOfDayLabel = !timeStr && entry.payload?.timeOfDay ? TIME_OF_DAY_LABEL[entry.payload.timeOfDay] : null;
   const selectedRing = selectionMode?.isSelected ? 'ring-2 ring-primary ring-offset-1' : '';
 
   const handleClick = () => {
@@ -173,6 +183,12 @@ function EventCard({ entry, selectionMode }: Readonly<CardProps>) {
               <div className="min-w-0 flex-1 space-y-1.5">
                 <p className="text-sm font-semibold leading-snug">{title}</p>
                 {timeStr && <p className="text-xs text-muted-foreground">{timeStr}</p>}
+                {timeOfDayLabel && (
+                  <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Clock className="h-3 w-3 shrink-0 opacity-60" aria-hidden="true" />
+                    {timeOfDayLabel}
+                  </p>
+                )}
                 <TagBadgeList tags={tags} />
               </div>
             </CardContent>

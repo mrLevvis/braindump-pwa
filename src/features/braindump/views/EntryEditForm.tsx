@@ -3,7 +3,8 @@ import { X, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import type { BrainDumpEntry, EntryCategory, EntryPatch, RecurrenceRule } from '../types';
+import type { BrainDumpEntry, EntryCategory, EntryPatch, RecurrenceRule, TimeOfDay } from '../types';
+import { TIME_OF_DAY_OPTIONS, TIME_OF_DAY_LABEL } from '../types/BrainDump';
 import { RecurrencePickerSection } from './RecurrencePickerSection';
 
 // Matches Input's visual style but grows with content instead of clipping.
@@ -29,6 +30,12 @@ function AutoGrowTextarea({ value, className, ...props }: React.TextareaHTMLAttr
 const LABEL_CLS = 'text-xs font-medium uppercase tracking-wide text-muted-foreground';
 const SECTION_CLS = 'space-y-1.5';
 const TIME_GRID_CLS = 'grid grid-cols-1 sm:grid-cols-3 gap-2';
+const SELECT_CLS = [
+  'flex w-full rounded-4xl border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors outline-none',
+  'text-foreground placeholder:text-muted-foreground',
+  'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30',
+  'disabled:cursor-not-allowed disabled:opacity-50',
+].join(' ');
 
 const CATEGORIES: EntryCategory[] = ['TASK', 'EVENT', 'NOTE'];
 const CATEGORY_LABEL: Record<EntryCategory, string> = { TASK: 'Aufgabe', EVENT: 'Termin', NOTE: 'Notiz', SHOPPING: 'Einkauf' };
@@ -56,6 +63,8 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
   const [date, setDate] = useState(entry.payload?.date ?? '');
   const [startTime, setStartTime] = useState(entry.payload?.startTime ?? '');
   const [endTime, setEndTime] = useState(entry.payload?.endTime ?? '');
+  const [deadline, setDeadline] = useState(entry.payload?.deadline ?? '');
+  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay | ''>(entry.payload?.timeOfDay ?? '');
   const [tags, setTags] = useState<string[]>(entry.payload?.tags ?? []);
   const [tagInput, setTagInput] = useState('');
   const [summary, setSummary] = useState<string[]>(entry.summary ?? []);
@@ -69,6 +78,8 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
       setDate('');
       setStartTime('');
       setEndTime('');
+      setDeadline('');
+      setTimeOfDay('');
     }
   };
 
@@ -102,7 +113,9 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
       payload: {
         ...(category !== 'NOTE' && date ? { date } : {}),
         ...(category !== 'NOTE' && startTime ? { startTime } : {}),
-        ...(category !== 'NOTE' && endTime ? { endTime } : {}),
+        ...(category !== 'NOTE' && endTime && startTime ? { endTime } : {}),
+        ...(category === 'TASK' && deadline ? { deadline } : {}),
+        ...(category !== 'NOTE' && timeOfDay ? { timeOfDay } : {}),
         ...(tags.length > 0 ? { tags } : {}),
       },
       summary: summary.filter(s => s.trim()),
@@ -159,6 +172,21 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
                 <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
               </div>
             </div>
+            {!startTime && (
+              <div className="space-y-1 mt-2">
+                <p className="text-[10px] text-muted-foreground">Grobe Tageszeit</p>
+                <select
+                  value={timeOfDay}
+                  onChange={e => setTimeOfDay(e.target.value as TimeOfDay | '')}
+                  className={SELECT_CLS}
+                >
+                  <option value="">– keine –</option>
+                  {TIME_OF_DAY_OPTIONS.map(t => (
+                    <option key={t} value={t}>{TIME_OF_DAY_LABEL[t]}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
           <div className={SECTION_CLS}>
             <p className={LABEL_CLS}>Wiederholung</p>
@@ -168,23 +196,47 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
       )}
 
       {category === 'TASK' && (
-        <div className={SECTION_CLS}>
-          <p className={LABEL_CLS}>Fällig am</p>
-          <div className={TIME_GRID_CLS}>
-            <div className="space-y-1">
-              <p className="text-[10px] text-muted-foreground">Datum</p>
-              <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
+        <>
+          <div className={SECTION_CLS}>
+            <p className={LABEL_CLS}>Termin</p>
+            <div className={TIME_GRID_CLS}>
+              <div className="space-y-1">
+                <p className="text-[10px] text-muted-foreground">Datum</p>
+                <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] text-muted-foreground">Von</p>
+                <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] text-muted-foreground">Bis</p>
+                <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
+              </div>
             </div>
+            {!startTime && (
+              <div className="space-y-1 mt-2">
+                <p className="text-[10px] text-muted-foreground">Grobe Tageszeit</p>
+                <select
+                  value={timeOfDay}
+                  onChange={e => setTimeOfDay(e.target.value as TimeOfDay | '')}
+                  className={SELECT_CLS}
+                >
+                  <option value="">– keine –</option>
+                  {TIME_OF_DAY_OPTIONS.map(t => (
+                    <option key={t} value={t}>{TIME_OF_DAY_LABEL[t]}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+          <div className={SECTION_CLS}>
+            <p className={LABEL_CLS}>Deadline</p>
             <div className="space-y-1">
-              <p className="text-[10px] text-muted-foreground">Von</p>
-              <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
-            </div>
-            <div className="space-y-1">
-              <p className="text-[10px] text-muted-foreground">Bis</p>
-              <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
+              <p className="text-[10px] text-muted-foreground">Fällig bis</p>
+              <Input type="time" value={deadline} onChange={e => setDeadline(e.target.value)} className="sm:max-w-[calc(33.33%-0.5rem)]" />
             </div>
           </div>
-        </div>
+        </>
       )}
 
       <div className={SECTION_CLS}>
