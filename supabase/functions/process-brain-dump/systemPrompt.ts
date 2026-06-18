@@ -83,16 +83,16 @@ Gib das JSON exakt in dieser Form zurück:
 }
 
 Kategorien:
-- "TASK":     Eine konkrete Aufgabe zum Erledigen/Abhaken (To-Dos, einzelne Einkäufe wie "Milch kaufen").
+- "TASK":     Eine konkrete Aufgabe zum Erledigen/Abhaken — aber KEIN Einkauf oder Bestellung. Wenn etwas gekauft, bestellt oder besorgt werden soll, immer SHOPPING verwenden.
 - "EVENT":    Ein Termin mit konkretem Zeitbezug.
 - "NOTE":     Ein Gedanke/eine Info ohne Handlungsbedarf.
-- "SHOPPING": Eine Einkaufsliste mit mehreren Artikeln. Genau EIN Entry für die gesamte Liste; alle Artikel kommen als Objekt-Array in payload.items. Kein date/startTime/endTime/tags im payload.
+- "SHOPPING": Alles, was gekauft, bestellt oder besorgt werden soll — egal ob ein einzelner Artikel oder eine ganze Einkaufsliste. Schlüsselwörter: "kaufen", "bestellen", "besorgen", "einkaufen", "brauche noch", "muss noch … holen/kaufen/bestellen". Genau EIN Entry; alle Artikel in payload.items. Kein date/startTime/endTime/tags im payload.
 - "recurrence" (nur für EVENT): Wenn eine Wiederholungsregel erkannt wird ("jeden Montag", "täglich", "jeden ersten Dienstag im Monat" usw.), setze das "recurrence"-Feld auf Top-Level des Entries (nicht in payload). Ohne erkennbare Wiederholung das Feld weglassen.
 
 Regeln:
 - "entries" ist IMMER ein Array — auch wenn nur ein Gedanke im Dump steckt (dann Länge 1).
 - "category" ist IMMER exakt einer der vier Großbuchstaben-Werte.
-- SHOPPING: Eine zusammenhängende Einkaufsliste → EIN Entry, alle Artikel in payload.items. payload.items ist ein Array von Objekten mit "label" (String) und "estimatedPrice" (Zahl in EUR, realistischer Supermarktpreis in Deutschland, z.B. Milch 1.19, Brot 2.49, Butter 1.89). Kein date, startTime, endTime, tags im SHOPPING-payload.
+- SHOPPING: Alles was gekauft/bestellt/besorgt werden soll (einzeln oder als Liste) → EIN Entry, alle Artikel in payload.items. payload.items ist ein Array von Objekten mit "label" (String, nur der Artikelname ohne Verben wie "kaufen") und "estimatedPrice" (Zahl in EUR, realistischer Supermarktpreis in Deutschland, z.B. Milch 1.19, Brot 2.49, Butter 1.89). Kein date, startTime, endTime, tags im SHOPPING-payload.
 - "sourceExcerpt" enthält den relevanten Wortlaut aus dem Original möglichst wörtlich, niemals leer.
 - "summary" ist ein Array von Stichpunkten (kurze Sätze/Fragmente) die Details aus dem sourceExcerpt aufschlüsseln. Kein Stichpunkt wiederholt bloß den title. IMMER mindestens 1 Stichpunkt — auch bei trivialen Entries fasst du den Kern in einem Satz zusammen.
 - Felder in "payload", die nicht im Text vorkommen, lässt du komplett weg.
@@ -135,7 +135,15 @@ Ausgabe:
 {
   "entries": [
     {"category":"EVENT","title":"Zahnarzttermin","sourceExcerpt":"Zahnarzt morgen um 10 Uhr","summary":["Termin morgen um 10 Uhr"],"payload":{"date":"${tomorrowIso}","startTime":"10:00","endTime":"11:00"}},
-    {"category":"TASK","title":"Milch kaufen","sourceExcerpt":"Milch kaufen","summary":["Milch einkaufen"],"payload":{"tags":["Einkauf"]}}
+    {"category":"SHOPPING","title":"Einkaufsliste","sourceExcerpt":"Milch kaufen","summary":["1 Artikel: Milch"],"payload":{"items":[{"label":"Milch","estimatedPrice":1.19}]}}
+  ]
+}
+
+Eingabe: "ich muss noch Zahnpasta bestellen"
+Ausgabe:
+{
+  "entries": [
+    {"category":"SHOPPING","title":"Einkaufsliste","sourceExcerpt":"ich muss noch Zahnpasta bestellen","summary":["1 Artikel: Zahnpasta"],"payload":{"items":[{"label":"Zahnpasta","estimatedPrice":2.49}]}}
   ]
 }
 
