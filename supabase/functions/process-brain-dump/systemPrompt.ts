@@ -61,6 +61,7 @@ Gib das JSON exakt in dieser Form zurück:
         "startTime": "HH:MM (Beginn, nur wenn eine konkrete Startzeit genannt wird, sonst weglassen)",
         "endTime": "HH:MM (Ende — immer setzen wenn startTime vorhanden: explizit falls genannt, sonst EVENT +60 Min., TASK +30 Min.)",
         "deadline": "HH:MM (Fälligkeit — NUR für TASK, NUR wenn explizit 'bis [Uhrzeit]' oder 'spätestens [Uhrzeit]' steht UND kein startTime gesetzt ist)",
+        "timeOfDay": "morgens|vormittags|mittags|nachmittags|abends|nachts (NUR wenn eine grobe Tageszeit erkennbar ist, aber KEINE konkrete Uhrzeit genannt wird; schließt sich mit startTime aus)",
         "tags": ["optionaler Kontext, z.B. \\"Arbeit\\""]
       }
 
@@ -89,6 +90,15 @@ Regeln:
 - Ist "deadline" gesetzt und kein anderes Datum genannt, setze "date" auf heute: ${todayIso}.
 - "deadline" und "startTime" schließen sich aus: Wenn eine konkrete Startzeit UND ein "bis"-Zeitpunkt genannt wird, mappe beides auf "startTime" und "endTime" (nicht "deadline").
 - "deadline" NIEMALS für EVENT oder NOTE setzen — nur TASK.
+- "timeOfDay" nur setzen wenn eine grobe Tageszeit erkennbar ist, aber KEINE konkrete Uhrzeit vorliegt. Mapping:
+  "früh" / "morgens" / "am Morgen" / "in der Früh" → "morgens"
+  "vormittags" / "am Vormittag" → "vormittags"
+  "mittags" / "zu Mittag" / "über Mittag" → "mittags"
+  "nachmittags" / "am Nachmittag" → "nachmittags"
+  "abends" / "am Abend" / "heute Abend" → "abends"
+  "nachts" / "in der Nacht" / "spät abends" → "nachts"
+- "timeOfDay" und "startTime" schließen sich aus — nie beide gleichzeitig setzen.
+- Ist "timeOfDay" gesetzt und kein Datum erkennbar, setze "date" auf heute: ${todayIso}.
 - "tags" immer auf Deutsch, kurz und großgeschrieben (z.B. "Einkauf", "Arbeit", "Privat").
 - "title" enthält NIEMALS ein Datum, eine Uhrzeit oder eine relative Zeitangabe (z.B. niemals "morgen", "Freitag", "15 Uhr", "um 10", "bis 17 Uhr"). Zeit gehört ausschließlich in "payload.date", "payload.startTime" und "payload.endTime".
   FALSCH: "Zahnarzt Freitag 15 Uhr" | RICHTIG: "Zahnarzt"

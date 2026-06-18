@@ -27,14 +27,18 @@ export type EntryCategory = typeof ENTRY_CATEGORIES[number];
  * Vertrag verlassen, ohne eigene Abwehrlogik zu duplizieren.
  */
 
+export const TIME_OF_DAY_VALUES = ['morgens', 'vormittags', 'mittags', 'nachmittags', 'abends', 'nachts'] as const;
+export type TimeOfDay = typeof TIME_OF_DAY_VALUES[number];
+
 /** Die Nutzlast eines Eintrags. */
 export interface EntryPayload {
-  date?: string;       // YYYY-MM-DD
-  startTime?: string;  // HH:MM (Beginn)
-  endTime?: string;    // HH:MM (Ende, nur wenn Zeitspanne, > startTime)
-  deadline?: string;   // HH:MM (Fälligkeit) — nur TASK, wenn explizit "bis [Uhrzeit]" ohne startTime
+  date?: string;         // YYYY-MM-DD
+  startTime?: string;    // HH:MM (Beginn)
+  endTime?: string;      // HH:MM (Ende, nur wenn Zeitspanne, > startTime)
+  deadline?: string;     // HH:MM (Fälligkeit) — nur TASK, wenn explizit "bis [Uhrzeit]" ohne startTime
+  timeOfDay?: TimeOfDay; // Grobe Tageszeit wenn keine konkrete Uhrzeit, aber Tageszeitfenster erkennbar
   tags?: string[];
-  items?: string[];    // SHOPPING: Liste der Einkaufsartikel
+  items?: string[];      // SHOPPING: Liste der Einkaufsartikel
 }
 
 /** Ein strukturierter Eintrag, wie ihn die KI zurückgibt. */
@@ -74,8 +78,8 @@ export function normalizeEntryContract(entry: StructuredEntry): StructuredEntry 
   }
 
   // NOTE mit Datum/Uhrzeit: Zeitfelder strippen, Kategorie bleibt NOTE.
-  if (entry.category === 'NOTE' && (entry.payload.date || entry.payload.startTime || entry.payload.endTime || entry.payload.deadline)) {
-    const { date: _d, startTime: _s, endTime: _e, deadline: _dl, ...stripped } = entry.payload;
+  if (entry.category === 'NOTE' && (entry.payload.date || entry.payload.startTime || entry.payload.endTime || entry.payload.deadline || entry.payload.timeOfDay)) {
+    const { date: _d, startTime: _s, endTime: _e, deadline: _dl, timeOfDay: _t, ...stripped } = entry.payload;
     return { ...entry, payload: stripped };
   }
 
@@ -96,6 +100,14 @@ export function normalizeEntryContract(entry: StructuredEntry): StructuredEntry 
     if (!/^\d{2}:\d{2}$/.test(entry.payload.deadline)) {
       const { deadline: _dl, ...withoutDeadline } = entry.payload;
       return { ...entry, payload: withoutDeadline };
+    }
+  }
+
+  // timeOfDay muss ein erlaubter Wert sein. Ungültiger Wert wird verworfen.
+  if (entry.payload.timeOfDay != null) {
+    if (!(TIME_OF_DAY_VALUES as readonly string[]).includes(entry.payload.timeOfDay)) {
+      const { timeOfDay: _t, ...withoutTimeOfDay } = entry.payload;
+      return { ...entry, payload: withoutTimeOfDay };
     }
   }
 

@@ -44,13 +44,17 @@ export type EntryCategory = 'TASK' | 'EVENT' | 'NOTE' | 'SHOPPING';
  * Der strukturierte Inhalt des JSONB-Feldes in Supabase.
  * Entspricht exakt unserem KI-Vertrag im MVP-Scope.
  */
+/** Grobe Tageszeit — gesetzt wenn keine konkrete Uhrzeit genannt, aber ein Tageszeitfenster erkennbar ist. */
+export type TimeOfDay = 'morgens' | 'vormittags' | 'mittags' | 'nachmittags' | 'abends' | 'nachts';
+
 export interface EntryPayload {
-  date?: string;       // ISO Datum (YYYY-MM-DD), falls im Text impliziert/erwähnt
-  startTime?: string;  // HH:MM (Beginn), falls im Text erwähnt
-  endTime?: string;    // HH:MM (Ende), nur wenn Zeitspanne und > startTime
-  deadline?: string;   // HH:MM (Fälligkeit) — nur TASK, wenn explizit "bis [Uhrzeit]" ohne startTime
-  tags?: string[];     // Flexibler Kontext (z.B. ["Arbeit"])
-  items?: string[];    // SHOPPING: Liste der Einkaufsartikel
+  date?: string;         // ISO Datum (YYYY-MM-DD), falls im Text impliziert/erwähnt
+  startTime?: string;    // HH:MM (Beginn), falls im Text erwähnt
+  endTime?: string;      // HH:MM (Ende), nur wenn Zeitspanne und > startTime
+  deadline?: string;     // HH:MM (Fälligkeit) — nur TASK, wenn explizit "bis [Uhrzeit]" ohne startTime
+  timeOfDay?: TimeOfDay; // Grobe Tageszeit wenn keine konkrete Uhrzeit, aber Tageszeitfenster erkennbar
+  tags?: string[];       // Flexibler Kontext (z.B. ["Arbeit"])
+  items?: string[];      // SHOPPING: Liste der Einkaufsartikel
 }
 
 /**
