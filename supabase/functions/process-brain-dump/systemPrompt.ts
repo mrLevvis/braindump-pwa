@@ -86,7 +86,7 @@ Regeln:
 - Felder in "payload", die nicht im Text vorkommen, lässt du komplett weg.
 - "date" immer als echtes Datum im Format YYYY-MM-DD, niemals als Wort wie "morgen".
 - Ist "startTime" gesetzt und kein anderes Datum genannt, setze "date" auf heute: ${todayIso}.
-- Ist "startTime" gesetzt, setze immer auch "endTime": explizit falls genannt, sonst EVENT → +60 Min., TASK → +30 Min.
+- Ist "startTime" gesetzt, setze immer auch "endTime": explizit falls genannt, sonst schätze eine realistische Dauer anhand des Kontexts (z.B. "Zahnarzt" → 60 Min., "kurzes Meeting" → 30 Min., "Präsentation vorbereiten" → 90 Min., "Mittagessen" → 60 Min.). Gibt es keinerlei Kontext für die Dauer: EVENT → +60 Min., TASK → +30 Min.
 - Ist "deadline" gesetzt und kein anderes Datum genannt, setze "date" auf heute: ${todayIso}.
 - "deadline" und "startTime" schließen sich aus: Wenn eine konkrete Startzeit UND ein "bis"-Zeitpunkt genannt wird, mappe beides auf "startTime" und "endTime" (nicht "deadline").
 - "deadline" NIEMALS für EVENT oder NOTE setzen — nur TASK.
