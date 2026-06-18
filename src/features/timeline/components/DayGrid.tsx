@@ -105,10 +105,10 @@ function DeadlineLine({ time, entries, topPx, onSelectSingle, onOpenSheet }: Rea
       style={{ top: `${topPx}px` }}
     >
       <span className="h-2 w-2 rounded-full bg-rose-500 ring-2 ring-rose-500/25 shrink-0" />
+      <div className="flex-1 h-px bg-rose-500/60" />
       <span className="text-[10px] font-medium text-rose-500 px-1.5 shrink-0 max-w-[65%] truncate group-hover:underline">
         {label}
       </span>
-      <div className="flex-1 h-px bg-rose-500/60" />
     </button>
   );
 }
