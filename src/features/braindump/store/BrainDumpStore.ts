@@ -43,6 +43,10 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a)
         });
     },
 
+    clearData: () => {
+        set(() => ({ entries: [], recurrenceExceptions: [], items: [] }));
+    },
+
     submitText: async (text: string) => {
         set(() => ({ isProcessing: true }));
         try {

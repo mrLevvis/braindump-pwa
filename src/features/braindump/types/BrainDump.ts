@@ -61,6 +61,7 @@ export interface BrainDumpState {
   updateEntry: (id: string, patch: EntryPatch) => Promise<UpdateResult>;
   updateEntryList: () => void;
   prioritizeDayTasks: (date: string, tasks: readonly BrainDumpEntry[]) => Promise<void>;
+  clearData: () => void;
 }
 
 /** Ergebnis der LLM-Priorisierung: geordnete Liste von Entry-IDs. */

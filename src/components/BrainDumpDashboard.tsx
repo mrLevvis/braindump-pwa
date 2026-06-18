@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { CalendarDays, ListChecks, ShieldCheck, ShoppingCart, Trash2, X } from 'lucide-react';
+import { CalendarDays, ListChecks, LogOut, ShieldCheck, ShoppingCart, Trash2, X } from 'lucide-react';
+import { supabase } from '../features/braindump/services/ApiClient';
+import { useBrainDumpStore } from '../features/braindump/store';
 import { useCategoryFilterStore } from '../features/braindump/store/CategoryFilterStore';
 import { applyCategoryFilter } from '../features/braindump/utils/applyCategoryFilter';
 import { CategoryFilterTabs } from '../features/braindump/views/CategoryFilterTabs';
@@ -72,6 +74,12 @@ export const BrainDumpDashboard = ({ onOpenTimeline, onOpenShopping, onOpenAdmin
     const deleteEntries    = useDeleteEntries();
     const showSuccessToast = useSuccessToast();
     const showErrorToast   = useErrorToast();
+    const clearData        = useBrainDumpStore(s => s.clearData);
+
+    const handleLogout = async () => {
+        clearData();
+        await supabase.auth.signOut();
+    };
 
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set());
@@ -157,6 +165,14 @@ export const BrainDumpDashboard = ({ onOpenTimeline, onOpenShopping, onOpenAdmin
                                 <ShieldCheck className="h-4 w-4" aria-hidden="true" />
                             </button>
                         )}
+                        <button
+                            type="button"
+                            className={ICON_BTN_CLASS_NAME}
+                            onClick={handleLogout}
+                            aria-label="Ausloggen"
+                        >
+                            <LogOut className="h-4 w-4" aria-hidden="true" />
+                        </button>
                     </div>
                 </div>
             </header>
