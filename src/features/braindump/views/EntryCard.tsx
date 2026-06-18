@@ -7,6 +7,7 @@ import { formatCreatedTime, formatCreatedDateTime } from '../utils';
 import { CATEGORY_STYLES, TagBadgeList } from '../categoryStyles';
 import { EntryDetailPanel } from './EntryDetailPanel';
 import { useToggleTaskCompleted } from '@/hooks';
+import { useBrainDumpStore } from '../store';
 
 // ─── Date/time helpers ────────────────────────────────────────────────────────
 
@@ -233,9 +234,28 @@ function ShoppingCard({ entry, selectionMode }: Readonly<CardProps>) {
   const [open, setOpen] = useState(false);
   const { tintBackground } = CATEGORY_STYLES.SHOPPING;
   const title = entry.title?.trim() || 'Einkaufsliste';
-  const items = entry.payload?.items ?? [];
-  const itemLabels = items.map((i) => (typeof i === 'string' ? i : i.label));
+  const payloadItems = entry.payload?.items ?? [];
+  const itemLabels = payloadItems.map((i) => (typeof i === 'string' ? i : i.label));
   const selectedRing = selectionMode?.isSelected ? 'ring-2 ring-primary ring-offset-1' : '';
+
+  const storeItems = useBrainDumpStore(s => s.items);
+  const liveItems = entry.captureId
+    ? storeItems.filter(i => i.source_dump === entry.captureId)
+    : [];
+
+  const total = (() => {
+    if (liveItems.length > 0) {
+      const priced = liveItems.filter(i => i.estimated_price != null);
+      if (priced.length === 0) return null;
+      return priced.reduce((sum, i) => sum + (i.estimated_price ?? 0), 0);
+    }
+    const priced = payloadItems.filter(
+      (i): i is { label: string; estimatedPrice: number } =>
+        typeof i !== 'string' && i.estimatedPrice != null
+    );
+    if (priced.length === 0) return null;
+    return priced.reduce((sum, i) => sum + i.estimatedPrice, 0);
+  })();
 
   const handleClick = () => {
     if (selectionMode) selectionMode.onToggleSelect();
@@ -251,6 +271,11 @@ function ShoppingCard({ entry, selectionMode }: Readonly<CardProps>) {
               <div className="flex items-center gap-2">
                 <ShoppingCart className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
                 <p className="text-sm font-semibold leading-snug">{title}</p>
+                {total != null && (
+                  <span className="ml-auto shrink-0 text-xs text-muted-foreground tabular-nums">
+                    ~{total.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                  </span>
+                )}
               </div>
               {itemLabels.length > 0 && <TagBadgeList tags={itemLabels} />}
             </CardContent>

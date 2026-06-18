@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
-import { Circle, CircleCheck, ChevronDown, ChevronRight, Clock, RefreshCw, ShoppingCart, Square, SquareCheck } from 'lucide-react';
+import { useState } from 'react';
+import { Circle, CircleCheck, ChevronDown, ChevronRight, Clock, Pencil, Plus, RefreshCw, ShoppingCart, Square, SquareCheck } from 'lucide-react';
 import type { ShoppingItem } from '../../shopping/types/ShoppingItem';
-import { fetchShoppingItemsBySourceDump } from '../../shopping/services/shoppingItemsService';
 import { useBrainDumpStore } from '../store';
 import type { EntryCategory } from '../types';
 import { useDeleteEntry, useDeleteOccurrence, useErrorToast, useSuccessToast, useToggleTaskCompleted, useUpdateEntry, useUpdateOccurrence } from '@/hooks';
@@ -198,41 +197,98 @@ function OriginalText({ text, excerpt, category, borderClass, bgClass }: Readonl
 
 // ─── ShoppingItemsSection ────────────────────────────────────────────────────
 
+function formatItemPrice(price: number): string {
+  return `~${price.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+}
+
 function ShoppingItemsSection({ captureId, labelCls, sectionCls }: Readonly<{
   captureId: string; labelCls: string; sectionCls: string;
 }>) {
-  const [items, setItems] = useState<ShoppingItem[]>([]);
-  const toggleItem = useBrainDumpStore(s => s.toggleItem);
+  const allItems       = useBrainDumpStore(s => s.items);
+  const toggleItem     = useBrainDumpStore(s => s.toggleItem);
+  const updateItemPrice = useBrainDumpStore(s => s.updateItemPrice);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState('');
 
-  useEffect(() => {
-    fetchShoppingItemsBySourceDump(captureId).then(setItems).catch(() => {});
-  }, [captureId]);
-
-  const handleToggle = async (id: string, isDone: boolean) => {
-    setItems(prev => prev.map(it => it.id === id ? { ...it, is_done: isDone } : it));
-    await toggleItem(id, isDone);
-  };
+  const items = allItems.filter(i => i.source_dump === captureId);
 
   if (items.length === 0) return null;
+
+  const startPriceEdit = (item: ShoppingItem) => {
+    setDraft(
+      item.estimated_price != null
+        ? item.estimated_price.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : ''
+    );
+    setEditingId(item.id);
+  };
+
+  const commitPrice = (id: string) => {
+    const trimmed = draft.trim();
+    if (!trimmed) {
+      void updateItemPrice(id, null);
+    } else {
+      const parsed = parseFloat(trimmed.replace(',', '.'));
+      if (!Number.isNaN(parsed) && parsed >= 0) {
+        void updateItemPrice(id, Math.round(parsed * 100) / 100);
+      }
+    }
+    setEditingId(null);
+  };
 
   return (
     <section className="space-y-2" aria-label="Einkaufsartikel">
       <p className={labelCls}>Artikel</p>
       <ul className={sectionCls}>
         {items.map(item => (
-          <li key={item.id}>
+          <li key={item.id} className="flex items-center gap-2 rounded-md px-0.5">
             <button
               type="button"
               role="checkbox"
-              aria-checked={item.is_done ? 'true' : 'false'}
-              onClick={() => handleToggle(item.id, !item.is_done)}
-              className="flex w-full items-center gap-2.5 rounded-md px-0.5 py-0.5 text-left text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+              aria-checked={item.is_done}
+              onClick={() => void toggleItem(item.id, !item.is_done)}
+              className="flex flex-1 items-center gap-2.5 py-0.5 text-left text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/5 rounded"
             >
               {item.is_done
                 ? <SquareCheck className="h-4 w-4 shrink-0 text-emerald-500" aria-hidden="true" />
                 : <Square className="h-4 w-4 shrink-0 text-muted-foreground/50" aria-hidden="true" />}
               <span className={item.is_done ? 'line-through text-muted-foreground' : ''}>{item.label}</span>
             </button>
+            {editingId === item.id ? (
+              <input
+                type="text"
+                inputMode="decimal"
+                autoFocus
+                value={draft}
+                onChange={e => setDraft(e.target.value)}
+                onBlur={() => commitPrice(item.id)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') { e.preventDefault(); commitPrice(item.id); }
+                  else if (e.key === 'Escape') setEditingId(null);
+                }}
+                className="w-14 shrink-0 text-xs text-right tabular-nums bg-transparent border-b border-emerald-400 focus:outline-none"
+                aria-label="Preis in Euro"
+              />
+            ) : item.estimated_price != null ? (
+              <button
+                type="button"
+                onClick={() => startPriceEdit(item)}
+                className="shrink-0 flex items-center gap-0.5 group text-xs text-muted-foreground/70 tabular-nums hover:text-foreground transition-colors rounded px-0.5"
+                aria-label="Preis bearbeiten"
+              >
+                {formatItemPrice(item.estimated_price)}
+                <Pencil className="h-2.5 w-2.5 opacity-0 group-hover:opacity-60 transition-opacity" aria-hidden="true" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => startPriceEdit(item)}
+                className="shrink-0 p-0.5 rounded text-muted-foreground/30 hover:text-muted-foreground transition-colors"
+                aria-label="Preis hinzufügen"
+              >
+                <Plus className="h-3 w-3" aria-hidden="true" />
+              </button>
+            )}
           </li>
         ))}
       </ul>

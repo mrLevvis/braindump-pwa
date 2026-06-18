@@ -21,3 +21,8 @@ export type DeleteResult =
   | { status: 'deleted' }
   | { status: 'not_found' }
   | { status: 'error'; message: string };
+
+export type UpdatePriceResult =
+  | { status: 'updated'; price: number | null }
+  | { status: 'not_found' }
+  | { status: 'error'; message: string };

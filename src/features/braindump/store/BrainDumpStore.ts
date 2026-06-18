@@ -15,7 +15,7 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a)
   const set = a[0];
   const get = a[1];
   return {
-    ...createShoppingSlice((partial) => set(partial)),
+    ...createShoppingSlice((partial) => set(partial), get),
     // --- INITIAL STATE ---
     entries: [],
     recurrenceExceptions: [],

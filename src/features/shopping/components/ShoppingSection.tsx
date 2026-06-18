@@ -25,10 +25,11 @@ function formatTotal(amount: number): string {
 }
 
 export function ShoppingSection() {
-  const items      = useBrainDumpStore((s) => s.items);
-  const loadItems  = useBrainDumpStore((s) => s.loadItems);
-  const toggleItem = useBrainDumpStore((s) => s.toggleItem);
-  const removeItem = useBrainDumpStore((s) => s.removeItem);
+  const items           = useBrainDumpStore((s) => s.items);
+  const loadItems       = useBrainDumpStore((s) => s.loadItems);
+  const toggleItem      = useBrainDumpStore((s) => s.toggleItem);
+  const removeItem      = useBrainDumpStore((s) => s.removeItem);
+  const updateItemPrice = useBrainDumpStore((s) => s.updateItemPrice);
 
   useEffect(() => { loadItems(); }, [loadItems]);
 
@@ -53,6 +54,7 @@ export function ShoppingSection() {
                 item={item}
                 onToggle={toggleItem}
                 onDelete={removeItem}
+                onPriceUpdate={updateItemPrice}
               />
             ))}
           </ul>
