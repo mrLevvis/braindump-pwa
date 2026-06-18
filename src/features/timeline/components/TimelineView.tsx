@@ -121,8 +121,10 @@ export function TimelineView({ onBack }: Readonly<Props>) {
   const pxPerHourRef     = useRef(pxPerHour);
   useEffect(() => { pxPerHourRef.current = pxPerHour; }, [pxPerHour]);
 
+  const viewRef = useRef<HTMLDivElement>(null);
   const swipeStartX = useRef(0);
   const swipeStartY = useRef(0);
+  const gestureMode = useRef<'unknown' | 'swipe' | 'scroll'>('unknown');
   const selectedDateRef = useRef(selectedDate);
   useEffect(() => { selectedDateRef.current = selectedDate; }, [selectedDate]);
 
@@ -132,46 +134,107 @@ export function TimelineView({ onBack }: Readonly<Props>) {
 
     const verticalDist = (t: TouchList) => Math.abs(t[0].clientY - t[1].clientY);
 
+    const snapBack = () => {
+      const view = viewRef.current;
+      if (!view) return;
+      view.style.transition = 'transform 0.2s ease';
+      view.style.transform = 'translateX(0)';
+      const cleanup = () => {
+        view.removeEventListener('transitionend', cleanup);
+        view.style.transition = '';
+        view.style.transform = '';
+      };
+      view.addEventListener('transitionend', cleanup);
+    };
+
     const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 2) {
         pinchInitialDist.current = verticalDist(e.touches);
         pinchInitialPx.current   = pxPerHourRef.current;
+        gestureMode.current = 'scroll';
       } else if (e.touches.length === 1) {
         swipeStartX.current = e.touches[0].clientX;
         swipeStartY.current = e.touches[0].clientY;
+        gestureMode.current = 'unknown';
       }
     };
 
     const onTouchMove = (e: TouchEvent) => {
-      if (e.touches.length !== 2) return;
-      e.preventDefault();
-      if (pinchInitialDist.current === 0) return;
-      const scale = verticalDist(e.touches) / pinchInitialDist.current;
-      setPxPerHour(Math.round(pinchInitialPx.current * scale));
-    };
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        if (pinchInitialDist.current === 0) return;
+        const scale = verticalDist(e.touches) / pinchInitialDist.current;
+        setPxPerHour(Math.round(pinchInitialPx.current * scale));
+        return;
+      }
+      if (e.touches.length !== 1 || gestureMode.current === 'scroll') return;
 
-    const onTouchEnd = (e: TouchEvent) => {
-      if (e.touches.length < 2) pinchInitialDist.current = 0;
+      const dx = e.touches[0].clientX - swipeStartX.current;
+      const dy = e.touches[0].clientY - swipeStartY.current;
 
-      if (e.changedTouches.length === 1 && e.touches.length === 0) {
-        const dx = e.changedTouches[0].clientX - swipeStartX.current;
-        const dy = e.changedTouches[0].clientY - swipeStartY.current;
-        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-          setSelectedDate(shiftDate(selectedDateRef.current, dx < 0 ? 1 : -1));
+      if (gestureMode.current === 'unknown') {
+        if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
+        gestureMode.current = Math.abs(dx) > Math.abs(dy) ? 'swipe' : 'scroll';
+      }
+
+      if (gestureMode.current === 'swipe') {
+        e.preventDefault();
+        const view = viewRef.current;
+        if (view) {
+          view.style.transition = 'none';
+          view.style.transform = `translateX(${dx}px)`;
         }
       }
     };
 
-    el.addEventListener('touchstart',  onTouchStart, { passive: true });
-    el.addEventListener('touchmove',   onTouchMove,  { passive: false });
-    el.addEventListener('touchend',    onTouchEnd,   { passive: true });
-    el.addEventListener('touchcancel', onTouchEnd,   { passive: true });
+    const onTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) pinchInitialDist.current = 0;
+      if (gestureMode.current !== 'swipe' || e.changedTouches.length !== 1 || e.touches.length !== 0) return;
+      gestureMode.current = 'unknown';
+
+      const dx = e.changedTouches[0].clientX - swipeStartX.current;
+      const dy = e.changedTouches[0].clientY - swipeStartY.current;
+
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        const view = viewRef.current;
+        const targetX = dx < 0 ? -window.innerWidth : window.innerWidth;
+        const nextDate = shiftDate(selectedDateRef.current, dx < 0 ? 1 : -1);
+        if (view) {
+          view.style.transition = 'transform 0.15s ease-in';
+          view.style.transform = `translateX(${targetX}px)`;
+          const onDone = () => {
+            view.removeEventListener('transitionend', onDone);
+            view.style.transition = 'none';
+            view.style.transform = '';
+            setSelectedDate(nextDate);
+          };
+          view.addEventListener('transitionend', onDone);
+        } else {
+          setSelectedDate(nextDate);
+        }
+      } else {
+        snapBack();
+      }
+    };
+
+    const onTouchCancel = () => {
+      pinchInitialDist.current = 0;
+      if (gestureMode.current === 'swipe') {
+        gestureMode.current = 'unknown';
+        snapBack();
+      }
+    };
+
+    el.addEventListener('touchstart',  onTouchStart,  { passive: true });
+    el.addEventListener('touchmove',   onTouchMove,   { passive: false });
+    el.addEventListener('touchend',    onTouchEnd,    { passive: true });
+    el.addEventListener('touchcancel', onTouchCancel, { passive: true });
 
     return () => {
       el.removeEventListener('touchstart',  onTouchStart);
       el.removeEventListener('touchmove',   onTouchMove);
       el.removeEventListener('touchend',    onTouchEnd);
-      el.removeEventListener('touchcancel', onTouchEnd);
+      el.removeEventListener('touchcancel', onTouchCancel);
     };
   }, [setPxPerHour, setSelectedDate]);
 
@@ -222,7 +285,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
   }, [pendingScrollEntryId, timedEntries, datedTimeless, setPendingScrollEntryId]);
 
   return (
-    <div className={VIEW}>
+    <div ref={viewRef} className={VIEW}>
       <header className={HEADER}>
         {/* Row 1: back + current date label + actions */}
         <div className={HEADER_TOP}>
