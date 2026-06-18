@@ -37,7 +37,7 @@ const SELECT_CLS = [
   'disabled:cursor-not-allowed disabled:opacity-50',
 ].join(' ');
 
-const CATEGORIES: EntryCategory[] = ['TASK', 'EVENT', 'NOTE'];
+const CATEGORIES: EntryCategory[] = ['TASK', 'EVENT', 'NOTE', 'SHOPPING'];
 const CATEGORY_LABEL: Record<EntryCategory, string> = { TASK: 'Aufgabe', EVENT: 'Termin', NOTE: 'Notiz', SHOPPING: 'Einkauf' };
 
 const CATEGORY_ACTIVE: Record<EntryCategory, string> = {

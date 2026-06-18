@@ -1,7 +1,7 @@
 import type { BrainDumpEntry, EntryCategory } from '../braindump/types';
 import { todayLocal } from '../../lib/dateUtils';
 
-const CATEGORY_ORDER: readonly EntryCategory[] = ['TASK', 'EVENT', 'NOTE'];
+const CATEGORY_ORDER: readonly EntryCategory[] = ['TASK', 'EVENT', 'NOTE', 'SHOPPING'];
 
 export interface DayMarker {
   readonly dateIso: string;
