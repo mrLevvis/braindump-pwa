@@ -234,6 +234,7 @@ function ShoppingCard({ entry, selectionMode }: Readonly<CardProps>) {
   const { tintBackground } = CATEGORY_STYLES.SHOPPING;
   const title = entry.title?.trim() || 'Einkaufsliste';
   const items = entry.payload?.items ?? [];
+  const itemLabels = items.map((i) => (typeof i === 'string' ? i : i.label));
   const selectedRing = selectionMode?.isSelected ? 'ring-2 ring-primary ring-offset-1' : '';
 
   const handleClick = () => {
@@ -251,7 +252,7 @@ function ShoppingCard({ entry, selectionMode }: Readonly<CardProps>) {
                 <ShoppingCart className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
                 <p className="text-sm font-semibold leading-snug">{title}</p>
               </div>
-              {items.length > 0 && <TagBadgeList tags={items} />}
+              {itemLabels.length > 0 && <TagBadgeList tags={itemLabels} />}
             </CardContent>
             <CardFooter className={FOOTER_CLS}>
               <time dateTime={entry.created_at}>erstellt am {formatCreatedDateTime(entry.created_at)} um {formatCreatedTime(entry.created_at)} Uhr</time>

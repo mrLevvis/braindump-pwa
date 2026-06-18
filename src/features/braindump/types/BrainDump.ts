@@ -54,7 +54,7 @@ export interface EntryPayload {
   deadline?: string;     // HH:MM (Fälligkeit) — nur TASK, wenn explizit "bis [Uhrzeit]" ohne startTime
   timeOfDay?: TimeOfDay; // Grobe Tageszeit wenn keine konkrete Uhrzeit, aber Tageszeitfenster erkennbar
   tags?: string[];       // Flexibler Kontext (z.B. ["Arbeit"])
-  items?: string[];      // SHOPPING: Liste der Einkaufsartikel
+  items?: Array<string | { label: string; estimatedPrice?: number }>; // SHOPPING: Artikel (string legacy | Objekt mit Preisschätzung)
 }
 
 /**
