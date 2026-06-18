@@ -66,7 +66,7 @@ Gib das JSON exakt in dieser Form zurück:
       }
 
       // Für SHOPPING (stattdessen):
-      // "payload": { "items": ["Artikel 1", "Artikel 2", "Artikel 3"] }
+      // "payload": { "items": [{"label": "Artikel 1", "estimatedPrice": 1.29}, {"label": "Artikel 2", "estimatedPrice": 2.49}] }
     }
   ]
 }
@@ -75,12 +75,12 @@ Kategorien:
 - "TASK":     Eine konkrete Aufgabe zum Erledigen/Abhaken (To-Dos, einzelne Einkäufe wie "Milch kaufen").
 - "EVENT":    Ein Termin mit konkretem Zeitbezug.
 - "NOTE":     Ein Gedanke/eine Info ohne Handlungsbedarf.
-- "SHOPPING": Eine Einkaufsliste mit mehreren Artikeln. Genau EIN Entry für die gesamte Liste; alle Artikel kommen als String-Array in payload.items. Kein date/startTime/endTime/tags im payload.
+- "SHOPPING": Eine Einkaufsliste mit mehreren Artikeln. Genau EIN Entry für die gesamte Liste; alle Artikel kommen als Objekt-Array in payload.items. Kein date/startTime/endTime/tags im payload.
 
 Regeln:
 - "entries" ist IMMER ein Array — auch wenn nur ein Gedanke im Dump steckt (dann Länge 1).
 - "category" ist IMMER exakt einer der vier Großbuchstaben-Werte.
-- SHOPPING: Eine zusammenhängende Einkaufsliste → EIN Entry, alle Artikel in payload.items. payload.items ist ein Array von Strings (je ein Artikel). Kein date, startTime, endTime, tags im SHOPPING-payload.
+- SHOPPING: Eine zusammenhängende Einkaufsliste → EIN Entry, alle Artikel in payload.items. payload.items ist ein Array von Objekten mit "label" (String) und "estimatedPrice" (Zahl in EUR, realistischer Supermarktpreis in Deutschland, z.B. Milch 1.19, Brot 2.49, Butter 1.89). Kein date, startTime, endTime, tags im SHOPPING-payload.
 - "sourceExcerpt" enthält den relevanten Wortlaut aus dem Original möglichst wörtlich, niemals leer.
 - "summary" ist ein Array von Stichpunkten (kurze Sätze/Fragmente) die Details aus dem sourceExcerpt aufschlüsseln. Kein Stichpunkt wiederholt bloß den title. IMMER mindestens 1 Stichpunkt — auch bei trivialen Entries fasst du den Kern in einem Satz zusammen.
 - Felder in "payload", die nicht im Text vorkommen, lässt du komplett weg.
@@ -151,7 +151,7 @@ Eingabe: "Milch, Brot, Butter kaufen"
 Ausgabe:
 {
   "entries": [
-    {"category":"SHOPPING","title":"Einkaufsliste","sourceExcerpt":"Milch, Brot, Butter kaufen","summary":["3 Artikel: Milch, Brot, Butter"],"payload":{"items":["Milch","Brot","Butter"]}}
+    {"category":"SHOPPING","title":"Einkaufsliste","sourceExcerpt":"Milch, Brot, Butter kaufen","summary":["3 Artikel: Milch, Brot, Butter"],"payload":{"items":[{"label":"Milch","estimatedPrice":1.19},{"label":"Brot","estimatedPrice":2.49},{"label":"Butter","estimatedPrice":1.89}]}}
   ]
 }
 `;

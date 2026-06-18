@@ -11,6 +11,15 @@ const CHECKBOX_CLS = [
 const LABEL_BASE_CLS = ['flex-1', 'text-sm', 'leading-snug', 'cursor-pointer', 'select-none'].join(' ');
 const LABEL_DONE_CLS = [LABEL_BASE_CLS, 'line-through', 'text-muted-foreground', 'opacity-60'].join(' ');
 
+const PRICE_CLS = [
+  'shrink-0', 'text-xs', 'text-muted-foreground', 'tabular-nums',
+].join(' ');
+const PRICE_DONE_CLS = [PRICE_CLS, 'opacity-40'].join(' ');
+
+function formatPrice(price: number): string {
+  return `~${price.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+}
+
 const DELETE_BTN_CLS = [
   'shrink-0', 'rounded', 'p-1',
   'text-muted-foreground/40', 'hover:text-destructive',
@@ -38,6 +47,11 @@ export function ShoppingItemRow({ item, onToggle, onDelete }: Readonly<Props>) {
       <label htmlFor={inputId} className={item.is_done ? LABEL_DONE_CLS : LABEL_BASE_CLS}>
         {item.label}
       </label>
+      {item.estimated_price != null && (
+        <span className={item.is_done ? PRICE_DONE_CLS : PRICE_CLS}>
+          {formatPrice(item.estimated_price)}
+        </span>
+      )}
       <button
         type="button"
         onClick={() => onDelete(item.id)}

@@ -31,6 +31,12 @@ export const TIME_OF_DAY_VALUES = ['morgens', 'vormittags', 'mittags', 'nachmitt
 export type TimeOfDay = typeof TIME_OF_DAY_VALUES[number];
 
 /** Die Nutzlast eines Eintrags. */
+/** Ein Einkaufsartikel mit optionaler KI-Preisschätzung (in EUR). */
+export interface ShoppingItemEntry {
+  label: string;
+  estimatedPrice?: number;
+}
+
 export interface EntryPayload {
   date?: string;         // YYYY-MM-DD
   startTime?: string;    // HH:MM (Beginn)
@@ -38,7 +44,7 @@ export interface EntryPayload {
   deadline?: string;     // HH:MM (Fälligkeit) — nur TASK, wenn explizit "bis [Uhrzeit]" ohne startTime
   timeOfDay?: TimeOfDay; // Grobe Tageszeit wenn keine konkrete Uhrzeit, aber Tageszeitfenster erkennbar
   tags?: string[];
-  items?: string[];      // SHOPPING: Liste der Einkaufsartikel
+  items?: ShoppingItemEntry[]; // SHOPPING: Liste der Einkaufsartikel mit Preisschätzung
 }
 
 /** Ein strukturierter Eintrag, wie ihn die KI zurückgibt. */

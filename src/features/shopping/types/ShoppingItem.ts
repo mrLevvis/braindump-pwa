@@ -9,6 +9,7 @@ export interface ShoppingItem {
   label: string;
   is_done: boolean;
   source_dump: string | null;
+  estimated_price: number | null;
 }
 
 export type ToggleResult =

@@ -157,12 +157,13 @@ Deno.serve(async (request) => {
     }
 
     const rows = shoppingEntries.flatMap(e =>
-      (e.payload.items ?? []).map((label: string) => ({
-        label,
-        is_done: false,
-        source_dump: captureId,
-        user_id: userId,
-      }))
+      (e.payload.items ?? []).map((raw) => {
+        // AI kann Strings (altes Format) oder Objekte (neues Format) liefern – beide fangen.
+        const isObj = raw !== null && typeof raw === 'object';
+        const label: string = isObj ? (raw as { label: string }).label : String(raw);
+        const estimatedPrice: number | null = isObj ? ((raw as { estimatedPrice?: number }).estimatedPrice ?? null) : null;
+        return { label, estimated_price: estimatedPrice, is_done: false, source_dump: captureId, user_id: userId };
+      })
     );
     if (rows.length > 0) {
       const { error: dbError } = await supabase.from('shopping_items').insert(rows);
