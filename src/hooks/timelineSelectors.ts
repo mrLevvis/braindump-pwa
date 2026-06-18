@@ -3,13 +3,26 @@ import type { BrainDumpEntry, EntryCategory } from '../features/braindump/types'
 import type { TimelineData } from '../features/timeline';
 import { buildTimelineBuckets, buildDayMarkers } from '../features/timeline';
 import { useDaySelectionStore } from '../features/timeline/store';
-import { useEntries } from './braindumpSelectors';
+import { todayLocal } from '../lib/dateUtils';
+import { useEntries, useRecurrenceExceptions } from './braindumpSelectors';
 
 const EMPTY_ENTRIES: readonly BrainDumpEntry[] = [];
 
+function addDays(iso: string, n: number): string {
+  const d = new Date(`${iso}T00:00:00`);
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 export function useTimelineBuckets(): TimelineData {
   const entries = useEntries();
-  return useMemo(() => buildTimelineBuckets(entries), [entries]);
+  const exceptions = useRecurrenceExceptions();
+  return useMemo(() => {
+    const today = todayLocal();
+    const windowStart = addDays(today, -30);
+    const windowEnd   = addDays(today, 365);
+    return buildTimelineBuckets(entries, exceptions, windowStart, windowEnd);
+  }, [entries, exceptions]);
 }
 
 export function useSelectedDate() {

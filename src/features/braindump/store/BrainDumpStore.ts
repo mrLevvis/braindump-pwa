@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import type { BrainDumpState, DeleteResult, EntryDraft, EntryPatch, IngestPreview, InsertEntry, ToggleResult, UpdateResult } from "../types";
-import { deleteEntry as deleteEntryFromApi, deleteEntriesByIds, fetchEntries, insertEntries, toggleTaskCompleted as toggleApi, updateEntry as updateEntryApi } from "../services";
+import type { BrainDumpState, DeleteResult, EntryDraft, EntryPatch, IngestPreview, InsertEntry, RecurrenceScope, ToggleResult, UpdateResult } from "../types";
+import { deleteEntry as deleteEntryFromApi, deleteEntriesByIds, deleteRecurrenceExceptionsForSeries, fetchEntries, fetchRecurrenceExceptions, insertEntries, insertEntry, insertRecurrenceException, toggleTaskCompleted as toggleApi, updateEntry as updateEntryApi } from "../services";
 import { processText } from "../services/processBrainDump";
 import { prioritizeDayTasks as prioritizeApi } from "../services/prioritizeTasks";
 import { showErrorToast } from "../../../hooks/useErrorToast";
@@ -18,6 +18,7 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a)
     ...createShoppingSlice((partial) => set(partial)),
     // --- INITIAL STATE ---
     entries: [],
+    recurrenceExceptions: [],
     isRecording: false,
     isProcessing: false,
     isPrioritizing: false,
@@ -37,6 +38,9 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a)
         fetchEntries().then((data) => {
             if (data) set(() => ({ entries: data }));
         });
+        fetchRecurrenceExceptions().then((data) => {
+            set(() => ({ recurrenceExceptions: data }));
+        });
     },
 
     submitText: async (text: string) => {
@@ -55,6 +59,7 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a)
                 sourceExcerpt: e.sourceExcerpt,
                 summary: e.summary,
                 completed: false,
+                recurrence: e.recurrence ?? null,
             }));
 
             set(() => ({ pendingPreview: { captureId, drafts } }));
@@ -75,11 +80,12 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a)
             source_excerpt: d.sourceExcerpt,
             summary: d.summary,
             completed: d.category === 'TASK' ? false : null,
+            recurrence: d.recurrence ?? null,
         }));
 
         await insertEntries(newEntries);
-        const data = await fetchEntries();
-        if (data) set(() => ({ entries: data }));
+        const [data, exceptions] = await Promise.all([fetchEntries(), fetchRecurrenceExceptions()]);
+        if (data) set(() => ({ entries: data, recurrenceExceptions: exceptions }));
         set(() => ({ pendingPreview: null }));
         get().loadItems();
     },
@@ -97,6 +103,101 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a)
         }
 
         return result;
+    },
+
+    deleteOccurrence: async (masterId: string, date: string, scope: RecurrenceScope): Promise<DeleteResult> => {
+        if (scope === 'all') {
+            // Serien-Master löschen → cascade auf Exceptions
+            return get().deleteEntry(masterId);
+        }
+        if (scope === 'single') {
+            // Exception eintragen: diese eine Occurrence als gelöscht markieren
+            const exc = await insertRecurrenceException({
+                series_entry_id: masterId,
+                original_date: date,
+                type: 'deleted',
+                override_entry_id: null,
+            });
+            if (!exc) return { status: 'error', message: 'Exception konnte nicht gespeichert werden.' };
+            const exceptions = await fetchRecurrenceExceptions();
+            set(() => ({ recurrenceExceptions: exceptions }));
+            return { status: 'deleted' };
+        }
+        // scope === 'following': Master-Regel bis zum Vortag kürzen
+        const master = get().entries.find(e => e.id === masterId);
+        if (!master?.recurrence) return { status: 'not_found' };
+        // Vortag = Datum vor `date`
+        const prevDate = new Date(`${date}T00:00:00`);
+        prevDate.setDate(prevDate.getDate() - 1);
+        const untilDate = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}-${String(prevDate.getDate()).padStart(2, '0')}`;
+        const updatedRule = { ...master.recurrence, end: { type: 'until' as const, date: untilDate } };
+        const result = await updateEntryApi(masterId, { recurrence: updatedRule });
+        if (result.status === 'updated') {
+            // Exceptions ab `date` für diese Serie löschen
+            await deleteRecurrenceExceptionsForSeries(masterId, date);
+            const [entries, exceptions] = await Promise.all([fetchEntries(), fetchRecurrenceExceptions()]);
+            if (entries) set(() => ({ entries, recurrenceExceptions: exceptions }));
+        }
+        return result.status === 'updated' ? { status: 'deleted' } : result;
+    },
+
+    updateOccurrence: async (masterId: string, date: string, patch: EntryPatch, scope: RecurrenceScope): Promise<UpdateResult> => {
+        if (scope === 'all') {
+            return get().updateEntry(masterId, patch);
+        }
+        if (scope === 'single') {
+            // Override-Entry anlegen und Exception registrieren
+            const master = get().entries.find(e => e.id === masterId);
+            if (!master) return { status: 'not_found' };
+            const overrideInsert = {
+                title: patch.title ?? master.title,
+                original_text: master.original_text,
+                category: master.category,
+                payload: { ...master.payload, date, ...(patch.payload ?? {}) },
+                capture_id: master.captureId,
+                source_excerpt: master.sourceExcerpt,
+                summary: patch.summary ?? master.summary,
+                completed: null as null,
+                series_entry_id: masterId,
+            };
+            const inserted = await insertEntry(overrideInsert);
+            if (!inserted) return { status: 'error', message: 'Override-Entry konnte nicht gespeichert werden.' };
+            // inserted ist der raw insert result — wir müssen den Entry-ID aus freshEntries holen
+            const freshEntries = await fetchEntries();
+            if (!freshEntries) return { status: 'error', message: 'Einträge konnten nicht geladen werden.' };
+            const override = freshEntries.find(e => e.seriesEntryId === masterId && e.payload.date === date);
+            if (!override) return { status: 'error', message: 'Override-Entry nicht gefunden.' };
+            await insertRecurrenceException({
+                series_entry_id: masterId,
+                original_date: date,
+                type: 'modified',
+                override_entry_id: override.id,
+            });
+            const exceptions = await fetchRecurrenceExceptions();
+            set(() => ({ entries: freshEntries, recurrenceExceptions: exceptions }));
+            return { status: 'updated' };
+        }
+        // scope === 'following': Master bis Vortag kürzen + neue Serie ab `date` anlegen
+        const master = get().entries.find(e => e.id === masterId);
+        if (!master?.recurrence) return { status: 'not_found' };
+        const prevDate = new Date(`${date}T00:00:00`);
+        prevDate.setDate(prevDate.getDate() - 1);
+        const untilDate = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}-${String(prevDate.getDate()).padStart(2, '0')}`;
+        await updateEntryApi(masterId, { recurrence: { ...master.recurrence, end: { type: 'until' as const, date: untilDate } } });
+        await deleteRecurrenceExceptionsForSeries(masterId, date);
+        const newMaster = {
+            title: patch.title ?? master.title,
+            original_text: master.original_text,
+            category: master.category,
+            payload: { ...master.payload, date, ...(patch.payload ?? {}) },
+            summary: patch.summary ?? master.summary,
+            completed: null as null,
+            recurrence: patch.recurrence ?? master.recurrence,
+        };
+        await insertEntry(newMaster);
+        const [entries, exceptions] = await Promise.all([fetchEntries(), fetchRecurrenceExceptions()]);
+        if (entries) set(() => ({ entries, recurrenceExceptions: exceptions }));
+        return { status: 'updated' };
     },
 
     deleteEntries: async (ids: readonly string[]): Promise<void> => {

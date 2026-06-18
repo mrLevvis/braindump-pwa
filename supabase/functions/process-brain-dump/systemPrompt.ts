@@ -67,6 +67,17 @@ Gib das JSON exakt in dieser Form zurück:
 
       // Für SHOPPING (stattdessen):
       // "payload": { "items": [{"label": "Artikel 1", "estimatedPrice": 1.29}, {"label": "Artikel 2", "estimatedPrice": 2.49}] }
+
+      // Für EVENT mit Wiederholung (optional, zusätzlich zu payload):
+      // "recurrence": {
+      //   "freq": "DAILY"|"WEEKLY"|"MONTHLY"|"YEARLY",
+      //   "interval": 1,
+      //   "byDay": ["MO","WE"],          // nur WEEKLY: konkrete Wochentage
+      //   "byMonthPos": {"ordinal": 1, "day": "MO"},  // nur MONTHLY: "jeden ersten Montag"
+      //   "end": {"type": "forever"}
+      //        | {"type": "until", "date": "YYYY-MM-DD"}
+      //        | {"type": "count", "count": 10}
+      // }
     }
   ]
 }
@@ -76,6 +87,7 @@ Kategorien:
 - "EVENT":    Ein Termin mit konkretem Zeitbezug.
 - "NOTE":     Ein Gedanke/eine Info ohne Handlungsbedarf.
 - "SHOPPING": Eine Einkaufsliste mit mehreren Artikeln. Genau EIN Entry für die gesamte Liste; alle Artikel kommen als Objekt-Array in payload.items. Kein date/startTime/endTime/tags im payload.
+- "recurrence" (nur für EVENT): Wenn eine Wiederholungsregel erkannt wird ("jeden Montag", "täglich", "jeden ersten Dienstag im Monat" usw.), setze das "recurrence"-Feld auf Top-Level des Entries (nicht in payload). Ohne erkennbare Wiederholung das Feld weglassen.
 
 Regeln:
 - "entries" ist IMMER ein Array — auch wenn nur ein Gedanke im Dump steckt (dann Länge 1).
@@ -100,6 +112,19 @@ Regeln:
 - "timeOfDay" und "startTime" schließen sich aus — nie beide gleichzeitig setzen.
 - Ist "timeOfDay" gesetzt und kein Datum erkennbar, setze "date" auf heute: ${todayIso}.
 - "tags" immer auf Deutsch, kurz und großgeschrieben (z.B. "Einkauf", "Arbeit", "Privat").
+- Wiederholungsregeln: "freq" + "interval" ≥ 1 + "end" sind Pflicht. "byDay" nur bei WEEKLY (Array von Kürzel), "byMonthPos" nur bei MONTHLY positional. Mapping:
+  "jeden Tag" / "täglich" → DAILY
+  "jeden [Wochentag]" → WEEKLY + byDay
+  "jede Woche" / "wöchentlich" → WEEKLY (kein byDay = gleicher Wochentag wie Start)
+  "dienstags und donnerstags" → WEEKLY byDay:["TU","TH"]
+  "jeden Werktag" → WEEKLY byDay:["MO","TU","WE","TH","FR"]
+  "monatlich" / "jeden Monat" → MONTHLY (kein byMonthPos = gleicher Tag des Monats)
+  "jeden ersten Montag im Monat" → MONTHLY byMonthPos:{ordinal:1,day:"MO"}
+  "jeden letzten Freitag" → MONTHLY byMonthPos:{ordinal:-1,day:"FR"}
+  "jährlich" / "jedes Jahr" → YEARLY
+  "noch 10 Mal" / "10 Termine" → end:{type:"count",count:10}
+  "bis Ende des Jahres" / "bis [Datum]" → end:{type:"until",date:"YYYY-MM-DD"}
+  sonst → end:{type:"forever"}
 - "title" enthält NIEMALS ein Datum, eine Uhrzeit oder eine relative Zeitangabe (z.B. niemals "morgen", "Freitag", "15 Uhr", "um 10", "bis 17 Uhr"). Zeit gehört ausschließlich in "payload.date", "payload.startTime" und "payload.endTime".
   FALSCH: "Zahnarzt Freitag 15 Uhr" | RICHTIG: "Zahnarzt"
 
@@ -144,6 +169,22 @@ Ausgabe:
 {
   "entries": [
     {"category":"NOTE","title":"Interessanter Artikel über KI-Agenten","sourceExcerpt":"Interessanter Artikel über KI-Agenten","summary":["Artikel über KI-Agenten als interessant markiert"],"payload":{}}
+  ]
+}
+
+Eingabe: "jeden Montag um 9 Uhr Standup"
+Ausgabe:
+{
+  "entries": [
+    {"category":"EVENT","title":"Standup-Meeting","sourceExcerpt":"jeden Montag um 9 Uhr Standup","summary":["Wöchentlich montags um 9 Uhr"],"payload":{"startTime":"09:00","endTime":"09:30"},"recurrence":{"freq":"WEEKLY","interval":1,"byDay":["MO"],"end":{"type":"forever"}}}
+  ]
+}
+
+Eingabe: "täglich Joggen um 7 Uhr, noch 30 Mal"
+Ausgabe:
+{
+  "entries": [
+    {"category":"EVENT","title":"Joggen","sourceExcerpt":"täglich Joggen um 7 Uhr, noch 30 Mal","summary":["Täglich um 7 Uhr, 30 Termine"],"payload":{"date":"${todayIso}","startTime":"07:00","endTime":"07:30"},"recurrence":{"freq":"DAILY","interval":1,"end":{"type":"count","count":30}}}
   ]
 }
 

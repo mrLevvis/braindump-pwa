@@ -100,3 +100,15 @@ export function usePrioritizedDays() {
 export function usePrioritizeDayTasks() {
     return useBrainDumpStore((s) => s.prioritizeDayTasks);
 }
+
+export function useRecurrenceExceptions() {
+    return useBrainDumpStore((s) => s.recurrenceExceptions);
+}
+
+export function useDeleteOccurrence() {
+    return useBrainDumpStore((s) => s.deleteOccurrence);
+}
+
+export function useUpdateOccurrence() {
+    return useBrainDumpStore((s) => s.updateOccurrence);
+}

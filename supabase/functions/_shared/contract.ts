@@ -8,6 +8,39 @@
 /** Die erlaubten Kategorien als Array (= die eine Wahrheit, zur Laufzeit nutzbar). */
 export const ENTRY_CATEGORIES = ["TASK", "EVENT", "NOTE", "SHOPPING"] as const;
 
+// ─── Recurrence ───────────────────────────────────────────────────────────────
+
+export type RecurrenceFreq = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
+export type Weekday = 'MO' | 'TU' | 'WE' | 'TH' | 'FR' | 'SA' | 'SU';
+export const WEEKDAYS: readonly Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+
+export type RecurrenceEnd =
+  | { type: 'forever' }
+  | { type: 'until'; date: string }   // YYYY-MM-DD, inklusiv
+  | { type: 'count'; count: number }; // Gesamtzahl Occurrences ab Start
+
+export interface RecurrenceRule {
+  freq:        RecurrenceFreq;
+  interval:    number;             // ≥ 1; wie viele Einheiten zwischen den Occurrences
+  byDay?:      Weekday[];          // nur bei WEEKLY: konkrete Wochentage
+  byMonthPos?: { ordinal: 1 | 2 | 3 | 4 | -1; day: Weekday }; // nur bei MONTHLY positional
+  end:         RecurrenceEnd;
+}
+
+export function isValidRecurrenceRule(r: unknown): r is RecurrenceRule {
+  if (!r || typeof r !== 'object' || Array.isArray(r)) return false;
+  const rule = r as Record<string, unknown>;
+  const freqs: RecurrenceFreq[] = ['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'];
+  if (!freqs.includes(rule.freq as RecurrenceFreq)) return false;
+  if (typeof rule.interval !== 'number' || rule.interval < 1) return false;
+  if (!rule.end || typeof rule.end !== 'object') return false;
+  const end = rule.end as Record<string, unknown>;
+  if (!['forever', 'until', 'count'].includes(end.type as string)) return false;
+  if (end.type === 'until' && typeof end.date !== 'string') return false;
+  if (end.type === 'count' && (typeof end.count !== 'number' || end.count < 1)) return false;
+  return true;
+}
+
 /** Der Typ wird aus dem Array ABGELEITET – ändert sich das Array, ändert sich der Typ automatisch. */
 export type EntryCategory = typeof ENTRY_CATEGORIES[number];
 
@@ -49,11 +82,12 @@ export interface EntryPayload {
 
 /** Ein strukturierter Eintrag, wie ihn die KI zurückgibt. */
 export interface StructuredEntry {
-  category: EntryCategory;
-  title: string;
-  payload: EntryPayload;
-  sourceExcerpt: string;  // Relevanter Ausschnitt des Original-Dumps für diesen Entry
-  summary: string[];      // Detail-Stichpunkte unterhalb des Titels (mind. 1 Stichpunkt, Pflichtfeld)
+  category:    EntryCategory;
+  title:       string;
+  payload:     EntryPayload;
+  sourceExcerpt: string;       // Relevanter Ausschnitt des Original-Dumps für diesen Entry
+  summary:     string[];       // Detail-Stichpunkte unterhalb des Titels (mind. 1 Stichpunkt, Pflichtfeld)
+  recurrence?: RecurrenceRule; // Nur für EVENT; fehlendes Feld = einmaliger Termin
 }
 
 /** Root-Objekt der KI-Antwort (Groq json_object-Mode erlaubt kein nacktes Array). */
@@ -76,7 +110,7 @@ export interface IngestResult {
  */
 export function normalizeEntryContract(entry: StructuredEntry): StructuredEntry {
   // SHOPPING hat keinen Zeitbezug — direkt durchreichen, nichts normalisieren.
-  if (entry.category === 'SHOPPING') return entry;
+  if (entry.category === 'SHOPPING') return { ...entry, recurrence: undefined };
 
   // EVENT ohne Datum ist kein valider Zustand — zu TASK herabstufen.
   if (entry.category === 'EVENT' && !entry.payload.date) {
@@ -117,5 +151,10 @@ export function normalizeEntryContract(entry: StructuredEntry): StructuredEntry 
     }
   }
 
-  return entry;
+  // recurrence nur für EVENT erlaubt und nur wenn valide.
+  const validatedRecurrence = (entry.category === 'EVENT' && isValidRecurrenceRule(entry.recurrence))
+    ? entry.recurrence
+    : undefined;
+
+  return { ...entry, recurrence: validatedRecurrence };
 }

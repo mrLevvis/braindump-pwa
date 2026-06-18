@@ -13,6 +13,7 @@ import {
 } from '../../../hooks/timelineSelectors';
 import { useDaySelectionStore } from '../store/DaySelectionStore';
 import { useEntries, useIsPrioritizing, usePrioritizeDayTasks, usePrioritizedDays, useToggleTaskCompleted } from '../../../hooks/braindumpSelectors';
+import type { BrainDumpEntry } from '../../braindump/types';
 import { useNow } from '../../../hooks/useNow';
 import { todayLocal } from '../../../lib/dateUtils';
 import { DayGrid } from './DayGrid';
@@ -72,12 +73,16 @@ interface Props {
 }
 
 export function TimelineView({ onBack }: Readonly<Props>) {
-  const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
+  const [selectedEntry, setSelectedEntry] = useState<BrainDumpEntry | null>(null);
 
+  // For real (non-virtual) entries, keep the selected entry fresh from the store.
+  // Virtual occurrences are not in allEntries, so we keep the snapshot directly.
   const allEntries = useEntries();
-  const selectedEntry = selectedEntryId != null
-    ? (allEntries.find(e => e.id === selectedEntryId) ?? null)
-    : null;
+  const resolvedEntry = useMemo(() => {
+    if (!selectedEntry) return null;
+    if (selectedEntry._isVirtualOccurrence) return selectedEntry;
+    return allEntries.find(e => e.id === selectedEntry.id) ?? selectedEntry;
+  }, [selectedEntry, allEntries]);
 
   const { undated } = useTimelineBuckets();
   const toggleTaskCompleted = useToggleTaskCompleted();
@@ -238,7 +243,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
             </button>
             <UntimedSection
               undated={undated}
-              onSelect={(e) => setSelectedEntryId(e.id)}
+              onSelect={setSelectedEntry}
               onToggle={toggleTaskCompleted}
             />
           </div>
@@ -265,17 +270,17 @@ export function TimelineView({ onBack }: Readonly<Props>) {
             now={now}
             pxPerHour={pxPerHour}
             nowLineRef={nowLineRef}
-            onSelect={(e) => setSelectedEntryId(e.id)}
+            onSelect={setSelectedEntry}
             onToggle={toggleTaskCompleted}
           />
         </div>
       </main>
 
-      {selectedEntry !== null && (
+      {resolvedEntry !== null && (
         <EntryDetailPanel
-          entry={selectedEntry}
+          entry={resolvedEntry}
           open
-          onOpenChange={(open) => { if (!open) setSelectedEntryId(null); }}
+          onOpenChange={(open) => { if (!open) setSelectedEntry(null); }}
         />
       )}
     </div>

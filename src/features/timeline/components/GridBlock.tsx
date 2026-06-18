@@ -1,3 +1,4 @@
+import { RefreshCw } from 'lucide-react';
 import { CardContent } from '../../../components/ui/card';
 import { TaskToggle } from '../../../components/TaskToggle';
 import type { BrainDumpEntry } from '../../braindump/types';
@@ -71,6 +72,13 @@ export function GridBlock({ entry, status, topPx, heightPx, onSelect, onToggle }
           )}
         </CardContent>
       </button>
+
+      {/* Repeat badge — top-right for recurring/virtual entries */}
+      {(entry.recurrence != null || entry._isVirtualOccurrence) && (
+        <div className="absolute top-1 right-1 z-10 pointer-events-none" aria-hidden="true">
+          <RefreshCw className="h-2.5 w-2.5 text-foreground/40" />
+        </div>
+      )}
 
       {/* Toggle — only for TASKs, bottom-right corner */}
       {isTask && (

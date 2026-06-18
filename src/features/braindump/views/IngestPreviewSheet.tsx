@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Calendar, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
+import { Calendar, ChevronDown, ChevronRight, RefreshCw, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -14,6 +14,7 @@ import { useErrorToast, useSuccessToast } from '@/hooks/useErrorToast';
 import { CategoryBadge, TagBadgeList, CATEGORY_STYLES } from '../categoryStyles';
 import { EntryEditForm } from './EntryEditForm';
 import type { BrainDumpEntry, EntryCategory, EntryDraft, EntryPatch, IngestPreview } from '../types';
+import { formatRecurrenceShort } from '../../timeline/recurrenceUtils';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -143,6 +144,12 @@ function DraftPreviewCard({ draft, onClick, onDelete }: Readonly<{ draft: EntryD
               <div className="min-w-0 flex-1 space-y-1.5">
                 <p className="text-sm font-semibold leading-snug">{title}</p>
                 {timeStr && <p className="text-xs text-muted-foreground">{timeStr}</p>}
+                {draft.recurrence && (
+                  <span className="inline-flex items-center gap-1 text-xs text-sky-600 dark:text-sky-400">
+                    <RefreshCw className="h-3 w-3 shrink-0" aria-hidden="true" />
+                    {formatRecurrenceShort(draft.recurrence)}
+                  </span>
+                )}
                 <TagBadgeList tags={tags} />
                 {draft.sourceExcerpt && (
                   <p className="text-xs text-muted-foreground italic line-clamp-2">„{draft.sourceExcerpt}"</p>

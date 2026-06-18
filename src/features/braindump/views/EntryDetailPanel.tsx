@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Circle, CircleCheck, ChevronDown, ChevronRight, Clock, ShoppingCart, Square, SquareCheck } from 'lucide-react';
+import { Circle, CircleCheck, ChevronDown, ChevronRight, Clock, RefreshCw, ShoppingCart, Square, SquareCheck } from 'lucide-react';
 import type { ShoppingItem } from '../../shopping/types/ShoppingItem';
 import { fetchShoppingItemsBySourceDump } from '../../shopping/services/shoppingItemsService';
 import { useBrainDumpStore } from '../store';
 import type { EntryCategory } from '../types';
-import { useDeleteEntry, useErrorToast, useSuccessToast, useToggleTaskCompleted, useUpdateEntry } from '@/hooks';
+import { useDeleteEntry, useDeleteOccurrence, useErrorToast, useSuccessToast, useToggleTaskCompleted, useUpdateEntry, useUpdateOccurrence } from '@/hooks';
 import { formatCreatedDateTime, formatCreatedTime } from '../utils/formatTime';
 import {
   AlertDialog,
@@ -18,8 +18,10 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import type { BrainDumpEntry, DeleteResult } from '../types';
+import type { BrainDumpEntry, DeleteResult, RecurrenceScope, UpdateResult } from '../types';
 import { CATEGORY_STYLES, CategoryBadge, TagBadgeList } from '../categoryStyles';
+import { RecurrenceScopeDialog } from './RecurrenceScopeDialog';
+import { formatRecurrenceRule } from '../../timeline/recurrenceUtils';
 import { useDaySelectionStore } from '../../timeline/store/DaySelectionStore';
 import { DetailPanelMenu } from './DetailPanelMenu';
 import { EntryEditForm } from './EntryEditForm';
@@ -244,16 +246,23 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
   entry: BrainDumpEntry; open: boolean; onOpenChange: (open: boolean) => void;
 }>) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isScopeDeleteOpen, setIsScopeDeleteOpen] = useState(false);
+  const [isScopeEditOpen, setIsScopeEditOpen] = useState(false);
+  const [editScope, setEditScope] = useState<RecurrenceScope | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isOriginalTextOpen, setIsOriginalTextOpen] = useState(false);
 
-  const deleteEntry        = useDeleteEntry();
-  const updateEntry        = useUpdateEntry();
+  const isRecurring = entry._isVirtualOccurrence === true || entry.recurrence != null;
+
+  const deleteEntry         = useDeleteEntry();
+  const deleteOccurrence    = useDeleteOccurrence();
+  const updateEntry         = useUpdateEntry();
+  const updateOccurrence    = useUpdateOccurrence();
   const toggleTaskCompleted = useToggleTaskCompleted();
-  const showSuccessToast   = useSuccessToast();
-  const showErrorToast     = useErrorToast();
+  const showSuccessToast    = useSuccessToast();
+  const showErrorToast      = useErrorToast();
 
   const s     = PANEL_STYLES[entry.category];
   const title = entry.title?.trim() || 'Untitled';
@@ -268,9 +277,17 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
     if (isSaving) return;
     setIsSaving(true);
     try {
-      const result = await updateEntry(entry.id, patch);
+      let result: UpdateResult;
+      if (entry._isVirtualOccurrence) {
+        const masterId = entry._seriesMasterId ?? entry.id;
+        const date = entry._occurrenceDate ?? entry.payload.date ?? '';
+        result = await updateOccurrence(masterId, date, patch, editScope ?? 'single');
+      } else {
+        result = await updateEntry(entry.id, patch);
+      }
       if (result.status === 'updated') {
         setIsEditing(false);
+        setEditScope(null);
         showSuccessToast('Eintrag gespeichert.');
       } else {
         showErrorToast(result.status === 'error' ? result.message : 'Eintrag nicht gefunden.');
@@ -297,6 +314,29 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
     }
   };
 
+  const handleScopeDelete = async (scope: RecurrenceScope) => {
+    if (isDeleting) return;
+    setIsDeleting(true);
+    try {
+      const masterId = entry._isVirtualOccurrence ? (entry._seriesMasterId ?? entry.id) : entry.id;
+      const date = entry._occurrenceDate ?? entry.payload.date ?? '';
+      const result = await deleteOccurrence(masterId, date, scope);
+      if (result.status === 'deleted') {
+        onOpenChange(false);
+        showSuccessToast(DELETE_FEEDBACK.deleted);
+      } else {
+        showErrorToast(result.status === 'error' ? result.message : DELETE_FEEDBACK.not_found);
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleScopeEditConfirm = (scope: RecurrenceScope) => {
+    setEditScope(scope);
+    setIsEditing(true);
+  };
+
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) setIsEditing(false); onOpenChange(v); }}>
       <DialogContent className="w-full sm:max-w-xl">
@@ -304,8 +344,8 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
         {!isEditing && (
           <div className="absolute top-4 right-10 z-10">
             <DetailPanelMenu
-              onDeleteClick={() => setIsDeleteDialogOpen(true)}
-              onEditClick={() => setIsEditing(true)}
+              onDeleteClick={() => isRecurring ? setIsScopeDeleteOpen(true) : setIsDeleteDialogOpen(true)}
+              onEditClick={() => entry._isVirtualOccurrence ? setIsScopeEditOpen(true) : setIsEditing(true)}
             />
           </div>
         )}
@@ -351,6 +391,19 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
                     </li>
                   ))}
                 </ul>
+              </section>
+            )}
+
+            {/* Recurrence info — shown for masters and virtual occurrences */}
+            {isRecurring && (
+              <section className="space-y-2" aria-label="Wiederholung">
+                <p className={labelCls}>Wiederholung</p>
+                <div className={`flex items-center gap-2 rounded-xl border ${s.timingBorder} ${s.timingBg} px-3 py-2`}>
+                  <RefreshCw className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" aria-hidden="true" />
+                  <span className="text-sm">
+                    {entry.recurrence ? formatRecurrenceRule(entry.recurrence) : 'Serientermin'}
+                  </span>
+                </div>
               </section>
             )}
 
@@ -466,6 +519,20 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <RecurrenceScopeDialog
+        open={isScopeDeleteOpen}
+        onOpenChange={setIsScopeDeleteOpen}
+        mode="delete"
+        onConfirm={handleScopeDelete}
+      />
+
+      <RecurrenceScopeDialog
+        open={isScopeEditOpen}
+        onOpenChange={setIsScopeEditOpen}
+        mode="edit"
+        onConfirm={handleScopeEditConfirm}
+      />
     </Dialog>
   );
 }

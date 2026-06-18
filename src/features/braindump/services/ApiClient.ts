@@ -1,5 +1,5 @@
 import { createClient, PostgrestError } from '@supabase/supabase-js';
-import type { BrainDumpEntry, DeleteResult, EntryPatch, InsertEntry, ToggleResult, UpdateResult } from '../types';
+import type { BrainDumpEntry, DeleteResult, EntryPatch, InsertEntry, RecurrenceException, ToggleResult, UpdateResult } from '../types';
 import { showErrorToast } from '../../../hooks/useErrorToast';
 
 //const BRAINDUMP_ENTRIES = 'braindump_entries';
@@ -50,10 +50,11 @@ function handlePostgrestError<T>(message: string, error: PostgrestError | null, 
  * ------------------------------------------------------------------------------*/
 
 /** Raw DB row returned by Supabase — snake_case column names, nullable new columns. */
-type BrainDumpEntryRow = Omit<BrainDumpEntry, 'captureId' | 'sourceExcerpt' | 'completed'> & {
+type BrainDumpEntryRow = Omit<BrainDumpEntry, 'captureId' | 'sourceExcerpt' | 'completed' | 'seriesEntryId' | '_isVirtualOccurrence' | '_occurrenceDate' | '_seriesMasterId'> & {
     capture_id?: string | null;
     source_excerpt?: string | null;
     completed: boolean | null;
+    series_entry_id?: string | null;
 };
 
 /**
@@ -67,11 +68,12 @@ export async function fetchEntries(): Promise<BrainDumpEntry[] | null> {
         .order('created_at', { ascending: false });
     const rows = handlePostgrestError<BrainDumpEntryRow[]>('Error fetching entries:', error, data as BrainDumpEntryRow[] | null);
     if (!rows) return null;
-    return rows.map(({ capture_id, source_excerpt, completed, ...rest }) => ({
+    return rows.map(({ capture_id, source_excerpt, completed, series_entry_id, ...rest }) => ({
         ...rest,
         completed: completed ?? false,
         captureId: capture_id ?? undefined,
         sourceExcerpt: source_excerpt ?? undefined,
+        seriesEntryId: series_entry_id ?? undefined,
     }));
 }
 
@@ -148,9 +150,6 @@ export async function updateEntry(id: string, patch: EntryPatch): Promise<Update
 
 /**
  * Setzt den completed-Status eines Eintrags in der Datenbank.
- * @param id Die UUID des Eintrags.
- * @param completed Der neue completed-Status.
- * @returns ToggleResult: 'toggled' | 'not_found' | 'error'
  */
 export async function toggleTaskCompleted(id: string, completed: boolean): Promise<ToggleResult> {
     const { error } = await supabase
@@ -160,4 +159,51 @@ export async function toggleTaskCompleted(id: string, completed: boolean): Promi
 
     if (error) return { status: 'error', message: error.message };
     return { status: 'toggled', completed };
+}
+
+
+/**------------------------------------------------------------------------------
+ * --- RECURRENCE EXCEPTIONS ---
+ * ------------------------------------------------------------------------------*/
+
+const EXCEPTIONS_TABLE = 'recurrence_exceptions';
+
+export async function fetchRecurrenceExceptions(): Promise<RecurrenceException[]> {
+    const { data, error } = await supabase
+        .from(EXCEPTIONS_TABLE)
+        .select('id, series_entry_id, original_date, type, override_entry_id')
+        .order('original_date', { ascending: true });
+    if (error) {
+        showErrorToast(`Fehler beim Laden der Ausnahmen: ${error.message}`);
+        return [];
+    }
+    return (data ?? []) as RecurrenceException[];
+}
+
+export async function insertRecurrenceException(
+    exc: Omit<RecurrenceException, 'id'>
+): Promise<RecurrenceException | null> {
+    const { data, error } = await supabase
+        .from(EXCEPTIONS_TABLE)
+        .insert([exc])
+        .select()
+        .single();
+    if (error) {
+        showErrorToast(`Fehler beim Speichern der Ausnahme: ${error.message}`);
+        return null;
+    }
+    return data as RecurrenceException;
+}
+
+export async function deleteRecurrenceExceptionsForSeries(
+    seriesEntryId: string,
+    fromDate?: string  // wenn gesetzt: nur Ausnahmen >= fromDate löschen
+): Promise<void> {
+    let query = supabase
+        .from(EXCEPTIONS_TABLE)
+        .delete()
+        .eq('series_entry_id', seriesEntryId);
+    if (fromDate) query = query.gte('original_date', fromDate);
+    const { error } = await query;
+    if (error) showErrorToast(`Fehler beim Löschen der Ausnahmen: ${error.message}`);
 }

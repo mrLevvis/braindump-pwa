@@ -4,13 +4,44 @@
  */
 
 
+// ─── Recurrence types (mirror of supabase/functions/_shared/contract.ts) ──────
+
+export type RecurrenceFreq = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
+export type Weekday = 'MO' | 'TU' | 'WE' | 'TH' | 'FR' | 'SA' | 'SU';
+export const WEEKDAYS: readonly Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+export const WEEKDAY_LABEL_DE: Record<Weekday, string> = {
+  MO: 'Mo', TU: 'Di', WE: 'Mi', TH: 'Do', FR: 'Fr', SA: 'Sa', SU: 'So',
+};
+
+export type RecurrenceEnd =
+  | { type: 'forever' }
+  | { type: 'until'; date: string }
+  | { type: 'count'; count: number };
+
+export interface RecurrenceRule {
+  freq:        RecurrenceFreq;
+  interval:    number;
+  byDay?:      Weekday[];
+  byMonthPos?: { ordinal: 1 | 2 | 3 | 4 | -1; day: Weekday };
+  end:         RecurrenceEnd;
+}
+
+export type RecurrenceScope = 'single' | 'following' | 'all';
+
+export interface RecurrenceException {
+  id:                string;
+  series_entry_id:   string;
+  original_date:     string;  // YYYY-MM-DD
+  type:              'deleted' | 'modified';
+  override_entry_id?: string | null;
+}
+
 /**
  * Der globale Zustandstyp für das BrainDump-Feature.
- * Definiert sowohl die State-Properties als auch die Actions (Mutations).
- * Dieser Vertrag wird von unserem Zustand-Management (z.B. Zustand) implementiert.
  */
 export interface BrainDumpState {
   entries: BrainDumpEntry[];
+  recurrenceExceptions: RecurrenceException[];
   isRecording: boolean;
   isProcessing: boolean;
   isPrioritizing: boolean;
@@ -24,6 +55,8 @@ export interface BrainDumpState {
   discardIngest: (captureId: string) => void;
   deleteEntry: (id: string) => Promise<DeleteResult>;
   deleteEntries: (ids: readonly string[]) => Promise<void>;
+  deleteOccurrence: (masterId: string, date: string, scope: RecurrenceScope) => Promise<DeleteResult>;
+  updateOccurrence: (masterId: string, date: string, patch: EntryPatch, scope: RecurrenceScope) => Promise<UpdateResult>;
   toggleTaskCompleted: (id: string, completed: boolean) => Promise<ToggleResult>;
   updateEntry: (id: string, patch: EntryPatch) => Promise<UpdateResult>;
   updateEntryList: () => void;
@@ -63,16 +96,22 @@ export interface EntryPayload {
  * mit den strukturierten KI-Daten.
  */
 export interface BrainDumpEntry {
-  id: string;               // UUID aus Supabase (PRIMARY KEY)
-  created_at: string;       // TIMESTAMP WITH TIME ZONE als ISO-String
-  title?: string;           // Optionaler Titel, falls von der KI extrahiert
-  original_text: string;    // Der volle Rohtext des Dumps (identisch auf allen Entries desselben Dumps)
-  category: EntryCategory;  // Das strikte Enum
-  payload: EntryPayload;    // Das strukturierte JSON-Objekt
-  completed: boolean;       // Mutabler Status — unabhängig vom unveränderlichen Dump-Inhalt
-  captureId?: string;       // UUID, die alle Entries desselben Dumps verbindet
-  sourceExcerpt?: string;   // Relevanter Wortlaut aus original_text für diesen Entry
-  summary?: string[];       // Detail-Stichpunkte (mind. 1 bei neuen Entries; optional/null für Altzeilen vor Migration)
+  id: string;               // UUID aus Supabase (PRIMARY KEY) — oder `${masterId}__${date}` für virtuelle Occurrences
+  created_at: string;
+  title?: string;
+  original_text: string;
+  category: EntryCategory;
+  payload: EntryPayload;
+  completed: boolean;
+  captureId?: string;
+  sourceExcerpt?: string;
+  summary?: string[];
+  recurrence?: RecurrenceRule | null;  // Serien-Master: Regel; Override/einmalig: null/absent
+  seriesEntryId?: string | null;       // Override-Instance: ID des Serien-Masters
+  // Runtime-only (nicht in DB): werden von expandRecurringSeries gesetzt
+  _isVirtualOccurrence?: boolean;
+  _occurrenceDate?: string;
+  _seriesMasterId?: string;
 }
 
 /**
@@ -89,6 +128,8 @@ export interface InsertEntry {
   source_excerpt?: string;
   summary?: string[];
   completed?: boolean | null;
+  recurrence?: RecurrenceRule | null;
+  series_entry_id?: string | null;
 }
 
 /**
@@ -114,15 +155,16 @@ export type UpdateResult =
   | { status: 'not_found' }
   | { status: 'error'; message: string };
 
-export type EntryPatch = Partial<Pick<BrainDumpEntry, 'title' | 'category' | 'payload' | 'summary'>>;
+export type EntryPatch = Partial<Pick<BrainDumpEntry, 'title' | 'category' | 'payload' | 'summary' | 'recurrence'>>;
 
 /** Ein strukturierter Eintrag, wie ihn die KI zurückgibt. */
 export interface StructuredEntry {
-  category: EntryCategory;
-  title: string;
-  payload: EntryPayload;
+  category:    EntryCategory;
+  title:       string;
+  payload:     EntryPayload;
   sourceExcerpt: string;
-  summary: string[];
+  summary:     string[];
+  recurrence?: RecurrenceRule;
 }
 
 /** Vollständiges Ergebnis der Edge Function nach captureId-Vergabe. */

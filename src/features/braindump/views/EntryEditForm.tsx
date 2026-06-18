@@ -3,7 +3,8 @@ import { X, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import type { BrainDumpEntry, EntryCategory, EntryPatch } from '../types';
+import type { BrainDumpEntry, EntryCategory, EntryPatch, RecurrenceRule } from '../types';
+import { RecurrencePickerSection } from './RecurrencePickerSection';
 
 // Matches Input's visual style but grows with content instead of clipping.
 const AUTOGROW_CLS = [
@@ -58,6 +59,7 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
   const [tags, setTags] = useState<string[]>(entry.payload?.tags ?? []);
   const [tagInput, setTagInput] = useState('');
   const [summary, setSummary] = useState<string[]>(entry.summary ?? []);
+  const [recurrence, setRecurrence] = useState<RecurrenceRule | null>(entry.recurrence ?? null);
 
   const tagInputRef = useRef<HTMLInputElement>(null);
 
@@ -104,6 +106,7 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
         ...(tags.length > 0 ? { tags } : {}),
       },
       summary: summary.filter(s => s.trim()),
+      ...(category === 'EVENT' ? { recurrence: recurrence ?? null } : {}),
     };
     onSave(patch);
   };
@@ -139,23 +142,29 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
       </div>
 
       {category === 'EVENT' && (
-        <div className={SECTION_CLS}>
-          <p className={LABEL_CLS}>Datum &amp; Uhrzeit</p>
-          <div className={TIME_GRID_CLS}>
-            <div className="space-y-1">
-              <p className="text-[10px] text-muted-foreground">Datum</p>
-              <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
-            </div>
-            <div className="space-y-1">
-              <p className="text-[10px] text-muted-foreground">Von</p>
-              <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
-            </div>
-            <div className="space-y-1">
-              <p className="text-[10px] text-muted-foreground">Bis</p>
-              <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
+        <>
+          <div className={SECTION_CLS}>
+            <p className={LABEL_CLS}>Datum &amp; Uhrzeit</p>
+            <div className={TIME_GRID_CLS}>
+              <div className="space-y-1">
+                <p className="text-[10px] text-muted-foreground">Datum</p>
+                <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] text-muted-foreground">Von</p>
+                <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] text-muted-foreground">Bis</p>
+                <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
+              </div>
             </div>
           </div>
-        </div>
+          <div className={SECTION_CLS}>
+            <p className={LABEL_CLS}>Wiederholung</p>
+            <RecurrencePickerSection value={recurrence} onChange={setRecurrence} />
+          </div>
+        </>
       )}
 
       {category === 'TASK' && (
