@@ -38,12 +38,14 @@ const TRACK = ['flex', 'items-stretch', 'gap-0.5', 'px-1', 'py-1'].join(' ');
 const TAB_BASE = [
   'flex', 'flex-col', 'items-center', 'justify-center', 'gap-0.5',
   'min-w-[2.75rem]', 'h-13', 'rounded-xl', 'shrink-0',
-  'select-none', 'transition-colors',
+  'select-none',
   'focus-visible:outline-none', 'focus-visible:ring-2', 'focus-visible:ring-ring',
 ].join(' ');
 
+// No transition on the active state so the pill switches in the same paint frame as DayGrid.
 const TAB_ACTIVE = [TAB_BASE, 'bg-primary text-primary-foreground'].join(' ');
-const TAB_INACTIVE = [TAB_BASE, 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'].join(' ');
+// transition-colors only for hover feedback on inactive tabs.
+const TAB_INACTIVE = [TAB_BASE, 'transition-colors', 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'].join(' ');
 const TAB_INACTIVE_TODAY = [TAB_INACTIVE, 'ring-1 ring-primary/60'].join(' ');
 
 // ─── Component ────────────────────────────────────────────────────────────────
