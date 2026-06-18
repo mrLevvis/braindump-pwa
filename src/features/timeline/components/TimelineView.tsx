@@ -140,9 +140,6 @@ export function TimelineView({ onBack }: Readonly<Props>) {
   const pxPerHourRef     = useRef(pxPerHour);
   useEffect(() => { pxPerHourRef.current = pxPerHour; }, [pxPerHour]);
 
-  const tabScrollRef      = useRef<HTMLDivElement>(null);
-  const baseTabScrollLeft = useRef(0);
-
   const swipeStartX = useRef(0);
   const swipeStartY = useRef(0);
   const gestureMode = useRef<'unknown' | 'swipe' | 'scroll'>('unknown');
@@ -166,8 +163,6 @@ export function TimelineView({ onBack }: Readonly<Props>) {
       if (!track) return;
       track.style.transition = 'transform 0.2s ease';
       track.style.transform = TRACK_REST;
-      // Scroll the tab strip back to where it was before the swipe.
-      tabScrollRef.current?.scrollTo({ left: baseTabScrollLeft.current, behavior: 'smooth' });
       const cleanup = () => {
         track.removeEventListener('transitionend', cleanup);
         track.style.transition = '';
@@ -184,7 +179,6 @@ export function TimelineView({ onBack }: Readonly<Props>) {
         swipeStartX.current = e.touches[0].clientX;
         swipeStartY.current = e.touches[0].clientY;
         gestureMode.current = 'unknown';
-        baseTabScrollLeft.current = tabScrollRef.current?.scrollLeft ?? 0;
       }
     };
 
@@ -212,13 +206,6 @@ export function TimelineView({ onBack }: Readonly<Props>) {
         if (track) {
           track.style.transition = 'none';
           track.style.transform = `translateX(calc(-33.3333% + ${dx}px))`;
-        }
-        // Scroll the tab strip proportionally so the next day slides under the indicator.
-        const tabEl = tabScrollRef.current;
-        const mainEl = mainRef.current;
-        if (tabEl && mainEl) {
-          const tabWidth = tabEl.scrollWidth / 61; // 61 = 2 * windowRadiusDays + 1
-          tabEl.scrollLeft = baseTabScrollLeft.current - dx * (tabWidth / mainEl.offsetWidth);
         }
       }
     };
@@ -375,7 +362,6 @@ export function TimelineView({ onBack }: Readonly<Props>) {
             windowRadiusDays={30}
             onSelectDay={setSelectedDate}
             markers={dayMarkers}
-            scrollElRef={tabScrollRef}
           />
         </div>
       </header>
