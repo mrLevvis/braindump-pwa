@@ -24,7 +24,7 @@ flowchart TD
         direction TB
         Auth["Supabase Auth <br/> (Magic Link / Session)"]
         Edge["Edge Functions (Sicheres BFF) <br/> process-brain-dump · prioritize-tasks"]
-        DB[("PostgreSQL Datenbank <br/> braindump_entries · shopping_items · issues")]
+        DB[("PostgreSQL Datenbank <br/> braindump_entries · recurrence_exceptions <br/> shopping_items · issues")]
     end
 
     %% External APIs

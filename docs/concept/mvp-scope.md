@@ -93,16 +93,20 @@ Der geteilte Typ lebt in `supabase/functions/_shared/contract.ts`.
 | :--- | :--- | :--- |
 | Text-Input | ✅ Implementiert | |
 | Voice-Input (Whisper) | ✅ Implementiert | |
-| Ingest-Preview (Review-Sheet) | ✅ Implementiert | |
+| Ingest-Preview (Review-Sheet) | ✅ Implementiert | Entwürfe bearbeitbar vor dem Speichern |
 | Supabase Auth (Magic Link) | ✅ Implementiert | Ursprünglich für v1 ausgeschlossen |
-| Einträge löschen | ✅ Implementiert | |
+| Logout-Funktion | ✅ Implementiert | Button im Dashboard-Header |
+| Einträge löschen | ✅ Implementiert | Einzeln und per Auswahl-Modus (Massen-Delete) |
 | Einträge bearbeiten | ✅ Implementiert | Ursprünglich für v1 ausgeschlossen |
 | Aufgaben abhaken (completed) | ✅ Implementiert | |
 | Kategorie-Filter | ✅ Implementiert | Ursprünglich für v1 ausgeschlossen |
-| KI-Priorisierung (ephemer) | ✅ Implementiert | |
-| Timeline-Ansicht | ✅ Implementiert | |
-| Shopping-Feature | ✅ Implementiert | |
-| Feedback/Issues-System | ✅ Implementiert | |
-| Admin-View | ✅ Implementiert | |
+| KI-Priorisierung (ephemer) | ✅ Implementiert | Kein DB-Write, nur im lokalen State |
+| Timeline-Ansicht | ✅ Implementiert | Tages-Grid mit Pinch-to-Zoom |
+| Termin-Serien (Wiederkehrende Events) | ✅ Implementiert | Google Calendar-Stil: täglich/wöchentlich/monatlich/jährlich; Scope-Dialog (einzeln / folgende / alle) |
+| Shopping-Feature | ✅ Implementiert | Eigene Ansicht mit abhakbaren Items |
+| KI-Preisschätzungen (Shopping) | ✅ Implementiert | `estimated_price` pro Item, Gesamtsumme in der Liste |
+| Feedback/Issues-System | ✅ Implementiert | Bug- und Vorschlag-Meldungen per Dialog |
+| Feedback Screenshot-Anhang | ✅ Implementiert | Datei-Upload oder Einfügen via Paste |
+| Admin-View | ✅ Implementiert | Nur für `VITE_ADMIN_EMAIL`, zeigt alle gemeldeten Issues |
 | Kalender-Synchronisation | ❌ Nicht geplant | OAuth-Overhead zu hoch |
 | Push-Benachrichtigungen | ❌ Nicht geplant | Service-Worker-Komplexität |

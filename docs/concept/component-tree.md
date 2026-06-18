@@ -14,8 +14,10 @@ App  (Root — prüft Auth-State, routet zu Auth-Pages oder der App)
       │    │    ├── DateDivider         (Gruppen-Header je Datum)
       │    │    └── EntryCard           (Einzelner Eintrag, klickbar)
       │    │         └── EntryDetailPanel  (Sheet: Vollansicht, Bearbeiten, Löschen)
-      │    │              ├── EntryEditForm    (Inline-Bearbeitung: Titel, Kategorie, Payload)
-      │    │              └── DetailPanelMenu  (Aktionsmenü: Edit / Delete)
+      │    │              ├── EntryEditForm        (Felder: Titel, Kategorie, Datum, Uhrzeit, Tags)
+      │    │              │    └── RecurrencePickerSection  (Wiederholungs-Konfiguration für EVENTs)
+      │    │              ├── DetailPanelMenu      (Aktionsmenü: Edit / Delete)
+      │    │              └── RecurrenceScopeDialog (bei Serien: "Nur dieser / Folgende / Alle")
       │    └── (Auswahl-Modus: Massen-Delete, InputSection wird ausgeblendet)
       │
       ├── TimelineView        (/timeline/:date)
@@ -25,8 +27,8 @@ App  (Root — prüft Auth-State, routet zu Auth-Pages oder der App)
       │    └── UntimedSection  (Einträge ohne Uhrzeit)
       │
       ├── ShoppingView        (/shopping)
-      │    └── ShoppingSection
-      │         └── ShoppingItemRow
+      │    └── ShoppingSection  (Listet Items, zeigt Gesamtsumme der KI-Preisschätzungen)
+      │         └── ShoppingItemRow  (Abhaken, Löschen, geschätzter Preis)
       │
       ├── AdminView           (/admin — nur für VITE_ADMIN_EMAIL)
       │
@@ -35,9 +37,11 @@ App  (Root — prüft Auth-State, routet zu Auth-Pages oder der App)
       │    └── VoiceRecorderControl → VoiceRecordButton
       │
       ├── IngestPreviewSheet  (Bottom Sheet: KI-Ergebnis prüfen vor DB-Insert)
+      │    └── DraftEditDialog   (Dialog zum Bearbeiten eines einzelnen Entwurfs)
+      │         └── EntryEditForm → RecurrencePickerSection
       │
       ├── FeedbackButton      (Floating Button — öffnet FeedbackDialog)
-      │    └── FeedbackDialog  (Bug / Suggestion einreichen)
+      │    └── FeedbackDialog  (Bug / Suggestion + optionaler Screenshot-Anhang)
       │
       └── Toaster             (Sonner — globale Toast-Notifications)
 ```
