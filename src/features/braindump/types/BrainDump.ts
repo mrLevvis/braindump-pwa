@@ -48,6 +48,7 @@ export interface EntryPayload {
   date?: string;       // ISO Datum (YYYY-MM-DD), falls im Text impliziert/erwähnt
   startTime?: string;  // HH:MM (Beginn), falls im Text erwähnt
   endTime?: string;    // HH:MM (Ende), nur wenn Zeitspanne und > startTime
+  deadline?: string;   // HH:MM (Fälligkeit) — nur TASK, wenn explizit "bis [Uhrzeit]" ohne startTime
   tags?: string[];     // Flexibler Kontext (z.B. ["Arbeit"])
   items?: string[];    // SHOPPING: Liste der Einkaufsartikel
 }

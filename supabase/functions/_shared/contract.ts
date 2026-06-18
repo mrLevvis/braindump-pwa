@@ -32,6 +32,7 @@ export interface EntryPayload {
   date?: string;       // YYYY-MM-DD
   startTime?: string;  // HH:MM (Beginn)
   endTime?: string;    // HH:MM (Ende, nur wenn Zeitspanne, > startTime)
+  deadline?: string;   // HH:MM (Fälligkeit) — nur TASK, wenn explizit "bis [Uhrzeit]" ohne startTime
   tags?: string[];
   items?: string[];    // SHOPPING: Liste der Einkaufsartikel
 }
@@ -73,8 +74,8 @@ export function normalizeEntryContract(entry: StructuredEntry): StructuredEntry 
   }
 
   // NOTE mit Datum/Uhrzeit: Zeitfelder strippen, Kategorie bleibt NOTE.
-  if (entry.category === 'NOTE' && (entry.payload.date || entry.payload.startTime || entry.payload.endTime)) {
-    const { date: _d, startTime: _s, endTime: _e, ...stripped } = entry.payload;
+  if (entry.category === 'NOTE' && (entry.payload.date || entry.payload.startTime || entry.payload.endTime || entry.payload.deadline)) {
+    const { date: _d, startTime: _s, endTime: _e, deadline: _dl, ...stripped } = entry.payload;
     return { ...entry, payload: stripped };
   }
 
@@ -87,6 +88,14 @@ export function normalizeEntryContract(entry: StructuredEntry): StructuredEntry 
     if (!validFormat || !afterStart) {
       const { endTime: _e, ...withoutEnd } = entry.payload;
       return { ...entry, payload: withoutEnd };
+    }
+  }
+
+  // deadline muss gültiges HH:MM sein. Ungültiges Format wird verworfen.
+  if (entry.payload.deadline != null) {
+    if (!/^\d{2}:\d{2}$/.test(entry.payload.deadline)) {
+      const { deadline: _dl, ...withoutDeadline } = entry.payload;
+      return { ...entry, payload: withoutDeadline };
     }
   }
 
