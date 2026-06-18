@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { ArrowLeft, Clock, Sparkles } from 'lucide-react';
 import { EntryDetailPanel } from '../../braindump/views/EntryDetailPanel';
 import { useZoomStore } from '../store';
@@ -231,7 +232,10 @@ export function TimelineView({ onBack }: Readonly<Props>) {
             track.removeEventListener('transitionend', onDone);
             track.style.transition = 'none';
             track.style.transform = TRACK_REST;
-            setSelectedDate(dateToNavigate);
+            // flushSync forces React to render synchronously inside the native
+            // transitionend handler so the DayTabs indicator updates in the same
+            // frame as the content — no one-frame lag between DayGrid and tab bar.
+            flushSync(() => { setSelectedDate(dateToNavigate); });
           };
           track.addEventListener('transitionend', onDone);
         } else {
