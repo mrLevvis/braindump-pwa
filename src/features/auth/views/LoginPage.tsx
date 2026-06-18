@@ -51,7 +51,7 @@ export function LoginPage() {
                     <p className="text-sm text-muted-foreground">
                         {step === 'email'
                             ? 'Gib deine E-Mail ein, um einen Code zu erhalten.'
-                            : 'Gib den 6-stelligen Code aus deiner E-Mail ein.'}
+                            : 'Gib den 8-stelligen Code aus deiner E-Mail ein.'}
                     </p>
                 </div>
 
@@ -75,13 +75,13 @@ export function LoginPage() {
                         <Input
                             type="text"
                             inputMode="numeric"
-                            pattern="\d{6}"
-                            placeholder="123456"
+                            pattern="\d{8}"
+                            placeholder="12345678"
                             value={code}
                             onChange={(e) => setCode(e.target.value)}
                             required
                             autoFocus
-                            maxLength={6}
+                            maxLength={8}
                         />
                         {error && <p className="text-sm text-destructive">{error}</p>}
                         <Button type="submit" className="w-full" disabled={loading}>
