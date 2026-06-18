@@ -1,5 +1,4 @@
 import { useMemo, useState, type RefObject } from 'react';
-import { AlertCircle } from 'lucide-react';
 import { Card, CardContent } from '../../../components/ui/card';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../../../components/ui/sheet';
 import { TaskToggle } from '../../../components/TaskToggle';
@@ -81,32 +80,35 @@ function AllDayEntry({ entry, onSelect, onToggle }: Readonly<AllDayEntryProps>) 
   );
 }
 
-// ─── DeadlineBadge ────────────────────────────────────────────────────────────
+// ─── DeadlineLine ─────────────────────────────────────────────────────────────
 
-interface DeadlineBadgeProps {
+interface DeadlineLineProps {
   time: string;
-  count: number;
+  entries: readonly BrainDumpEntry[];
   topPx: number;
-  onClick: () => void;
+  onSelectSingle: (entry: BrainDumpEntry) => void;
+  onOpenSheet: (time: string) => void;
 }
 
-function DeadlineBadge({ time, count, topPx, onClick }: Readonly<DeadlineBadgeProps>) {
+function DeadlineLine({ time, entries, topPx, onSelectSingle, onOpenSheet }: Readonly<DeadlineLineProps>) {
+  const isSingle = entries.length === 1;
+  const label = isSingle
+    ? (entries[0].title ?? entries[0].original_text)
+    : `${entries.length} Deadlines`;
+
   return (
     <button
       type="button"
-      onClick={onClick}
-      aria-label={`${count} Task${count !== 1 ? 's' : ''} fällig bis ${time}`}
-      className="absolute right-1 z-20 -translate-y-1/2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1"
+      onClick={() => isSingle ? onSelectSingle(entries[0]) : onOpenSheet(time)}
+      aria-label={isSingle ? `Deadline: ${label} bis ${time}` : `${entries.length} Tasks fällig bis ${time}`}
+      className="absolute left-0 right-0 z-20 flex items-center -translate-y-1/2 group focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-rose-500"
       style={{ top: `${topPx}px` }}
     >
-      <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-rose-500 text-white shadow-md ring-2 ring-rose-500/25">
-        <AlertCircle className="h-4 w-4" aria-hidden="true" />
-        {count > 1 && (
-          <span className="absolute -top-1.5 -right-1.5 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-rose-700 text-[9px] font-bold ring-1 ring-background">
-            {count}
-          </span>
-        )}
+      <span className="h-2 w-2 rounded-full bg-rose-500 ring-2 ring-rose-500/25 shrink-0" />
+      <span className="text-[10px] font-medium text-rose-500 px-1.5 shrink-0 max-w-[65%] truncate group-hover:underline">
+        {label}
       </span>
+      <div className="flex-1 h-px bg-rose-500/60" />
     </button>
   );
 }
@@ -256,17 +258,18 @@ export function DayGrid({ date, entries, allDay, isToday, now, pxPerHour, nowLin
             </div>
           )}
 
-          {/* Deadline badges — one per unique deadline time */}
+          {/* Deadline lines — one per unique deadline time */}
           {Array.from(deadlineByTime.entries()).map(([time, group]) => {
             const [h, m] = time.split(':').map(Number);
             const topPx = (h * 60 + m) * (pxPerHour / 60);
             return (
-              <DeadlineBadge
+              <DeadlineLine
                 key={`deadline-${time}`}
                 time={time}
-                count={group.length}
+                entries={group}
                 topPx={topPx}
-                onClick={() => setOpenDeadlineTime(time)}
+                onSelectSingle={onSelect}
+                onOpenSheet={setOpenDeadlineTime}
               />
             );
           })}
