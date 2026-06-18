@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, Clock, Sparkles } from 'lucide-react';
 import { EntryDetailPanel } from '../../braindump/views/EntryDetailPanel';
 import { useZoomStore } from '../store';
@@ -36,12 +36,10 @@ function formatNavLabel(dateStr: string, todayStr: string): string {
 
 const VIEW = ['flex', 'h-dvh', 'flex-col', 'bg-background'].join(' ');
 const HEADER = ['shrink-0', 'border-b', 'bg-background', 'sticky', 'top-0', 'z-10'].join(' ');
-// Row 1: back + current date label + actions
 const HEADER_TOP = [
   'mx-auto', 'flex', 'w-full', 'max-w-3xl',
   'items-center', 'justify-between', 'px-4', 'py-3',
 ].join(' ');
-// Row 2: scrollable day-tab strip
 const TABS_ROW = ['mx-auto', 'w-full', 'max-w-3xl', 'px-2', 'pb-2'].join(' ');
 const ICON_BTN = [
   'flex', 'items-center', 'justify-center',
@@ -53,7 +51,10 @@ const ICON_BTN = [
 const CURRENT_DATE = [
   'text-sm', 'font-semibold', 'text-center', 'select-none',
 ].join(' ');
-const MAIN = ['flex-1', 'overflow-y-auto'].join(' ');
+// Scroll container: clips the track horizontally, each panel scrolls vertically.
+const MAIN  = ['flex-1', 'overflow-hidden'].join(' ');
+const TRACK = ['flex', 'h-full'].join(' ');
+const PANEL = ['shrink-0', 'h-full', 'overflow-y-auto'].join(' ');
 const MAIN_INNER = ['mx-auto', 'w-full', 'max-w-3xl', 'px-4', 'py-4', 'pb-36'].join(' ');
 const HEADER_ACTIONS = ['flex', 'items-center', 'gap-1'].join(' ');
 const JETZT_BTN = [
@@ -66,6 +67,13 @@ const JETZT_BTN = [
 
 const PRIO_BTN_ACTIVE = [ICON_BTN, 'text-primary'].join(' ');
 const PRIO_BTN_SPINNING = 'animate-spin';
+
+// Track resting at the middle (current) panel; 300%-wide track, each panel = 100% of viewport.
+const TRACK_REST = 'translateX(-33.3333%)';
+const TRACK_PREV = 'translateX(0%)';          // fully shows prev panel
+const TRACK_NEXT = 'translateX(-66.6667%)';   // fully shows next panel
+
+const NO_ENTRIES: readonly BrainDumpEntry[] = [];
 
 // ─── TimelineView (Container) ─────────────────────────────────────────────────
 
@@ -85,7 +93,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
     return allEntries.find(e => e.id === selectedEntry.id) ?? selectedEntry;
   }, [selectedEntry, allEntries]);
 
-  const { undated } = useTimelineBuckets();
+  const { undated, byDate } = useTimelineBuckets();
   const { triggerToggle, dialogs } = useTaskCompletionFlow();
   const selectedDate = useSelectedDate();
   const goToToday = useGoToToday();
@@ -93,6 +101,16 @@ export function TimelineView({ onBack }: Readonly<Props>) {
   const timedEntries = useSelectedDayTimedEntries();
   const datedTimeless = useDatedTimelessEntries();
   const dayMarkers = useDayMarkers();
+
+  // Adjacent day entries (for the swipe preview panels).
+  const prevDate = useMemo(() => shiftDate(selectedDate, -1), [selectedDate]);
+  const nextDate = useMemo(() => shiftDate(selectedDate,  1), [selectedDate]);
+  const prevEntries = byDate.get(prevDate) ?? NO_ENTRIES;
+  const nextEntries = byDate.get(nextDate) ?? NO_ENTRIES;
+  const prevTimed  = useMemo(() => prevEntries.filter(e => e.payload.startTime != null), [prevEntries]);
+  const prevAllDay = useMemo(() => prevEntries.filter(e => e.payload.startTime == null), [prevEntries]);
+  const nextTimed  = useMemo(() => nextEntries.filter(e => e.payload.startTime != null), [nextEntries]);
+  const nextAllDay = useMemo(() => nextEntries.filter(e => e.payload.startTime == null), [nextEntries]);
 
   const isPrioritizing = useIsPrioritizing();
   const prioritizeDayTasks = usePrioritizeDayTasks();
@@ -115,18 +133,24 @@ export function TimelineView({ onBack }: Readonly<Props>) {
   const pxPerHour    = useZoomStore(s => s.pxPerHour);
   const setPxPerHour = useZoomStore(s => s.setPxPerHour);
 
-  const mainRef = useRef<HTMLDivElement>(null);
+  const mainRef  = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
   const pinchInitialDist = useRef(0);
   const pinchInitialPx   = useRef(0);
   const pxPerHourRef     = useRef(pxPerHour);
   useEffect(() => { pxPerHourRef.current = pxPerHour; }, [pxPerHour]);
 
-  const viewRef = useRef<HTMLDivElement>(null);
   const swipeStartX = useRef(0);
   const swipeStartY = useRef(0);
   const gestureMode = useRef<'unknown' | 'swipe' | 'scroll'>('unknown');
   const selectedDateRef = useRef(selectedDate);
   useEffect(() => { selectedDateRef.current = selectedDate; }, [selectedDate]);
+
+  // Set the track to show the middle (current) panel on mount.
+  // We manage this imperatively so React re-renders never fight the animation.
+  useLayoutEffect(() => {
+    if (trackRef.current) trackRef.current.style.transform = TRACK_REST;
+  }, []);
 
   useEffect(() => {
     const el = mainRef.current;
@@ -135,16 +159,15 @@ export function TimelineView({ onBack }: Readonly<Props>) {
     const verticalDist = (t: TouchList) => Math.abs(t[0].clientY - t[1].clientY);
 
     const snapBack = () => {
-      const view = viewRef.current;
-      if (!view) return;
-      view.style.transition = 'transform 0.2s ease';
-      view.style.transform = 'translateX(0)';
+      const track = trackRef.current;
+      if (!track) return;
+      track.style.transition = 'transform 0.2s ease';
+      track.style.transform = TRACK_REST;
       const cleanup = () => {
-        view.removeEventListener('transitionend', cleanup);
-        view.style.transition = '';
-        view.style.transform = '';
+        track.removeEventListener('transitionend', cleanup);
+        track.style.transition = '';
       };
-      view.addEventListener('transitionend', cleanup);
+      track.addEventListener('transitionend', cleanup);
     };
 
     const onTouchStart = (e: TouchEvent) => {
@@ -179,10 +202,10 @@ export function TimelineView({ onBack }: Readonly<Props>) {
 
       if (gestureMode.current === 'swipe') {
         e.preventDefault();
-        const view = viewRef.current;
-        if (view) {
-          view.style.transition = 'none';
-          view.style.transform = `translateX(${dx}px)`;
+        const track = trackRef.current;
+        if (track) {
+          track.style.transition = 'none';
+          track.style.transform = `translateX(calc(-33.3333% + ${dx}px))`;
         }
       }
     };
@@ -196,21 +219,23 @@ export function TimelineView({ onBack }: Readonly<Props>) {
       const dy = e.changedTouches[0].clientY - swipeStartY.current;
 
       if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-        const view = viewRef.current;
-        const targetX = dx < 0 ? -window.innerWidth : window.innerWidth;
-        const nextDate = shiftDate(selectedDateRef.current, dx < 0 ? 1 : -1);
-        if (view) {
-          view.style.transition = 'transform 0.15s ease-in';
-          view.style.transform = `translateX(${targetX}px)`;
+        const track = trackRef.current;
+        const toNext = dx < 0;
+        const targetTransform = toNext ? TRACK_NEXT : TRACK_PREV;
+        const dateToNavigate  = shiftDate(selectedDateRef.current, toNext ? 1 : -1);
+
+        if (track) {
+          track.style.transition = 'transform 0.2s ease-out';
+          track.style.transform = targetTransform;
           const onDone = () => {
-            view.removeEventListener('transitionend', onDone);
-            view.style.transition = 'none';
-            view.style.transform = '';
-            setSelectedDate(nextDate);
+            track.removeEventListener('transitionend', onDone);
+            track.style.transition = 'none';
+            track.style.transform = TRACK_REST;
+            setSelectedDate(dateToNavigate);
           };
-          view.addEventListener('transitionend', onDone);
+          track.addEventListener('transitionend', onDone);
         } else {
-          setSelectedDate(nextDate);
+          setSelectedDate(dateToNavigate);
         }
       } else {
         snapBack();
@@ -285,7 +310,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
   }, [pendingScrollEntryId, timedEntries, datedTimeless, setPendingScrollEntryId]);
 
   return (
-    <div ref={viewRef} className={VIEW}>
+    <div className={VIEW}>
       <header className={HEADER}>
         {/* Row 1: back + current date label + actions */}
         <div className={HEADER_TOP}>
@@ -341,19 +366,55 @@ export function TimelineView({ onBack }: Readonly<Props>) {
         </div>
       </header>
 
+      {/* overflow-hidden clips the track; touch events are captured here */}
       <main ref={mainRef} className={MAIN}>
-        <div className={MAIN_INNER}>
-          <DayGrid
-            date={selectedDate}
-            entries={timedEntries}
-            allDay={sortedDatedTimeless}
-            isToday={isToday}
-            now={now}
-            pxPerHour={pxPerHour}
-            nowLineRef={nowLineRef}
-            onSelect={setSelectedEntry}
-            onToggle={triggerToggle}
-          />
+        {/* 300%-wide flex track: [prev | current | next], each panel = 100% of main width */}
+        <div ref={trackRef} className={TRACK} style={{ width: '300%' }}>
+          <div className={PANEL} style={{ width: '33.3333%' }}>
+            <div className={MAIN_INNER}>
+              <DayGrid
+                date={prevDate}
+                entries={prevTimed}
+                allDay={prevAllDay}
+                isToday={prevDate === todayStr}
+                now={now}
+                pxPerHour={pxPerHour}
+                onSelect={setSelectedEntry}
+                onToggle={triggerToggle}
+              />
+            </div>
+          </div>
+
+          <div className={PANEL} style={{ width: '33.3333%' }}>
+            <div className={MAIN_INNER}>
+              <DayGrid
+                date={selectedDate}
+                entries={timedEntries}
+                allDay={sortedDatedTimeless}
+                isToday={isToday}
+                now={now}
+                pxPerHour={pxPerHour}
+                nowLineRef={nowLineRef}
+                onSelect={setSelectedEntry}
+                onToggle={triggerToggle}
+              />
+            </div>
+          </div>
+
+          <div className={PANEL} style={{ width: '33.3333%' }}>
+            <div className={MAIN_INNER}>
+              <DayGrid
+                date={nextDate}
+                entries={nextTimed}
+                allDay={nextAllDay}
+                isToday={nextDate === todayStr}
+                now={now}
+                pxPerHour={pxPerHour}
+                onSelect={setSelectedEntry}
+                onToggle={triggerToggle}
+              />
+            </div>
+          </div>
         </div>
       </main>
 
