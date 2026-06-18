@@ -3,15 +3,6 @@
 // Imported by the store (DaySelectionStore), the hook (useRouteSync), and App.
 
 export type AppView = 'dashboard' | 'timeline' | 'shopping' | 'admin';
-export type AuthPage = 'login' | 'auth-callback';
-
-/** Returns the auth page type if the current URL is an auth route, otherwise null. */
-export function currentAuthPage(): AuthPage | null {
-  const path = window.location.pathname;
-  if (path === '/login') return 'login';
-  if (path === '/auth/callback') return 'auth-callback';
-  return null;
-}
 
 const DATE_SEGMENT = /^\/timeline\/(\d{4}-\d{2}-\d{2})(?:[/?#]|$)/;
 const TIMELINE_PREFIX = /^\/timeline(?:[/?#]|$)/;

@@ -3,7 +3,7 @@ import { BrainDumpDashboard } from './components/BrainDumpDashboard';
 import { TimelineView } from './features/timeline';
 import { Toaster } from './components/ui/sonner';
 import { useEntriesBootstrap } from './hooks/useEntriesBootstrap';
-import { currentAuthPage, parseAppRoute, type AppView } from './lib/routing';
+import { parseAppRoute, type AppView } from './lib/routing';
 import { useRouteSync } from './hooks/useRouteSync';
 import { useSelectedDate } from './hooks/timelineSelectors';
 import { useDaySelectionStore } from './features/timeline/store';
@@ -13,7 +13,7 @@ import { ShoppingView } from './features/shopping/components/ShoppingView';
 import { useIsProcessing, useSetProcessing, useSubmitText } from './hooks/braindumpSelectors';
 import { useErrorToast, useSuccessToast } from './hooks/useErrorToast';
 import { useVoiceRecording } from './hooks/useVoiceRecording';
-import { LoginPage, AuthCallbackPage } from './features/auth';
+import { LoginPage } from './features/auth';
 import { FeedbackButton, AdminView } from './features/issues';
 import { useAuthStore } from './store/authSlice';
 import { supabase } from './features/braindump/services/ApiClient';
@@ -125,8 +125,6 @@ type AuthState = 'loading' | 'authenticated' | 'unauthenticated';
 function App() {
   const setUser = useAuthStore(s => s.setUser);
   const [authState, setAuthState] = useState<AuthState>('loading');
-  const authPage = currentAuthPage();
-
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -141,7 +139,6 @@ function App() {
     return () => subscription.unsubscribe();
   }, [setUser]);
 
-  if (authPage === 'auth-callback') return <AuthCallbackPage />;
   if (authState === 'loading') return null;
   if (authState === 'unauthenticated') return <LoginPage />;
   return <AuthenticatedApp />;
