@@ -9,6 +9,7 @@ export interface Issue {
     type: IssueType;
     title: string;
     description: string | null;
+    screenshot_url: string | null;
     status: IssueStatus;
 }
 

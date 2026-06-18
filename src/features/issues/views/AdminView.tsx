@@ -69,6 +69,7 @@ export function AdminView({ onBack }: { onBack: () => void }) {
                                 <th className="px-4 py-3 font-medium">Typ</th>
                                 <th className="px-4 py-3 font-medium">Titel</th>
                                 <th className="px-4 py-3 font-medium">Beschreibung</th>
+                                <th className="px-4 py-3 font-medium">Screenshot</th>
                                 <th className="px-4 py-3 font-medium">Status</th>
                             </tr>
                         </thead>
@@ -92,6 +93,19 @@ export function AdminView({ onBack }: { onBack: () => void }) {
                                     <td className="px-4 py-3 font-medium">{issue.title}</td>
                                     <td className="max-w-xs px-4 py-3 text-muted-foreground">
                                         {issue.description ?? <span className="opacity-40">—</span>}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        {issue.screenshot_url ? (
+                                            <a href={issue.screenshot_url} target="_blank" rel="noreferrer">
+                                                <img
+                                                    src={issue.screenshot_url}
+                                                    alt="Screenshot"
+                                                    className="h-10 w-16 rounded-lg border border-border object-cover opacity-90 transition-opacity hover:opacity-100"
+                                                />
+                                            </a>
+                                        ) : (
+                                            <span className="opacity-40">—</span>
+                                        )}
                                     </td>
                                     <td className="px-4 py-3">
                                         <StatusSelect issue={issue} onChange={handleStatusChange} />
