@@ -68,10 +68,13 @@ interface CardProps {
 function TaskCard({ entry, selectionMode }: Readonly<CardProps>) {
   const [open, setOpen] = useState(false);
   const toggle = useToggleTaskCompleted();
-  const { tintBackground, accent } = CATEGORY_STYLES.TASK;
+  const { tintBackground, accent, accentBg } = CATEGORY_STYLES.TASK;
   const title = entry.title?.trim() || 'Untitled';
   const tags = entry.payload?.tags ?? [];
   const selectedRing = selectionMode?.isSelected ? 'ring-2 ring-primary ring-offset-1' : '';
+  const dateBlock = entry.payload?.date ? parseDateBlock(entry.payload.date) : null;
+  const timeStr = fmtTime(entry.payload?.startTime, entry.payload?.endTime);
+  const hasTiming = dateBlock !== null || timeStr !== null;
 
   const handleClick = () => {
     if (selectionMode) selectionMode.onToggleSelect();
@@ -83,11 +86,29 @@ function TaskCard({ entry, selectionMode }: Readonly<CardProps>) {
       <div className="relative">
         <button type="button" className={CARD_BTN} onClick={handleClick}>
           <Card className={[CARD_BASE, tintBackground, entry.completed ? 'opacity-60' : '', selectedRing].join(' ')} size="sm">
-            <CardContent className="space-y-1.5 px-4 pr-12">
-              <p className={['text-sm font-semibold leading-snug', entry.completed ? 'line-through text-muted-foreground' : ''].join(' ')}>
-                {title}
-              </p>
-              <TagBadgeList tags={tags} />
+            <CardContent className={hasTiming ? 'flex items-start gap-3 px-4' : 'space-y-1.5 px-4 pr-12'}>
+              {hasTiming && (
+                <div
+                  className={['shrink-0 flex flex-col items-center justify-center rounded-lg px-2.5 py-1.5 min-w-[2.75rem]', accentBg].join(' ')}
+                  aria-hidden="true"
+                >
+                  {dateBlock ? (
+                    <>
+                      <span className="text-base font-bold text-white leading-none">{dateBlock.day}</span>
+                      <span className="text-[10px] font-medium text-white/80 uppercase tracking-wide">{dateBlock.month}</span>
+                    </>
+                  ) : (
+                    <Calendar className="h-5 w-5 text-white" />
+                  )}
+                </div>
+              )}
+              <div className={['min-w-0 flex-1 space-y-1.5', hasTiming ? 'pr-10' : ''].join(' ')}>
+                <p className={['text-sm font-semibold leading-snug', entry.completed ? 'line-through text-muted-foreground' : ''].join(' ')}>
+                  {title}
+                </p>
+                {timeStr && <p className="text-xs text-muted-foreground">{timeStr}</p>}
+                <TagBadgeList tags={tags} />
+              </div>
             </CardContent>
             <CardFooter className={FOOTER_CLS}>
               <time dateTime={entry.created_at}>erstellt am {formatCreatedDateTime(entry.created_at)} um {formatCreatedTime(entry.created_at)} Uhr</time>
