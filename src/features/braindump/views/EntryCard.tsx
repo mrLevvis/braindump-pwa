@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Calendar, CheckCircle2, Circle, Clock, ShoppingCart } from 'lucide-react';
+import { Calendar, CheckCircle2, Circle, Clock, ShoppingCart, Timer } from 'lucide-react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { TaskToggle } from '@/components/TaskToggle';
 import type { BrainDumpEntry, EntryCategory } from '../types';
@@ -9,6 +9,7 @@ import { CATEGORY_STYLES, TagBadgeList } from '../categoryStyles';
 import { EntryDetailPanel } from './EntryDetailPanel';
 import { useTaskCompletionFlow } from './TaskCompletionDialog';
 import { useBrainDumpStore } from '../store';
+import { useNow } from '@/hooks';
 
 // ─── Date/time helpers ────────────────────────────────────────────────────────
 
@@ -27,6 +28,48 @@ function parseDateBlock(iso: string): { day: string; month: string } | null {
 function fmtTime(startTime?: string, endTime?: string): string | null {
   if (!startTime) return null;
   return endTime ? `${startTime}–${endTime} Uhr` : `${startTime} Uhr`;
+}
+
+// ─── Deadline chip ────────────────────────────────────────────────────────────
+
+function getDeadlineStep(diffMs: number): 'overdue' | 'critical' | 'warning' | 'caution' | 'safe' {
+  if (diffMs <= 0) return 'overdue';
+  const h = diffMs / 3_600_000;
+  if (h <= 3) return 'critical';
+  if (h <= 12) return 'warning';
+  if (h <= 48) return 'caution';
+  return 'safe';
+}
+
+const CHIP_CLS = {
+  overdue:  'bg-rose-900/15 border-rose-600/30 text-rose-800 dark:bg-rose-900/30 dark:border-rose-600/50 dark:text-rose-300',
+  critical: 'bg-rose-500/10 border-rose-400/30 text-rose-700 dark:bg-rose-500/20 dark:border-rose-400/50 dark:text-rose-400',
+  warning:  'bg-orange-500/10 border-orange-400/30 text-orange-700 dark:bg-orange-500/20 dark:border-orange-400/50 dark:text-orange-400',
+  caution:  'bg-yellow-500/10 border-yellow-400/30 text-yellow-700 dark:bg-yellow-500/20 dark:border-yellow-400/50 dark:text-yellow-400',
+  safe:     'bg-emerald-500/10 border-emerald-400/30 text-emerald-700 dark:bg-emerald-500/20 dark:border-emerald-400/50 dark:text-emerald-400',
+};
+
+function DeadlineChip({ date, deadline }: Readonly<{ date?: string; deadline: string }>) {
+  const now = useNow();
+
+  const diffMs = (() => {
+    if (!date) return null;
+    const [hh, mm] = deadline.split(':').map(Number);
+    const target = new Date(`${date}T00:00:00`);
+    target.setHours(hh, mm, 0, 0);
+    return target.getTime() - now.getTime();
+  })();
+
+  const step = diffMs !== null ? getDeadlineStep(diffMs) : 'safe';
+  const isOverdue = diffMs !== null && diffMs <= 0;
+  const label = isOverdue ? `Überfällig · ${deadline} Uhr` : `bis ${deadline} Uhr`;
+
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-medium ${CHIP_CLS[step]}`}>
+      <Timer className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
+      {label}
+    </span>
+  );
 }
 
 // ─── Shared class constants ───────────────────────────────────────────────────
@@ -78,6 +121,7 @@ function TaskCard({ entry, selectionMode }: Readonly<CardProps>) {
   const timeStr = fmtTime(entry.payload?.startTime, entry.payload?.endTime);
   const timeOfDayLabel = !timeStr && entry.payload?.timeOfDay ? TIME_OF_DAY_LABEL[entry.payload.timeOfDay] : null;
   const hasTiming = dateBlock !== null || timeStr !== null || timeOfDayLabel !== null;
+  const deadline = entry.payload?.deadline;
 
   const handleClick = () => {
     if (selectionMode) selectionMode.onToggleSelect();
@@ -117,6 +161,7 @@ function TaskCard({ entry, selectionMode }: Readonly<CardProps>) {
                   </p>
                 )}
                 <TagBadgeList tags={tags} />
+                {deadline && <DeadlineChip date={entry.payload?.date} deadline={deadline} />}
               </div>
             </CardContent>
             <CardFooter className={FOOTER_CLS}>
