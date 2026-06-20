@@ -52,6 +52,15 @@ export async function deleteShoppingItem(id: string): Promise<DeleteResult> {
   return { status: 'deleted' };
 }
 
+export async function deleteShoppingItemsBySourceDump(captureId: string): Promise<void> {
+  const { error } = await supabase
+    .from(TABLE)
+    .delete()
+    .eq('source_dump', captureId);
+
+  if (error) throw new Error(error.message);
+}
+
 export async function updateShoppingItemPrice(id: string, price: number | null): Promise<UpdatePriceResult> {
   const { error, count } = await supabase
     .from(TABLE)

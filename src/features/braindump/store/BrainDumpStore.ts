@@ -6,6 +6,7 @@ import { prioritizeDayTasks as prioritizeApi } from "../services/prioritizeTasks
 import { showErrorToast } from "../../../hooks/useErrorToast";
 import { createShoppingSlice } from "../../shopping/store/shoppingSlice";
 import type { ShoppingSlice } from "../../shopping/store/shoppingSlice";
+import { deleteShoppingItemsBySourceDump } from "../../shopping/services/shoppingItemsService";
 
 /**
  * Globaler Zustand-Store für das BrainDump-Feature.
@@ -118,11 +119,18 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a)
     },
 
     deleteEntry: async (id: string): Promise<DeleteResult> => {
+        const entry = get().entries.find(e => e.id === id);
+
+        if (entry?.category === 'SHOPPING' && entry.captureId) {
+            await deleteShoppingItemsBySourceDump(entry.captureId);
+        }
+
         const result = await deleteEntryFromApi(id);
 
         if (result.status === 'deleted') {
             const data = await fetchEntries();
             if (data) set(() => ({ entries: data }));
+            if (entry?.category === 'SHOPPING') get().loadItems();
         }
 
         return result;
@@ -224,9 +232,18 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a)
     },
 
     deleteEntries: async (ids: readonly string[]): Promise<void> => {
+        const shoppingCaptureIds = [
+            ...new Set(
+                get().entries
+                    .filter(e => ids.includes(e.id) && e.category === 'SHOPPING' && e.captureId)
+                    .map(e => e.captureId!)
+            ),
+        ];
+        await Promise.all(shoppingCaptureIds.map(deleteShoppingItemsBySourceDump));
         await deleteEntriesByIds(ids);
         const data = await fetchEntries();
         if (data) set(() => ({ entries: data }));
+        if (shoppingCaptureIds.length > 0) get().loadItems();
     },
 
     prioritizeDayTasks: async (date, tasks) => {
