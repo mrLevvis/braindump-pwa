@@ -5,7 +5,7 @@
  */
 
 import { supabase } from '../../braindump/services/ApiClient';
-import type { ShoppingItem, DeleteResult, ToggleResult, UpdatePriceResult } from '../types/ShoppingItem';
+import type { ShoppingItem, DeleteResult, ToggleResult, UpdatePriceResult, UpdateLabelResult } from '../types/ShoppingItem';
 
 const TABLE = 'shopping_items';
 
@@ -59,6 +59,28 @@ export async function deleteShoppingItemsBySourceDump(captureId: string): Promis
     .eq('source_dump', captureId);
 
   if (error) throw new Error(error.message);
+}
+
+export async function addShoppingItem(captureId: string, label: string): Promise<ShoppingItem> {
+  const { data, error } = await supabase
+    .from(TABLE)
+    .insert({ label, is_done: false, source_dump: captureId })
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as ShoppingItem;
+}
+
+export async function updateShoppingItemLabel(id: string, label: string): Promise<UpdateLabelResult> {
+  const { error, count } = await supabase
+    .from(TABLE)
+    .update({ label }, { count: 'exact' })
+    .eq('id', id);
+
+  if (error) return { status: 'error', message: error.message };
+  if (count === 0) return { status: 'not_found' };
+  return { status: 'updated' };
 }
 
 export async function updateShoppingItemPrice(id: string, price: number | null): Promise<UpdatePriceResult> {

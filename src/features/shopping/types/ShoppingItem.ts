@@ -26,3 +26,8 @@ export type UpdatePriceResult =
   | { status: 'updated'; price: number | null }
   | { status: 'not_found' }
   | { status: 'error'; message: string };
+
+export type UpdateLabelResult =
+  | { status: 'updated' }
+  | { status: 'not_found' }
+  | { status: 'error'; message: string };

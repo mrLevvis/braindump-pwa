@@ -6,7 +6,13 @@ import { prioritizeDayTasks as prioritizeApi } from "../services/prioritizeTasks
 import { showErrorToast } from "../../../hooks/useErrorToast";
 import { createShoppingSlice } from "../../shopping/store/shoppingSlice";
 import type { ShoppingSlice } from "../../shopping/store/shoppingSlice";
-import { deleteShoppingItemsBySourceDump } from "../../shopping/services/shoppingItemsService";
+import {
+  addShoppingItem as addShoppingItemToDb,
+  deleteShoppingItem,
+  deleteShoppingItemsBySourceDump,
+  fetchShoppingItems,
+  updateShoppingItemLabel,
+} from "../../shopping/services/shoppingItemsService";
 
 /**
  * Globaler Zustand-Store für das BrainDump-Feature.
@@ -15,6 +21,26 @@ import { deleteShoppingItemsBySourceDump } from "../../shopping/services/shoppin
 export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a) => {
   const set = a[0];
   const get = a[1];
+
+  // Syncs payload.tags on the shopping entry to the current item labels,
+  // and refreshes the global items list — called after any item mutation.
+  const syncShoppingEntry = async (captureId: string) => {
+    const allItems = await fetchShoppingItems();
+    const tags = allItems.filter(i => i.source_dump === captureId).map(i => i.label);
+    const entry = get().entries.find(e => e.captureId === captureId);
+    if (entry) {
+      await updateEntryApi(entry.id, { payload: { ...entry.payload, tags } });
+      set(s => ({
+        items: allItems,
+        entries: s.entries.map(e =>
+          e.id === entry.id ? { ...e, payload: { ...e.payload, tags } } : e
+        ),
+      }));
+    } else {
+      set({ items: allItems });
+    }
+  };
+
   return {
     ...createShoppingSlice((partial) => set(partial), get),
     // --- INITIAL STATE ---
@@ -329,6 +355,27 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a)
         }
 
         return result;
+    },
+
+    addItemToEntry: async (captureId: string, label: string) => {
+      try {
+        await addShoppingItemToDb(captureId, label);
+        await syncShoppingEntry(captureId);
+      } catch (e) {
+        showErrorToast((e as Error).message);
+      }
+    },
+
+    updateItemLabel: async (itemId: string, captureId: string, label: string) => {
+      const result = await updateShoppingItemLabel(itemId, label);
+      if (result.status === 'error') { showErrorToast(result.message); return; }
+      await syncShoppingEntry(captureId);
+    },
+
+    removeItemFromEntry: async (itemId: string, captureId: string) => {
+      const result = await deleteShoppingItem(itemId);
+      if (result.status === 'error') { showErrorToast(result.message); return; }
+      await syncShoppingEntry(captureId);
     },
 
     toggleTaskCompleted: async (id: string, completed: boolean): Promise<ToggleResult> => {
