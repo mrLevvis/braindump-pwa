@@ -155,6 +155,14 @@ Deno.serve(async (request) => {
     }
   }
 
+  // Item-Labels 1:1 als Tags in den Entry-Payload schreiben — kein KI-Ermessen.
+  if (entry.category === "SHOPPING") {
+    entry.payload.tags = (entry.payload.items ?? []).map((raw) => {
+      const isObj = raw !== null && typeof raw === "object";
+      return isObj ? (raw as { label: string }).label : String(raw);
+    });
+  }
+
   // 8. Den neu strukturierten Entry zurückgeben — der Client übernimmt das DB-Update.
   return new Response(JSON.stringify({ entry }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -201,6 +201,14 @@ Deno.serve(async (request) => {
     }
   }
 
+  // Item-Labels 1:1 als Tags in den Entry-Payload schreiben — kein KI-Ermessen.
+  for (const e of shoppingEntries) {
+    e.payload.tags = (e.payload.items ?? []).map((raw) => {
+      const isObj = raw !== null && typeof raw === 'object';
+      return isObj ? (raw as { label: string }).label : String(raw);
+    });
+  }
+
   // 9. additionalInfos validieren — ungültige Einträge stillschweigend verwerfen.
   const additionalInfos: EntryAdditionalInfo[] = Array.isArray(ingestResponse.additionalInfos)
     ? (ingestResponse.additionalInfos as unknown[]).filter(isValidAdditionalInfo)
