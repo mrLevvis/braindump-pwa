@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { BrainDumpDashboard } from './components/BrainDumpDashboard';
 import { TimelineView } from './features/timeline';
 import { Toaster } from './components/ui/sonner';
@@ -41,7 +41,8 @@ function AuthenticatedApp() {
 
   // ─── Global input state ───────────────────────────────────────────────────────
   const [textValue, setTextValue] = useState('');
-  const { status, toggleRecording } = useVoiceRecording((blob) => {
+  const submitAfterTranscription = useRef(false);
+  const { status, toggleRecording, stopRecording } = useVoiceRecording((blob) => {
     handleTranscription(blob);
   });
   const isProcessing = useIsProcessing();
@@ -51,16 +52,16 @@ function AuthenticatedApp() {
   const showErrorToast = useErrorToast();
   const showSuccessToast = useSuccessToast();
 
-  const handleTextSubmit = async () => {
-    if (!textValue.trim()) return;
+  const handleSubmit = useCallback(async (text: string) => {
+    if (!text.trim()) return;
     try {
-      await submitText(textValue);
+      await submitText(text);
       setTextValue('');
       showSuccessToast('Analyse abgeschlossen – bitte Einträge prüfen.');
     } catch {
       showErrorToast('Beim Strukturieren ist etwas schiefgelaufen. Bitte versuche es gleich erneut.');
     }
-  };
+  }, [submitText, showSuccessToast, showErrorToast]);
 
   const handleTranscription = async (blob: Blob) => {
     setProcessing(true);
@@ -68,12 +69,26 @@ function AuthenticatedApp() {
       const transcript = await transcribeAudio(blob);
       setTextValue(transcript);
       showSuccessToast('Transkription erfolgreich erstellt.');
+      if (submitAfterTranscription.current) {
+        submitAfterTranscription.current = false;
+        await handleSubmit(transcript);
+      }
     } catch (error) {
+      submitAfterTranscription.current = false;
       showErrorToast(error);
     } finally {
       setProcessing(false);
     }
   };
+
+  const handleSubmitClick = useCallback(async () => {
+    if (status === 'recording') {
+      submitAfterTranscription.current = true;
+      stopRecording();
+    } else {
+      await handleSubmit(textValue);
+    }
+  }, [status, stopRecording, handleSubmit, textValue]);
 
   const user = useAuthStore(s => s.user);
   const isAdmin = ADMIN_EMAIL !== '' && user?.email === ADMIN_EMAIL;
@@ -104,7 +119,7 @@ function AuthenticatedApp() {
         <InputSection
           textValue={textValue}
           onTextChange={setTextValue}
-          onTextSubmit={handleTextSubmit}
+          onTextSubmit={handleSubmitClick}
           status={buttonStatus}
           onVoiceClick={toggleRecording}
           disabled={isProcessing}

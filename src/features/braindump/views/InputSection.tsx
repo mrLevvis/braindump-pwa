@@ -20,6 +20,7 @@ export default function InputSection({
   disabled?: boolean;
 }>) {
   const isTextInputDisabled = disabled || status === 'recording' || status === 'requesting';
+  const isSubmitDisabled = disabled || status === 'requesting' || (status !== 'recording' && textValue.trim() === '');
 
   return (
     <div className={INPUT_SECTION_CLASS_NAME}>
@@ -33,7 +34,7 @@ export default function InputSection({
 
         <VoiceRecordButton status={status} onClick={onVoiceClick} />
 
-        <TextSubmitButton onClick={onTextSubmit} disabled={isTextInputDisabled || textValue.trim() === ''} />
+        <TextSubmitButton onClick={onTextSubmit} disabled={isSubmitDisabled} />
       </div>
     </div>
   );
