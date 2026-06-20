@@ -1,6 +1,7 @@
 import type { BrainDumpEntry, RecurrenceException } from '../braindump/types';
 import type { TimelineData } from './types';
 import { expandRecurringSeries } from './expandRecurringSeries';
+import { sortTasksTopologically } from '../braindump/utils/dependencies';
 
 // Sorts after any valid HH:MM so timeless entries land at the end of their day
 const TIME_END_OF_DAY = '99:99';
@@ -36,7 +37,9 @@ export function buildTimelineBuckets(
   // Alle datierten Einträge: reguläre + expandierte Occurrences
   const allDated = [...regular, ...expanded].filter(e => e.payload.date != null);
 
-  const undated = regular.filter(e => e.payload.date == null && e.category === 'TASK');
+  const undated = sortTasksTopologically(
+    regular.filter(e => e.payload.date == null && e.category === 'TASK')
+  );
 
   const byDate = allDated
     .sort(byDateThenTime)

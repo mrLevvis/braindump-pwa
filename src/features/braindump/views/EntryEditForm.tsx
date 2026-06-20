@@ -6,6 +6,9 @@ import { cn } from '@/lib/utils';
 import type { BrainDumpEntry, EntryCategory, EntryPatch, RecurrenceRule, TimeOfDay } from '../types';
 import { TIME_OF_DAY_OPTIONS, TIME_OF_DAY_LABEL } from '../types/BrainDump';
 import { RecurrencePickerSection } from './RecurrencePickerSection';
+import { useBrainDumpStore } from '../store';
+import { wouldCreateCycle } from '../utils/dependencies';
+import { useErrorToast } from '@/hooks';
 
 // Matches Input's visual style but grows with content instead of clipping.
 const AUTOGROW_CLS = [
@@ -69,8 +72,15 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
   const [tagInput, setTagInput] = useState('');
   const [summary, setSummary] = useState<string[]>(entry.summary ?? []);
   const [recurrence, setRecurrence] = useState<RecurrenceRule | null>(entry.recurrence ?? null);
+  const [predecessorIds, setPredecessorIds] = useState<string[]>(entry.dependsOn ?? []);
+  const [predSearch, setPredSearch] = useState('');
+  const [predDropdownOpen, setPredDropdownOpen] = useState(false);
+
+  const allEntries = useBrainDumpStore(s => s.entries);
+  const showErrorToast = useErrorToast();
 
   const tagInputRef = useRef<HTMLInputElement>(null);
+  const predSearchRef = useRef<HTMLInputElement>(null);
 
   const handleCategoryChange = (cat: EntryCategory) => {
     setCategory(cat);
@@ -98,6 +108,30 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
 
   const removeTag = (tag: string) => setTags(prev => prev.filter(t => t !== tag));
 
+  const candidateTasks = allEntries.filter(e =>
+    e.category === 'TASK' &&
+    e.id !== entry.id &&
+    !e._isVirtualOccurrence &&
+    !predecessorIds.includes(e.id)
+  );
+  const filteredCandidates = predSearch.trim()
+    ? candidateTasks.filter(e => (e.title ?? '').toLowerCase().includes(predSearch.toLowerCase()))
+    : candidateTasks.slice(0, 8);
+
+  const handleAddPredecessor = (predId: string) => {
+    if (wouldCreateCycle(entry.id, predId, allEntries)) {
+      showErrorToast('Dieser Vorgänger würde einen Zyklus erzeugen.');
+      return;
+    }
+    setPredecessorIds(prev => [...prev, predId]);
+    setPredSearch('');
+    setPredDropdownOpen(false);
+    predSearchRef.current?.focus();
+  };
+
+  const handleRemovePredecessor = (predId: string) =>
+    setPredecessorIds(prev => prev.filter(id => id !== predId));
+
   const updateSummaryLine = (i: number, value: string) =>
     setSummary(prev => prev.map((line, idx) => idx === i ? value : line));
 
@@ -120,6 +154,7 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
       },
       summary: summary.filter(s => s.trim()),
       ...(category === 'EVENT' ? { recurrence: recurrence ?? null } : {}),
+      ...(category === 'TASK' && !entry._isVirtualOccurrence ? { dependsOn: predecessorIds } : {}),
     };
     onSave(patch);
   };
@@ -304,6 +339,59 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
           </Button>
         </div>
       </div>
+
+      {category === 'TASK' && !entry._isVirtualOccurrence && (
+        <div className={SECTION_CLS}>
+          <p className={LABEL_CLS}>Vorgänger</p>
+          <div className="flex flex-wrap gap-1.5">
+            {predecessorIds.map(predId => {
+              const pred = allEntries.find(e => e.id === predId);
+              return (
+                <span
+                  key={predId}
+                  className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs"
+                >
+                  {pred?.title ?? 'Unbekannt'}
+                  <button
+                    type="button"
+                    onClick={() => handleRemovePredecessor(predId)}
+                    aria-label="Vorgänger entfernen"
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              );
+            })}
+          </div>
+          <div className="relative">
+            <Input
+              ref={predSearchRef}
+              value={predSearch}
+              onChange={e => { setPredSearch(e.target.value); setPredDropdownOpen(true); }}
+              onFocus={() => setPredDropdownOpen(true)}
+              onBlur={() => setTimeout(() => setPredDropdownOpen(false), 150)}
+              placeholder="Vorgänger hinzufügen…"
+              className="h-7 text-sm"
+            />
+            {predDropdownOpen && filteredCandidates.length > 0 && (
+              <ul className="absolute z-10 w-full mt-1 max-h-48 overflow-y-auto rounded-md border bg-popover shadow-md">
+                {filteredCandidates.map(task => (
+                  <li key={task.id}>
+                    <button
+                      type="button"
+                      onMouseDown={() => handleAddPredecessor(task.id)}
+                      className="w-full px-3 py-1.5 text-left text-sm hover:bg-muted truncate"
+                    >
+                      {task.title ?? 'Unbenannt'}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
 
       {bottomSlot}
 

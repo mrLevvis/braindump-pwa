@@ -124,6 +124,7 @@ export interface BrainDumpEntry {
   summary?: string[];
   recurrence?: RecurrenceRule | null;  // Serien-Master: Regel; Override/einmalig: null/absent
   seriesEntryId?: string | null;       // Override-Instance: ID des Serien-Masters
+  dependsOn?: string[];                // IDs der Vorgänger-Tasks (dieser Task muss nach diesen kommen)
   // Runtime-only (nicht in DB): werden von expandRecurringSeries gesetzt
   _isVirtualOccurrence?: boolean;
   _occurrenceDate?: string;
@@ -171,7 +172,7 @@ export type UpdateResult =
   | { status: 'not_found' }
   | { status: 'error'; message: string };
 
-export type EntryPatch = Partial<Pick<BrainDumpEntry, 'title' | 'category' | 'payload' | 'summary' | 'recurrence'>>;
+export type EntryPatch = Partial<Pick<BrainDumpEntry, 'title' | 'category' | 'payload' | 'summary' | 'recurrence' | 'dependsOn'>>;
 
 /** Ein strukturierter Eintrag, wie ihn die KI zurückgibt. */
 export interface StructuredEntry {

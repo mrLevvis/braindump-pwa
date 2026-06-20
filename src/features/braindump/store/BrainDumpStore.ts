@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { BrainDumpState, ContextEntry, DeleteResult, EntryDraft, EntryPatch, IngestPreview, InsertEntry, RecurrenceScope, ToggleResult, UpdateResult } from "../types";
-import { deleteEntry as deleteEntryFromApi, deleteEntriesByIds, deleteRecurrenceExceptionsForSeries, fetchEntries, fetchRecurrenceExceptions, insertEntries, insertEntry, insertRecurrenceException, toggleTaskCompleted as toggleApi, updateEntry as updateEntryApi } from "../services";
+import { deleteEntry as deleteEntryFromApi, deleteEntriesByIds, deleteRecurrenceExceptionsForSeries, fetchEntries, fetchRecurrenceExceptions, insertEntries, insertEntry, insertRecurrenceException, toggleTaskCompleted as toggleApi, updateEntry as updateEntryApi, updateEntryDependsOn as updateDependsOnApi } from "../services";
 import { processText, reprocessEntryAI } from "../services/processBrainDump";
 import { prioritizeDayTasks as prioritizeApi } from "../services/prioritizeTasks";
 import { showErrorToast } from "../../../hooks/useErrorToast";
@@ -293,7 +293,11 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a)
             ),
         }));
 
-        const result = await updateEntryApi(id, patch);
+        const result = await updateEntryApi(id, patch); // dependsOn wird intern gestripped
+
+        if (patch.dependsOn !== undefined && result.status === 'updated') {
+            await updateDependsOnApi(id, patch.dependsOn);
+        }
 
         if (result.status !== 'updated') {
             const data = await fetchEntries();
@@ -339,12 +343,21 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a)
         set(s => ({
             entries: s.entries.map(e =>
                 e.id === id
-                    ? { ...e, ...finalPatch, payload: { ...e.payload, ...(finalPatch.payload ?? {}) } }
+                    ? {
+                        ...e,
+                        ...finalPatch,
+                        payload: { ...e.payload, ...(finalPatch.payload ?? {}) },
+                        ...(patch.dependsOn !== undefined ? { dependsOn: patch.dependsOn } : {}),
+                      }
                     : e
             ),
         }));
 
         const result = await updateEntryApi(id, finalPatch);
+
+        if (patch.dependsOn !== undefined && result.status === 'updated') {
+            await updateDependsOnApi(id, patch.dependsOn);
+        }
 
         if (result.status !== 'updated') {
             const data = await fetchEntries();

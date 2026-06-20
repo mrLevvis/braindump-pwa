@@ -50,11 +50,12 @@ function handlePostgrestError<T>(message: string, error: PostgrestError | null, 
  * ------------------------------------------------------------------------------*/
 
 /** Raw DB row returned by Supabase — snake_case column names, nullable new columns. */
-type BrainDumpEntryRow = Omit<BrainDumpEntry, 'captureId' | 'sourceExcerpt' | 'completed' | 'seriesEntryId' | '_isVirtualOccurrence' | '_occurrenceDate' | '_seriesMasterId'> & {
+type BrainDumpEntryRow = Omit<BrainDumpEntry, 'captureId' | 'sourceExcerpt' | 'completed' | 'seriesEntryId' | 'dependsOn' | '_isVirtualOccurrence' | '_occurrenceDate' | '_seriesMasterId'> & {
     capture_id?: string | null;
     source_excerpt?: string | null;
     completed: boolean | null;
     series_entry_id?: string | null;
+    depends_on?: string[] | null;
 };
 
 /**
@@ -68,12 +69,13 @@ export async function fetchEntries(): Promise<BrainDumpEntry[] | null> {
         .order('created_at', { ascending: false });
     const rows = handlePostgrestError<BrainDumpEntryRow[]>('Error fetching entries:', error, data as BrainDumpEntryRow[] | null);
     if (!rows) return null;
-    return rows.map(({ capture_id, source_excerpt, completed, series_entry_id, ...rest }) => ({
+    return rows.map(({ capture_id, source_excerpt, completed, series_entry_id, depends_on, ...rest }) => ({
         ...rest,
         completed: completed ?? false,
         captureId: capture_id ?? undefined,
         sourceExcerpt: source_excerpt ?? undefined,
         seriesEntryId: series_entry_id ?? undefined,
+        dependsOn: depends_on ?? undefined,
     }));
 }
 
@@ -136,11 +138,28 @@ export async function deleteEntriesByIds(ids: readonly string[]): Promise<void> 
 
 /**
  * Aktualisiert bearbeitbare Felder eines Eintrags (title, category, payload, summary).
+ * dependsOn wird intern herausgefiltert — dafür updateEntryDependsOn verwenden.
  */
 export async function updateEntry(id: string, patch: EntryPatch): Promise<UpdateResult> {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { dependsOn: _dependsOn, ...dbPatch } = patch;
     const { error, count } = await supabase
         .from(BRAINDUMP_ENTRIES_DB)
-        .update(patch, { count: 'exact' })
+        .update(dbPatch, { count: 'exact' })
+        .eq('id', id);
+
+    if (error) return { status: 'error', message: error.message };
+    if (count === 0) return { status: 'not_found' };
+    return { status: 'updated' };
+}
+
+/**
+ * Aktualisiert die depends_on Spalte eines Eintrags.
+ */
+export async function updateEntryDependsOn(id: string, dependsOn: string[]): Promise<UpdateResult> {
+    const { error, count } = await supabase
+        .from(BRAINDUMP_ENTRIES_DB)
+        .update({ depends_on: dependsOn }, { count: 'exact' })
         .eq('id', id);
 
     if (error) return { status: 'error', message: error.message };

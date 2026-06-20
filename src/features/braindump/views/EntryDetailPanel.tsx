@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Circle, CircleCheck, ChevronDown, ChevronRight, Clock, Pencil, Plus, RefreshCw, ShoppingCart, Square, SquareCheck, Timer, Sun, Trash2 } from 'lucide-react';
+import { Circle, CircleCheck, ChevronDown, ChevronRight, Clock, GitFork, Pencil, Plus, RefreshCw, ShoppingCart, Square, SquareCheck, Timer, Sun, Trash2 } from 'lucide-react';
 import { useNow } from '@/hooks';
 import type { ShoppingItem } from '../../shopping/types/ShoppingItem';
 import { useBrainDumpStore } from '../store';
@@ -20,6 +20,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { BrainDumpEntry, DeleteResult, RecurrenceScope, UpdateResult } from '../types';
+import { getSuccessors, calcDeltaDays, addDays } from '../utils/dependencies';
 import { TIME_OF_DAY_LABEL } from '../types/BrainDump';
 import { CATEGORY_STYLES, CategoryBadge, TagBadgeList } from '../categoryStyles';
 import { RecurrenceScopeDialog } from './RecurrenceScopeDialog';
@@ -526,6 +527,9 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
   const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isOriginalTextOpen, setIsOriginalTextOpen] = useState(false);
+  const [shiftQueue, setShiftQueue] = useState<Array<{ entryId: string; delta: number }>>([]);
+
+  const allEntries = useBrainDumpStore(s => s.entries);
 
   const isRecurring = entry._isVirtualOccurrence === true || entry.recurrence != null;
 
@@ -554,14 +558,30 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
       let result: UpdateResult;
       if (entry._isVirtualOccurrence) {
         const masterId = entry._seriesMasterId ?? entry.id;
-        const date = entry._occurrenceDate ?? entry.payload.date ?? '';
-        result = await updateOccurrence(masterId, date, patch, editScope ?? 'single');
+        const occDate = entry._occurrenceDate ?? entry.payload.date ?? '';
+        result = await updateOccurrence(masterId, occDate, patch, editScope ?? 'single');
       } else {
         result = await reprocessEntry(entry.id, patch);
       }
       if (result.status === 'updated') {
         setIsEditing(false);
         setEditScope(null);
+
+        // Verschiebe-Dialog: prüfen ob Nachfolger durch Datumsänderung verletzt werden
+        if (!entry._isVirtualOccurrence) {
+          const newDate = patch.payload?.date;
+          const oldDate = entry.payload.date;
+          if (newDate && oldDate && newDate !== oldDate) {
+            const delta = calcDeltaDays(oldDate, newDate);
+            const freshEntries = useBrainDumpStore.getState().entries;
+            const violating = getSuccessors(entry.id, freshEntries).filter(
+              s => s.payload.date != null && s.payload.date < newDate
+            );
+            if (violating.length > 0) {
+              setShiftQueue(violating.map(s => ({ entryId: s.id, delta })));
+            }
+          }
+        }
       } else {
         showErrorToast(result.status === 'error' ? result.message : 'Eintrag nicht gefunden.');
       }
@@ -569,6 +589,31 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
       setIsSaving(false);
     }
   };
+
+  const handleShiftConfirm = async () => {
+    const current = shiftQueue[0];
+    if (!current) return;
+    const freshEntries = useBrainDumpStore.getState().entries;
+    const target = freshEntries.find(e => e.id === current.entryId);
+    if (!target?.payload.date) { setShiftQueue(prev => prev.slice(1)); return; }
+
+    const newDate = addDays(target.payload.date, current.delta);
+    const result = await updateEntry(current.entryId, { payload: { ...target.payload, date: newDate } });
+
+    const afterEntries = useBrainDumpStore.getState().entries;
+    const nextViolating = result.status === 'updated'
+      ? getSuccessors(current.entryId, afterEntries).filter(
+          s => s.payload.date != null && s.payload.date < newDate
+        )
+      : [];
+
+    setShiftQueue(prev => [
+      ...prev.slice(1),
+      ...nextViolating.map(s => ({ entryId: s.id, delta: current.delta })),
+    ]);
+  };
+
+  const handleShiftReject = () => setShiftQueue(prev => prev.slice(1));
 
   const handleDeleteConfirm = async () => {
     if (isDeleting) return;
@@ -746,6 +791,52 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
               </section>
             )}
 
+            {/* Abhängigkeiten (nur TASK) */}
+            {entry.category === 'TASK' && (() => {
+              const liveEntry = allEntries.find(e => e.id === entry.id);
+              const predecessorIds = liveEntry?.dependsOn ?? entry.dependsOn ?? [];
+              const successors = getSuccessors(entry.id, allEntries);
+              if (predecessorIds.length === 0 && successors.length === 0) return null;
+              return (
+                <section className="space-y-2" aria-label="Abhängigkeiten">
+                  <div className={`flex items-center gap-1.5`}>
+                    <GitFork className={`h-3 w-3 ${s.labelText}`} aria-hidden="true" />
+                    <p className={labelCls}>Abhängigkeiten</p>
+                  </div>
+                  <div className={`rounded-xl border ${s.sectionBorder} ${s.sectionBg} p-3 space-y-3`}>
+                    {predecessorIds.length > 0 && (
+                      <div className="space-y-1.5">
+                        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Vorgänger</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {predecessorIds.map(predId => {
+                            const pred = allEntries.find(e => e.id === predId);
+                            if (!pred) return null;
+                            return (
+                              <span key={predId} className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs">
+                                {pred.title ?? 'Unbenannt'}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    {successors.length > 0 && (
+                      <div className="space-y-1.5">
+                        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Nachfolger</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {successors.map(succ => (
+                            <span key={succ.id} className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs">
+                              {succ.title ?? 'Unbenannt'}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              );
+            })()}
+
             {/* Action row */}
             {entry.category === 'TASK' && (
               <div className="flex items-center justify-end pt-1">
@@ -816,6 +907,30 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
     </Dialog>
 
     {dialogs}
+
+    {shiftQueue.length > 0 && (() => {
+      const current = shiftQueue[0];
+      const target = allEntries.find(e => e.id === current.entryId);
+      if (!target) return null;
+      const absDelta = Math.abs(current.delta);
+      const direction = current.delta > 0 ? 'nach hinten' : 'nach vorne';
+      return (
+        <AlertDialog open={true} onOpenChange={() => {}}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Abhängigen Task verschieben?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Soll „{target.title ?? 'Unbenannt'}" auch um {absDelta} Tag{absDelta !== 1 ? 'e' : ''} {direction} verschoben werden?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={handleShiftReject}>Nein</AlertDialogCancel>
+              <AlertDialogAction onClick={() => void handleShiftConfirm()}>Ja</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      );
+    })()}
     </>
   );
 }
