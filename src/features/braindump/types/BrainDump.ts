@@ -59,6 +59,7 @@ export interface BrainDumpState {
   updateOccurrence: (masterId: string, date: string, patch: EntryPatch, scope: RecurrenceScope) => Promise<UpdateResult>;
   toggleTaskCompleted: (id: string, completed: boolean) => Promise<ToggleResult>;
   updateEntry: (id: string, patch: EntryPatch) => Promise<UpdateResult>;
+  reprocessEntry: (id: string, patch: EntryPatch) => Promise<UpdateResult>;
   updateEntryList: () => void;
   prioritizeDayTasks: (date: string, tasks: readonly BrainDumpEntry[]) => Promise<void>;
   clearData: () => void;

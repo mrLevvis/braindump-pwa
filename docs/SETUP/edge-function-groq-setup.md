@@ -20,8 +20,19 @@ Frontend  --(Text/Audio)-->  process-brain-dump  --(Key aus Secrets)-->  Groq
                                    |
                      validiert jeden Entry im Batch
                      vergibt captureId (UUID) serverseitig
+                     schreibt SHOPPING-Items direkt in shopping_items
                                    |
 Frontend  <--({ captureId, entries: StructuredEntry[] })-----+
+```
+
+**Reprocessing-Pfad** (Entry-Bearbeitung → KI aktualisiert Metadaten):
+```
+Frontend  --(text + captureId?)-->  reprocess-entry  --(Key aus Secrets)-->  Groq
+                                          |
+                             ersetzt Shopping-Items serverseitig (DELETE → INSERT)
+                             gibt genau einen aktualisierten StructuredEntry zurück
+                                          |
+Frontend  <--({ entry: StructuredEntry })--+
 ```
 
 **Priorisierungs-Pfad** (on-demand, kein DB-Write):
@@ -129,11 +140,12 @@ $env:SUPABASE_ACCESS_TOKEN="DEIN_SUPABASE_TOKEN"
 ```powershell
 supabase functions new process-brain-dump
 supabase functions new prioritize-tasks
+supabase functions new reprocess-entry
 ```
 
-Erzeugt die Ordner `supabase/functions/process-brain-dump/` und
-`supabase/functions/prioritize-tasks/`.
-Beide teilen sich denselben Groq-Key (Abschnitt 6).
+Erzeugt die Ordner `supabase/functions/process-brain-dump/`,
+`supabase/functions/prioritize-tasks/` und `supabase/functions/reprocess-entry/`.
+Alle drei teilen sich denselben Groq-Key (Abschnitt 6).
 Datei-Struktur: siehe Abschnitt 9.
 
 ---
@@ -153,21 +165,25 @@ supabase secrets set GROQ_API_KEY=DEIN_GROQ_KEY     # aus Schritt 3d
 ## 7. Functions deployen
 
 ```powershell
-# Ingest-Pipeline
+# Ingest-Pipeline (Neu-Erstellung)
 supabase functions deploy process-brain-dump --no-verify-jwt
+
+# Reprocessing (Nachträgliche Bearbeitung)
+supabase functions deploy reprocess-entry --no-verify-jwt
 
 # Priorisierung (on-demand, kein DB-Write)
 supabase functions deploy prioritize-tasks --no-verify-jwt
 ```
 
-- `--no-verify-jwt`: Die Functions erwarten keinen User-JWT im `Authorization`-Header.
-  Der Zugriff wird stattdessen über den `apikey`-Header (Supabase anon key) gesichert,
-  den das Frontend bei jedem Request mitschickt. Das ist das korrekte Muster für
-  Functions, die serverseitig in die DB schreiben — der User-JWT wäre hier redundant.
+- `--no-verify-jwt`: Die Functions verlangen keinen validen User-JWT am Gateway.
+  Der Zugriff wird über den `apikey`-Header (Supabase anon key) gesichert, den das
+  Frontend bei jedem Request mitschickt. `reprocess-entry` liest den JWT dennoch intern
+  aus, wenn er vorhanden ist — er wird für das userId-Lookup bei SHOPPING-Item-Updates
+  benötigt.
 - Die Warnung **"Docker is not running" kann ignoriert werden** – Docker braucht
   man nur fürs *lokale* Testen, nicht fürs Deployen in die Cloud.
 
-> **WICHTIG:** Nach jeder Änderung an einem Secret (Abschnitt 6) müssen **beide**
+> **WICHTIG:** Nach jeder Änderung an einem Secret (Abschnitt 6) müssen **alle drei**
 > Functions neu deployed werden, sonst ziehen sie den neuen Wert nicht!
 
 ---
@@ -252,7 +268,46 @@ IDs, die im Input nicht enthalten waren, werden von der Function herausgefiltert
 
 ---
 
-### Fehler-Codes als Wegweiser (beide Functions)
+### 8c. reprocess-entry
+
+Reprocessed einen bestehenden Entry — nimmt den aktualisierten Text und gibt einen
+einzigen neu strukturierten `StructuredEntry` zurück. Der Client übernimmt das DB-Update.
+
+```powershell
+$body = '{"text": "Zahnarzttermin nächste Woche Dienstag um 14 Uhr"}'
+
+try {
+  Invoke-RestMethod -Uri "https://woubazfojtzsfpxrtxqa.supabase.co/functions/v1/reprocess-entry" -Method Post -Headers $headers -Body $body
+} catch {
+  $stream = $_.Exception.Response.GetResponseStream()
+  $reader = New-Object System.IO.StreamReader($stream)
+  Write-Host $reader.ReadToEnd()
+}
+```
+
+**Erwartete Antwort:**
+```json
+{
+  "entry": {
+    "category": "EVENT",
+    "title": "Zahnarzttermin",
+    "sourceExcerpt": "Zahnarzttermin nächste Woche Dienstag um 14 Uhr",
+    "summary": ["Zahnarzttermin nächste Woche Dienstag um 14 Uhr"],
+    "payload": { "date": "...", "startTime": "14:00", "tags": ["Gesundheit"] }
+  }
+}
+```
+
+Unterschiede zu process-brain-dump:
+- Rückgabe ist `{ entry }` (einzeln), nicht `{ captureId, entries[] }`.
+- Optional: `captureId` im Body mitgeben → Function ersetzt Shopping-Items atomisch.
+  In diesem Fall **muss** ein gültiger User-JWT im `Authorization`-Header mitgeschickt
+  werden (`Authorization: Bearer <user-token>`), da die Function die user_id für den
+  DB-Write benötigt.
+
+---
+
+### Fehler-Codes als Wegweiser (alle Functions)
 | Code | Bedeutung | Wo suchen |
 | :--- | :--- | :--- |
 | **401** | anon key falsch/fehlt **ODER** "Invalid API Key" von Groq | Schritt 3c bzw. 3d/6 |
@@ -277,8 +332,10 @@ supabase/
     ├── process-brain-dump/
     │   ├── index.ts             # Einstiegspunkt: Text/Audio -> Routing -> { captureId, entries }
     │   ├── systemPrompt.ts      # System-Prompt (Multi-Entry, entries[] + sourceExcerpt)
-    │   ├── structureText.ts     # Text  -> Groq (Llama) -> IngestResponse
+    │   ├── structureText.ts     # Text -> Groq (Llama) -> IngestResponse  ← auch von reprocess-entry genutzt
     │   └── transcribeAudio.ts   # Audio -> Groq (Whisper) -> Text   [Audio-Pfad]
+    ├── reprocess-entry/
+    │   └── index.ts             # text + captureId? -> Groq -> { entry }  [kein captureId-Batch]
     └── prioritize-tasks/
         └── index.ts             # { tasks } -> Groq (Llama) -> { orderedTaskIds }  [kein DB-Write]
 ```
@@ -286,6 +343,9 @@ supabase/
 **Warum `_shared/`?** Die Edge Functions laufen auf Deno (Server) und können nicht aus
 dem Frontend-`src/` importieren. Geteilte Typen liegen daher in `_shared/`
 (der Unterstrich sagt der CLI: "nicht als eigene Function deployen").
+
+**`structureText.ts` ist gemeinsam genutzt:** `reprocess-entry` importiert direkt aus
+`../process-brain-dump/structureText.ts` — keine Duplizierung des Groq-Calls.
 
 **`prioritize-tasks` ist bewusst schlank:** keine Validierungs-Schleife, kein DB-Write,
 nur IDs zurück. Unbekannte IDs aus der LLM-Antwort werden serverseitig herausgefiltert.
@@ -335,10 +395,10 @@ Bewusst aufgeschobene Dinge – kein Versäumnis, sondern korrekt nach hinten pr
   Live-Gang durch die echte Frontend-Domain ersetzen, z.B.
   `"https://meine-app.vercel.app"`.
 
-- [ ] **Zeitzone beim Datum:** `structureText.ts` berechnet "heute" via
-  `new Date().toISOString()` = **UTC**. Spätabends deutscher Zeit kann das einen
-  Tag daneben liegen. Sobald der Planner ernst wird: Datum in Europe/Berlin
-  berechnen.
+- [x] **Zeitzone beim Datum:** ~~`structureText.ts` berechnet "heute" via
+  `new Date().toISOString()` = UTC.~~ → Erledigt. `getTodayIso()` nutzt
+  `Intl.DateTimeFormat` mit `timeZone: 'Europe/Berlin'` — kein Off-by-one-Day
+  mehr spätabends.
 
 - [x] **Audio-Pfad testen:** ~~Der Audio-Zweig ist deployed, aber noch nicht mit
   echtem Frontend-Audio getestet.~~ → Erledigt. Voice-Recording ist live und

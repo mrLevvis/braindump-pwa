@@ -23,7 +23,7 @@ flowchart TD
     subgraph BaaS ["Supabase (Backend-as-a-Service)"]
         direction TB
         Auth["Supabase Auth <br/> (Magic Link / Session)"]
-        Edge["Edge Functions (Sicheres BFF) <br/> process-brain-dump · prioritize-tasks"]
+        Edge["Edge Functions (Sicheres BFF) <br/> process-brain-dump · reprocess-entry · prioritize-tasks"]
         DB[("PostgreSQL Datenbank <br/> braindump_entries · recurrence_exceptions <br/> shopping_items · issues")]
     end
 

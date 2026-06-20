@@ -1,7 +1,8 @@
-import type { IngestResult } from '../types';
+import type { IngestResult, StructuredEntry } from '../types';
 import { supabase } from './ApiClient';
 
 const FUNCTION_NAME = 'process-brain-dump';
+const REPROCESS_FUNCTION_NAME = 'reprocess-entry';
 
 export async function processText(text: string): Promise<IngestResult> {
     const { data, error } = await supabase.functions.invoke<IngestResult>(FUNCTION_NAME, {
@@ -9,6 +10,14 @@ export async function processText(text: string): Promise<IngestResult> {
     });
     if (error) throw new Error(error.message);
     return data!;
+}
+
+export async function reprocessEntryAI(text: string, captureId?: string): Promise<StructuredEntry> {
+    const { data, error } = await supabase.functions.invoke<{ entry: StructuredEntry }>(REPROCESS_FUNCTION_NAME, {
+        body: { text, captureId },
+    });
+    if (error) throw new Error(error.message);
+    return data!.entry;
 }
 
 export async function transcribeAudio(audioBlob: Blob): Promise<string> {

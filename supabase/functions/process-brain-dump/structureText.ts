@@ -1,6 +1,7 @@
 /**
  * supabase/functions/process-brain-dump/structureText.ts
- * * Eine Aufgabe: reinen Text über Groqs Llama in den StructuredEntry-Vertrag übersetzen.
+ * Eine Aufgabe: reinen Text über Groqs Llama in den StructuredEntry-Vertrag übersetzen.
+ * Wird von process-brain-dump (Erst-Ingest) und reprocess-entry (Nachbearbeitung) geteilt.
  */
 
 import { buildSystemPrompt } from "./systemPrompt.ts";

@@ -4,7 +4,7 @@ import { useNow } from '@/hooks';
 import type { ShoppingItem } from '../../shopping/types/ShoppingItem';
 import { useBrainDumpStore } from '../store';
 import type { EntryCategory } from '../types';
-import { useDeleteEntry, useDeleteOccurrence, useErrorToast, useSuccessToast, useUpdateEntry, useUpdateOccurrence } from '@/hooks';
+import { useDeleteEntry, useDeleteOccurrence, useErrorToast, useReprocessEntry, useSuccessToast, useUpdateEntry, useUpdateOccurrence } from '@/hooks';
 import { useTaskCompletionFlow } from './TaskCompletionDialog';
 import { formatCreatedDateTime, formatCreatedTime } from '../utils/formatTime';
 import {
@@ -434,6 +434,7 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
   const deleteEntry                  = useDeleteEntry();
   const deleteOccurrence             = useDeleteOccurrence();
   const updateEntry                  = useUpdateEntry();
+  const reprocessEntry               = useReprocessEntry();
   const updateOccurrence             = useUpdateOccurrence();
   const { triggerToggle, dialogs }   = useTaskCompletionFlow();
   const showSuccessToast             = useSuccessToast();
@@ -458,7 +459,7 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
         const date = entry._occurrenceDate ?? entry.payload.date ?? '';
         result = await updateOccurrence(masterId, date, patch, editScope ?? 'single');
       } else {
-        result = await updateEntry(entry.id, patch);
+        result = await reprocessEntry(entry.id, patch);
       }
       if (result.status === 'updated') {
         setIsEditing(false);

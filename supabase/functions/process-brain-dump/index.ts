@@ -1,7 +1,12 @@
 /**
  * supabase/functions/process-brain-dump/index.ts
- * * Einstiegspunkt der Function: nimmt den Request an, entscheidet Audio vs. Text
- * * und gibt den validierten Vertrag zurück. Orchestriert nur, enthält keine Logik.
+ * Einstiegspunkt für neue Dumps: nimmt den Request an, entscheidet Audio vs. Text
+ * und gibt den validierten Vertrag zurück. Orchestriert nur, enthält keine Logik.
+ *
+ * Geschwister-Function für nachträgliche Bearbeitungen: ../reprocess-entry/index.ts
+ * Gemeinsam genutzte Module:
+ *  • ./structureText.ts     — Groq-Aufruf + JSON-Parsing (auch von reprocess-entry genutzt)
+ *  • ../_shared/contract.ts — Typen, Validierung, Normalisierung
  */
 
 import "@supabase/functions-js/edge-runtime.d.ts";

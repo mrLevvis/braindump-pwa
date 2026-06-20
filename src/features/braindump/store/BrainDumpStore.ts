@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { BrainDumpState, DeleteResult, EntryDraft, EntryPatch, IngestPreview, InsertEntry, RecurrenceScope, ToggleResult, UpdateResult } from "../types";
 import { deleteEntry as deleteEntryFromApi, deleteEntriesByIds, deleteRecurrenceExceptionsForSeries, fetchEntries, fetchRecurrenceExceptions, insertEntries, insertEntry, insertRecurrenceException, toggleTaskCompleted as toggleApi, updateEntry as updateEntryApi } from "../services";
-import { processText } from "../services/processBrainDump";
+import { processText, reprocessEntryAI } from "../services/processBrainDump";
 import { prioritizeDayTasks as prioritizeApi } from "../services/prioritizeTasks";
 import { showErrorToast } from "../../../hooks/useErrorToast";
 import { createShoppingSlice } from "../../shopping/store/shoppingSlice";
@@ -237,6 +237,59 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a)
             const data = await fetchEntries();
             if (data) set(() => ({ entries: data }));
             if (result.status === 'error') showErrorToast(result.message);
+        }
+
+        return result;
+    },
+
+    reprocessEntry: async (id: string, patch: EntryPatch): Promise<UpdateResult> => {
+        const currentEntry = get().entries.find(e => e.id === id);
+        if (!currentEntry) return { status: 'not_found' };
+
+        // Only run AI when the text content changed; otherwise fall back to a plain update.
+        const hasTextChange = 'title' in patch || 'summary' in patch;
+        if (!hasTextChange) return get().updateEntry(id, patch);
+
+        const effectiveTitle = 'title' in patch ? patch.title : currentEntry.title;
+        const effectiveSummary = 'summary' in patch ? patch.summary : currentEntry.summary;
+        const textParts = [effectiveTitle, ...(effectiveSummary ?? [])].filter((p): p is string => Boolean(p));
+        const text = textParts.join('. ') || currentEntry.original_text;
+
+        let finalPatch: EntryPatch;
+        try {
+            const aiEntry = await reprocessEntryAI(text, currentEntry.captureId);
+            // Patch fields take precedence for explicitly changed fields; AI fills the rest.
+            finalPatch = {
+                title: 'title' in patch ? patch.title : aiEntry.title,
+                category: 'category' in patch ? patch.category : aiEntry.category,
+                summary: 'summary' in patch ? patch.summary : aiEntry.summary,
+                recurrence: 'recurrence' in patch ? patch.recurrence : (aiEntry.recurrence ?? null),
+                payload: {
+                    ...aiEntry.payload,
+                    ...(patch.payload ?? {}),
+                },
+            };
+        } catch {
+            // AI unavailable — save only the manual changes so the user's edit is not lost.
+            finalPatch = patch;
+        }
+
+        set(s => ({
+            entries: s.entries.map(e =>
+                e.id === id
+                    ? { ...e, ...finalPatch, payload: { ...e.payload, ...(finalPatch.payload ?? {}) } }
+                    : e
+            ),
+        }));
+
+        const result = await updateEntryApi(id, finalPatch);
+
+        if (result.status !== 'updated') {
+            const data = await fetchEntries();
+            if (data) set(() => ({ entries: data }));
+            if (result.status === 'error') showErrorToast(result.message);
+        } else if (finalPatch.category === 'SHOPPING' || currentEntry.category === 'SHOPPING') {
+            get().loadItems();
         }
 
         return result;
