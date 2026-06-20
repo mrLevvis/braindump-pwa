@@ -134,8 +134,11 @@ export function TimelineView({ onBack }: Readonly<Props>) {
   const pxPerHour    = useZoomStore(s => s.pxPerHour);
   const setPxPerHour = useZoomStore(s => s.setPxPerHour);
 
-  const mainRef  = useRef<HTMLDivElement>(null);
-  const trackRef = useRef<HTMLDivElement>(null);
+  const mainRef         = useRef<HTMLDivElement>(null);
+  const trackRef        = useRef<HTMLDivElement>(null);
+  const prevPanelRef    = useRef<HTMLDivElement>(null);
+  const currentPanelRef = useRef<HTMLDivElement>(null);
+  const nextPanelRef    = useRef<HTMLDivElement>(null);
   const pinchInitialDist = useRef(0);
   const pinchInitialPx   = useRef(0);
   const pxPerHourRef     = useRef(pxPerHour);
@@ -180,6 +183,11 @@ export function TimelineView({ onBack }: Readonly<Props>) {
         swipeStartX.current = e.touches[0].clientX;
         swipeStartY.current = e.touches[0].clientY;
         gestureMode.current = 'unknown';
+        // Mirror center scroll to side panels so the target is already at the
+        // right position the moment the user's finger starts pulling it into view.
+        const scrollTop = currentPanelRef.current?.scrollTop ?? 0;
+        if (prevPanelRef.current)  prevPanelRef.current.scrollTop  = scrollTop;
+        if (nextPanelRef.current)  nextPanelRef.current.scrollTop  = scrollTop;
       }
     };
 
@@ -374,7 +382,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
       <main ref={mainRef} className={MAIN}>
         {/* 300%-wide flex track: [prev | current | next], each panel = 100% of main width */}
         <div ref={trackRef} className={TRACK} style={{ width: '300%' }}>
-          <div className={PANEL} style={{ width: '33.3333%' }}>
+          <div ref={prevPanelRef} className={PANEL} style={{ width: '33.3333%' }}>
             <div className={MAIN_INNER}>
               <DayGrid
                 date={prevDate}
@@ -389,7 +397,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
             </div>
           </div>
 
-          <div className={PANEL} style={{ width: '33.3333%' }}>
+          <div ref={currentPanelRef} className={PANEL} style={{ width: '33.3333%' }}>
             <div className={MAIN_INNER}>
               <DayGrid
                 date={selectedDate}
@@ -405,7 +413,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
             </div>
           </div>
 
-          <div className={PANEL} style={{ width: '33.3333%' }}>
+          <div ref={nextPanelRef} className={PANEL} style={{ width: '33.3333%' }}>
             <div className={MAIN_INNER}>
               <DayGrid
                 date={nextDate}
