@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { BrainDumpState, DeleteResult, EntryDraft, EntryPatch, IngestPreview, InsertEntry, RecurrenceScope, ToggleResult, UpdateResult } from "../types";
+import type { BrainDumpState, ContextEntry, DeleteResult, EntryDraft, EntryPatch, IngestPreview, InsertEntry, RecurrenceScope, ToggleResult, UpdateResult } from "../types";
 import { deleteEntry as deleteEntryFromApi, deleteEntriesByIds, deleteRecurrenceExceptionsForSeries, fetchEntries, fetchRecurrenceExceptions, insertEntries, insertEntry, insertRecurrenceException, toggleTaskCompleted as toggleApi, updateEntry as updateEntryApi } from "../services";
 import { processText, reprocessEntryAI } from "../services/processBrainDump";
 import { prioritizeDayTasks as prioritizeApi } from "../services/prioritizeTasks";
@@ -50,8 +50,14 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a)
     submitText: async (text: string) => {
         set(() => ({ isProcessing: true }));
         try {
+            // Bestehende Nicht-NOTE-Entries als Kontext mitschicken, damit die KI
+            // Zusatzinfos erkennen und targetEntryId korrekt setzen kann.
+            const contextEntries: ContextEntry[] = get().entries
+                .filter(e => e.category !== 'NOTE' && e.id)
+                .map(e => ({ id: e.id, title: e.title ?? '', category: e.category }));
+
             // 1. Text von der KI strukturieren lassen — liefert captureId + entries[].
-            const { captureId, entries } = await processText(text);
+            const { captureId, entries, additionalInfos } = await processText(text, contextEntries);
 
             // 2. Drafts für die Preview zusammenbauen — kein DB-Insert hier.
             const drafts: EntryDraft[] = entries.map((e) => ({
@@ -66,7 +72,7 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a)
                 recurrence: e.recurrence ?? null,
             }));
 
-            set(() => ({ pendingPreview: { captureId, drafts } }));
+            set(() => ({ pendingPreview: { captureId, drafts, additionalInfos } }));
         } catch (e) {
             throw e;
         } finally {
@@ -88,8 +94,21 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a)
         }));
 
         await insertEntries(newEntries);
+
+        // Zusatzinfos an bestehende Entries anhängen (summary erweitern).
+        if (preview.additionalInfos && preview.additionalInfos.length > 0) {
+            const currentEntries = get().entries;
+            await Promise.all(
+                preview.additionalInfos.map(({ targetEntryId, content }) => {
+                    const target = currentEntries.find(e => e.id === targetEntryId);
+                    if (!target) return Promise.resolve();
+                    return updateEntryApi(targetEntryId, { summary: [...(target.summary ?? []), content] });
+                })
+            );
+        }
+
         const [data, exceptions] = await Promise.all([fetchEntries(), fetchRecurrenceExceptions()]);
-        if (data) set(() => ({ entries: data, recurrenceExceptions: exceptions }));
+        if (data) set(() =>({ entries: data, recurrenceExceptions: exceptions }));
         set(() => ({ pendingPreview: null }));
         get().loadItems();
     },

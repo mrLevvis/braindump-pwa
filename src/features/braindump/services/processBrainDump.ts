@@ -1,12 +1,12 @@
-import type { IngestResult, StructuredEntry } from '../types';
+import type { ContextEntry, IngestResult, StructuredEntry } from '../types';
 import { supabase } from './ApiClient';
 
 const FUNCTION_NAME = 'process-brain-dump';
 const REPROCESS_FUNCTION_NAME = 'reprocess-entry';
 
-export async function processText(text: string): Promise<IngestResult> {
+export async function processText(text: string, contextEntries?: ContextEntry[]): Promise<IngestResult> {
     const { data, error } = await supabase.functions.invoke<IngestResult>(FUNCTION_NAME, {
-        body: { text },
+        body: { text, ...(contextEntries && contextEntries.length > 0 ? { contextEntries } : {}) },
     });
     if (error) throw new Error(error.message);
     return data!;

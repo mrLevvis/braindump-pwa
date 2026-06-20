@@ -14,7 +14,7 @@ import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "@supabase/supabase-js";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { structureText } from "./structureText.ts";
-import type { StructuredEntry } from "../_shared/contract.ts";
+import type { ContextEntry, EntryAdditionalInfo, StructuredEntry } from "../_shared/contract.ts";
 import { ENTRY_CATEGORIES, normalizeEntryContract } from "../_shared/contract.ts";
 import { transcribeAudio } from "./transcribeAudio.ts";
 
@@ -32,6 +32,15 @@ function isValidEntry(e: unknown): e is StructuredEntry {
     typeof entry.payload === "object" && entry.payload !== null && !Array.isArray(entry.payload) &&
     typeof entry.sourceExcerpt === "string" && entry.sourceExcerpt.trim().length > 0 &&
     Array.isArray(entry.summary) && (entry.summary as unknown[]).length >= 1 && (entry.summary as unknown[]).every((s) => typeof s === "string")
+  );
+}
+
+function isValidAdditionalInfo(a: unknown): a is EntryAdditionalInfo {
+  if (!a || typeof a !== "object" || Array.isArray(a)) return false;
+  const info = a as Record<string, unknown>;
+  return (
+    typeof info.targetEntryId === "string" && info.targetEntryId.trim().length > 0 &&
+    typeof info.content === "string" && info.content.trim().length > 0
   );
 }
 
@@ -61,6 +70,7 @@ Deno.serve(async (request) => {
   //    - application/json     -> Text  -> direkt nehmen
   const contentType = request.headers.get("content-type") ?? "";
   let rawText: string;
+  let contextEntries: ContextEntry[] | undefined;
 
   try {
     if (contentType.includes("multipart/form-data")) {
@@ -101,6 +111,16 @@ Deno.serve(async (request) => {
         );
       }
       rawText = text;
+      // contextEntries ist optional: bestehende Einträge als Kontext für die KI.
+      if (Array.isArray(body?.contextEntries)) {
+        contextEntries = (body.contextEntries as unknown[]).filter(
+          (e): e is ContextEntry =>
+            !!e && typeof e === "object" && !Array.isArray(e) &&
+            typeof (e as Record<string, unknown>).id === "string" &&
+            typeof (e as Record<string, unknown>).title === "string" &&
+            typeof (e as Record<string, unknown>).category === "string"
+        );
+      }
     }
   } catch (e) {
     const details = e instanceof Error ? e.message : String(e);
@@ -112,9 +132,9 @@ Deno.serve(async (request) => {
 
 
   // 4. Den Rohtext von Groq strukturieren lassen.
-  let ingestResponse: { entries: unknown[] };
+  let ingestResponse: { entries: unknown[]; additionalInfos?: unknown[] };
   try {
-    ingestResponse = await structureText(rawText, groqApiKey);
+    ingestResponse = await structureText(rawText, groqApiKey, contextEntries);
   } catch (e) {
     const details = e instanceof Error ? e.message : String(e);
     return new Response(
@@ -181,8 +201,15 @@ Deno.serve(async (request) => {
     }
   }
 
-  // 9. Alle Entries zurückgeben — SHOPPING-Entries erscheinen als EntryCard im Dashboard.
-  return new Response(JSON.stringify({ captureId, entries: normalizedEntries }), {
+  // 9. additionalInfos validieren — ungültige Einträge stillschweigend verwerfen.
+  const additionalInfos: EntryAdditionalInfo[] = Array.isArray(ingestResponse.additionalInfos)
+    ? (ingestResponse.additionalInfos as unknown[]).filter(isValidAdditionalInfo)
+    : [];
+
+  // 10. Alle Entries + additionalInfos zurückgeben — SHOPPING-Entries erscheinen als EntryCard im Dashboard.
+  const responsePayload: Record<string, unknown> = { captureId, entries: normalizedEntries };
+  if (additionalInfos.length > 0) responsePayload.additionalInfos = additionalInfos;
+  return new Response(JSON.stringify(responsePayload), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 });

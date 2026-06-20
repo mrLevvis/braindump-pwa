@@ -5,7 +5,7 @@
  */
 
 import { buildSystemPrompt } from "./systemPrompt.ts";
-import type { IngestResponse } from "../_shared/contract.ts";
+import type { ContextEntry, IngestResponse } from "../_shared/contract.ts";
 
 const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
 const TEXT_MODEL = "llama-3.3-70b-versatile";
@@ -13,6 +13,7 @@ const TEXT_MODEL = "llama-3.3-70b-versatile";
 export async function structureText(
   rawText: string,
   groqApiKey: string,
+  contextEntries?: ContextEntry[],
 ): Promise<IngestResponse> {
 
   // 1. Anfrage an Groq schicken.
@@ -25,7 +26,7 @@ export async function structureText(
     body: JSON.stringify({
       model: TEXT_MODEL,
       messages: [
-        { role: "system", content: buildSystemPrompt(getTodayIso()) },
+        { role: "system", content: buildSystemPrompt(getTodayIso(), contextEntries) },
         { role: "user", content: rawText },
       ],
       response_format: { type: "json_object" }, // zwingt Groq zu reinem JSON

@@ -4,6 +4,8 @@
  * * Konfiguration, kein Ablauf – getrennt gehalten, damit structureText lesbar bleibt.
  */
 
+import type { ContextEntry } from "../_shared/contract.ts";
+
 const WEEKDAY_DE = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
 
 function shiftIso(baseIso: string, delta: number): string {
@@ -12,9 +14,38 @@ function shiftIso(baseIso: string, delta: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+function buildContextSection(contextEntries?: ContextEntry[]): string {
+  const relevant = (contextEntries ?? []).filter(e => e.category !== 'NOTE');
+  if (relevant.length === 0) return '';
+
+  const list = relevant.map(e => `  - id: "${e.id}", category: ${e.category}, title: "${e.title}"`).join('\n');
+
+  return `
+
+Vorhandene Einträge im System (nur TASK / EVENT / SHOPPING):
+${list}
+
+Wenn ein Segment des Dumps eindeutig eine Ergänzung oder ein Detail zu einem dieser bestehenden Einträge ist — kein eigenständiger neuer Gedanke, sondern eine direkte Zusatzinfo zu einem bekannten Eintrag — dann:
+• Erstelle KEINEN separaten Entry (insbesondere keinen NOTE-Entry) für diesen Textteil.
+• Trage stattdessen in "additionalInfos" ein: { "targetEntryId": "<id>", "content": "<Zusatzinfo als kurzer Satz>" }
+
+Kriterium: Würde jemand diesen Satz inhaltlich dem bestehenden Eintrag zuordnen? → additionalInfos.
+Ist es ein eigenständiger, neuer Gedanke ohne klaren Bezug zu einem bestehenden Eintrag? → normaler Entry (ggf. NOTE).
+"additionalInfos" fehlt im JSON, wenn keine solchen Infos erkannt werden.
+
+Erweitertes JSON-Format wenn additionalInfos vorhanden:
+{
+  "entries": [...],
+  "additionalInfos": [
+    { "targetEntryId": "<uuid>", "content": "<Zusatzinfo>" }
+  ]
+}`;
+}
+
 // Baut den Prompt mit dem heutigen Datum, damit die KI relative Angaben
 // wie "morgen" in echte Daten (YYYY-MM-DD) umrechnen kann.
-export function buildSystemPrompt(todayIso: string): string {
+// contextEntries: bestehende Nicht-NOTE-Einträge, gegen die die KI Zusatzinfos matchen soll.
+export function buildSystemPrompt(todayIso: string, contextEntries?: ContextEntry[]): string {
   const todayDate = new Date(`${todayIso}T12:00:00`);
   const todayWeekday = WEEKDAY_DE[todayDate.getDay()];
   const tomorrowIso = shiftIso(todayIso, 1);
@@ -203,5 +234,5 @@ Ausgabe:
     {"category":"SHOPPING","title":"Einkaufsliste","sourceExcerpt":"Milch, Brot, Butter kaufen","summary":["3 Artikel: Milch, Brot, Butter"],"payload":{"items":[{"label":"Milch","estimatedPrice":1.19},{"label":"Brot","estimatedPrice":2.49},{"label":"Butter","estimatedPrice":1.89}]}}
   ]
 }
-`;
+${buildContextSection(contextEntries)}`;
 }

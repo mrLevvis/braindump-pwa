@@ -180,10 +180,24 @@ export interface StructuredEntry {
   recurrence?: RecurrenceRule;
 }
 
+/** Zusatzinfo zu einem bestehenden Nicht-NOTE-Entry — KI-Ausgabe statt separatem NOTE-Entry. */
+export interface EntryAdditionalInfo {
+  targetEntryId: string;
+  content: string;
+}
+
+/** Schlanke Repräsentation eines bestehenden Entries als Kontext für den KI-Aufruf. */
+export interface ContextEntry {
+  id: string;
+  title: string;
+  category: EntryCategory;
+}
+
 /** Vollständiges Ergebnis der Edge Function nach captureId-Vergabe. */
 export interface IngestResult {
   captureId: string;
   entries: StructuredEntry[];
+  additionalInfos?: EntryAdditionalInfo[];
 }
 
 /** Ein Entry-Entwurf vor dem DB-Insert — enthält alle Felder außer id und created_at. */
@@ -193,4 +207,5 @@ export type EntryDraft = Omit<BrainDumpEntry, 'id' | 'created_at'>;
 export interface IngestPreview {
   captureId: string;
   drafts: EntryDraft[];
+  additionalInfos?: EntryAdditionalInfo[];
 }

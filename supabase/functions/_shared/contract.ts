@@ -90,9 +90,23 @@ export interface StructuredEntry {
   recurrence?: RecurrenceRule; // Nur für EVENT; fehlendes Feld = einmaliger Termin
 }
 
+/** Zusatzinfo zu einem bestehenden Nicht-NOTE-Entry — KI-Ausgabe statt separatem NOTE-Entry. */
+export interface EntryAdditionalInfo {
+  targetEntryId: string;
+  content: string;
+}
+
+/** Schlanke Repräsentation eines bestehenden Entries als Kontext für den KI-Aufruf. */
+export interface ContextEntry {
+  id: string;
+  title: string;
+  category: EntryCategory;
+}
+
 /** Root-Objekt der KI-Antwort (Groq json_object-Mode erlaubt kein nacktes Array). */
 export interface IngestResponse {
   entries: StructuredEntry[];
+  additionalInfos?: EntryAdditionalInfo[];
 }
 
 /** Eine UUID pro Dump — serverseitig erzeugt, verbindet alle Entries eines Dumps. */
