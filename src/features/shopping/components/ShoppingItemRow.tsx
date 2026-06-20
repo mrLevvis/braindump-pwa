@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Trash2, CalendarClock } from 'lucide-react';
 import type { ShoppingItem } from '../types/ShoppingItem';
+import { isDeadlineOverdue } from '../utils/shoppingUtils';
 
 const ROW_CLS = ['flex', 'items-center', 'gap-3', 'py-2.5', 'px-1'].join(' ');
 
@@ -39,6 +40,10 @@ const DELETE_BTN_CLS = [
   'focus-visible:outline-none', 'focus-visible:ring-2', 'focus-visible:ring-ring',
 ].join(' ');
 
+function formatDeadline(deadline: string): string {
+  return new Date(deadline + 'T00:00:00').toLocaleDateString('de-DE', { day: 'numeric', month: 'short' });
+}
+
 function formatPrice(price: number): string {
   return `~${price.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 }
@@ -54,6 +59,7 @@ export function ShoppingItemRow({ item, onToggle, onDelete, onPriceUpdate }: Rea
   const inputId = `shopping-item-${item.id}`;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
+  const overdue = isDeadlineOverdue(item);
 
   const startEditing = () => {
     setDraft(
@@ -128,6 +134,22 @@ export function ShoppingItemRow({ item, onToggle, onDelete, onPriceUpdate }: Rea
       <label htmlFor={inputId} className={item.is_done ? LABEL_DONE_CLS : LABEL_BASE_CLS}>
         {item.label}
       </label>
+      {item.deadline && (
+        <span
+          className={[
+            'shrink-0', 'flex', 'items-center', 'gap-0.5',
+            'text-xs', 'tabular-nums', 'rounded', 'px-1', 'py-0.5',
+            overdue
+              ? 'text-destructive bg-destructive/10'
+              : 'text-muted-foreground',
+            item.is_done ? 'opacity-40' : '',
+          ].join(' ')}
+          aria-label={overdue ? `Überfällig: ${formatDeadline(item.deadline)}` : `Fällig: ${formatDeadline(item.deadline)}`}
+        >
+          <CalendarClock className="h-3 w-3 shrink-0" aria-hidden="true" />
+          {formatDeadline(item.deadline)}
+        </span>
+      )}
       {priceEl}
       <button
         type="button"

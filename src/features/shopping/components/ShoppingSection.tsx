@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useBrainDumpStore } from '../../braindump/store';
 import { ShoppingItemRow } from './ShoppingItemRow';
+import { sortShoppingItemsByDeadline } from '../utils/shoppingUtils';
 
 const SECTION_CLS = ['space-y-2'].join(' ');
 
@@ -33,6 +34,7 @@ export function ShoppingSection() {
 
   useEffect(() => { loadItems(); }, [loadItems]);
 
+  const sorted = sortShoppingItemsByDeadline(items);
   const pricedItems = items.filter((i) => i.estimated_price != null);
   const totalAll = pricedItems.reduce((sum, i) => sum + (i.estimated_price ?? 0), 0);
   const totalOpen = pricedItems.filter((i) => !i.is_done).reduce((sum, i) => sum + (i.estimated_price ?? 0), 0);
@@ -48,7 +50,7 @@ export function ShoppingSection() {
       ) : (
         <>
           <ul className={LIST_CLS}>
-            {items.map((item) => (
+            {sorted.map((item) => (
               <ShoppingItemRow
                 key={item.id}
                 item={item}

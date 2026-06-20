@@ -10,6 +10,7 @@ export interface ShoppingItem {
   is_done: boolean;
   source_dump: string | null;
   estimated_price: number | null;
+  deadline: string | null;
 }
 
 export type ToggleResult =
