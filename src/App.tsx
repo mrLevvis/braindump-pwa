@@ -68,7 +68,6 @@ function AuthenticatedApp() {
     try {
       const transcript = await transcribeAudio(blob);
       setTextValue(transcript);
-      showSuccessToast('Transkription erfolgreich erstellt.');
       if (submitAfterTranscription.current) {
         submitAfterTranscription.current = false;
         await handleSubmit(transcript);

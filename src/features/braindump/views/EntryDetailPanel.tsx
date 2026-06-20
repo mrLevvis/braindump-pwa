@@ -464,7 +464,6 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
       if (result.status === 'updated') {
         setIsEditing(false);
         setEditScope(null);
-        showSuccessToast('Eintrag gespeichert.');
       } else {
         showErrorToast(result.status === 'error' ? result.message : 'Eintrag nicht gefunden.');
       }
