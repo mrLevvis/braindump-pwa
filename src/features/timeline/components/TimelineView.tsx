@@ -86,11 +86,16 @@ export function TimelineView({ onBack }: Readonly<Props>) {
   const [selectedEntry, setSelectedEntry] = useState<BrainDumpEntry | null>(null);
 
   // For real (non-virtual) entries, keep the selected entry fresh from the store.
-  // Virtual occurrences are not in allEntries, so we keep the snapshot directly.
+  // Recurrence virtual occurrences are kept as-is (scope dialogs need the occurrence snapshot).
+  // Multi-day expansion virtuals resolve to the master so the panel always shows the real startDate.
   const allEntries = useEntries();
   const resolvedEntry = useMemo(() => {
     if (!selectedEntry) return null;
     if (selectedEntry._isVirtualOccurrence) return selectedEntry;
+    if (selectedEntry._isMultiDayExpansion) {
+      const masterId = selectedEntry.id.replace(/__mde__.*$/, '');
+      return allEntries.find(e => e.id === masterId) ?? selectedEntry;
+    }
     return allEntries.find(e => e.id === selectedEntry.id) ?? selectedEntry;
   }, [selectedEntry, allEntries]);
 
