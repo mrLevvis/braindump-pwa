@@ -106,37 +106,40 @@ function TimingCard({ date, endDate, startTime, endTime, timeOfDay, accentBg, bo
 }>) {
   if (!date && !startTime) return null;
 
-  const parsed      = date    ? parseLocalDate(date)    : null;
-  const parsedEnd   = endDate ? parseLocalDate(endDate) : null;
-  const day         = parsed ? FMT_DAY.format(parsed) : null;
-  const monthS      = parsed ? FMT_MONTH_S.format(parsed).replace('.', '') : null;
-  const weekday     = parsed ? FMT_WEEKDAY.format(parsed) : null;
-  const dateLong    = parsed ? FMT_DATE_L.format(parsed) : null;
-  const endWeekday  = parsedEnd ? FMT_WEEKDAY.format(parsedEnd) : null;
-  const endDateLong = parsedEnd ? FMT_DATE_L.format(parsedEnd) : null;
-  const timeStr     = startTime
+  const parsed    = date    ? parseLocalDate(date)    : null;
+  const parsedEnd = endDate ? parseLocalDate(endDate) : null;
+  const day       = parsed    ? FMT_DAY.format(parsed).replace('.', '')    : null;
+  const monthS    = parsed    ? FMT_MONTH_S.format(parsed).replace('.', '') : null;
+  const endDay    = parsedEnd ? FMT_DAY.format(parsedEnd).replace('.', '')    : null;
+  const endMonthS = parsedEnd ? FMT_MONTH_S.format(parsedEnd).replace('.', '') : null;
+  const weekday   = parsed ? FMT_WEEKDAY.format(parsed) : null;
+  const dateLong  = parsed ? FMT_DATE_L.format(parsed) : null;
+  const timeStr   = startTime
     ? endTime ? `${startTime} – ${endTime} Uhr` : `${startTime} Uhr`
     : null;
 
+  const dateTile = (d: string, m: string) => (
+    <div className={[
+      'shrink-0 flex flex-col items-center justify-center rounded-lg',
+      'min-w-[3rem] py-2 px-1', accentBg,
+    ].join(' ')}>
+      <span className="text-xl font-bold text-white leading-none">{d}</span>
+      <span className="text-[10px] font-semibold text-white/75 uppercase tracking-wider mt-0.5">{m}</span>
+    </div>
+  );
+
   const inner = (
     <>
-      {parsed && (
-        <div className={[
-          'shrink-0 flex flex-col items-center justify-center rounded-lg',
-          'min-w-[3rem] py-2 px-1', accentBg,
-        ].join(' ')}>
-          <span className="text-xl font-bold text-white leading-none">{day}</span>
-          <span className="text-[10px] font-semibold text-white/75 uppercase tracking-wider mt-0.5">{monthS}</span>
-        </div>
+      {parsed && day && monthS && dateTile(day, monthS)}
+      {parsedEnd && endDay && endMonthS && (
+        <>
+          <span className="shrink-0 text-sm font-semibold text-muted-foreground/60" aria-hidden="true">–</span>
+          {dateTile(endDay, endMonthS)}
+        </>
       )}
       <div className="min-w-0 flex-1 space-y-0.5 text-left">
         {weekday && <p className="text-sm font-semibold text-foreground">{weekday}</p>}
         {dateLong && <p className="text-xs text-muted-foreground">{dateLong}</p>}
-        {endDateLong && (
-          <p className="text-xs text-muted-foreground">
-            bis {endWeekday}, {endDateLong}
-          </p>
-        )}
         {timeStr && (
           <span className="inline-flex items-center gap-1 mt-1 rounded-full border bg-background/60 px-2 py-0.5 text-xs font-medium text-foreground">
             <Clock className="h-3 w-3 shrink-0 opacity-60" aria-hidden="true" />
