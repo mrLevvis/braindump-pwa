@@ -328,8 +328,8 @@ function ShoppingCard({ entry, selectionMode }: Readonly<CardProps>) {
       <div className="relative">
         <button type="button" className={CARD_BTN} onClick={handleClick}>
           <Card className={[CARD_BASE, tintBackground, selectedRing].join(' ')} size="sm">
-            <CardContent className={['space-y-2 px-4', selectionMode ? 'pr-10' : ''].join(' ')}>
-              <div className="flex items-center gap-2">
+            <CardContent className="space-y-2 px-4">
+              <div className={['flex items-center gap-2', selectionMode ? 'pr-6' : ''].join(' ')}>
                 <ShoppingCart className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
                 <p className="text-sm font-semibold leading-snug">{title}</p>
                 {total != null && (
