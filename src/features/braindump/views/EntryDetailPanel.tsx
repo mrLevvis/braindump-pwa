@@ -106,15 +106,17 @@ function TimingCard({ date, endDate, startTime, endTime, timeOfDay, accentBg, bo
 }>) {
   if (!date && !startTime) return null;
 
-  const parsed    = date    ? parseLocalDate(date)    : null;
-  const parsedEnd = endDate ? parseLocalDate(endDate) : null;
-  const day       = parsed    ? FMT_DAY.format(parsed).replace('.', '')    : null;
-  const monthS    = parsed    ? FMT_MONTH_S.format(parsed).replace('.', '') : null;
-  const endDay    = parsedEnd ? FMT_DAY.format(parsedEnd).replace('.', '')    : null;
-  const endMonthS = parsedEnd ? FMT_MONTH_S.format(parsedEnd).replace('.', '') : null;
-  const weekday   = parsed ? FMT_WEEKDAY.format(parsed) : null;
-  const dateLong  = parsed ? FMT_DATE_L.format(parsed) : null;
-  const timeStr   = startTime
+  const parsed       = date    ? parseLocalDate(date)    : null;
+  const parsedEnd    = endDate ? parseLocalDate(endDate) : null;
+  const day          = parsed    ? FMT_DAY.format(parsed)    : null;
+  const monthS       = parsed    ? FMT_MONTH_S.format(parsed).replace('.', '')    : null;
+  const endDay       = parsedEnd ? FMT_DAY.format(parsedEnd) : null;
+  const endMonthS    = parsedEnd ? FMT_MONTH_S.format(parsedEnd).replace('.', '') : null;
+  const weekday      = parsed    ? FMT_WEEKDAY.format(parsed)    : null;
+  const dateLong     = parsed    ? FMT_DATE_L.format(parsed)     : null;
+  const endWeekday   = parsedEnd ? FMT_WEEKDAY.format(parsedEnd) : null;
+  const endDateLong  = parsedEnd ? FMT_DATE_L.format(parsedEnd)  : null;
+  const timeStr      = startTime
     ? endTime ? `${startTime} – ${endTime} Uhr` : `${startTime} Uhr`
     : null;
 
@@ -128,30 +130,46 @@ function TimingCard({ date, endDate, startTime, endTime, timeOfDay, accentBg, bo
     </div>
   );
 
-  const inner = (
+  const timeChip = timeStr ? (
+    <span className="inline-flex items-center gap-1 mt-1 rounded-full border bg-background/60 px-2 py-0.5 text-xs font-medium text-foreground">
+      <Clock className="h-3 w-3 shrink-0 opacity-60" aria-hidden="true" />
+      {timeStr}
+    </span>
+  ) : !timeStr && timeOfDay ? (
+    <span className="inline-flex items-center gap-1 mt-1 rounded-full border bg-background/60 px-2 py-0.5 text-xs font-medium text-foreground">
+      <Sun className="h-3 w-3 shrink-0 opacity-60" aria-hidden="true" />
+      {timeOfDay}
+    </span>
+  ) : null;
+
+  const inner = parsedEnd ? (
+    // ── Mehrtägiger Zeitraum: zwei vollständige Blöcke mit Bindestrich ──────
+    <div className="flex items-center gap-3 min-w-0 flex-1 flex-wrap">
+      <div className="flex items-center gap-3 shrink-0">
+        {day && monthS && dateTile(day, monthS)}
+        <div className="space-y-0.5 text-left">
+          {weekday   && <p className="text-sm font-semibold text-foreground">{weekday}</p>}
+          {dateLong  && <p className="text-xs text-muted-foreground">{dateLong}</p>}
+          {timeChip}
+        </div>
+      </div>
+      <span className="text-base font-semibold text-muted-foreground/50 shrink-0 px-1" aria-hidden="true">–</span>
+      <div className="flex items-center gap-3 shrink-0">
+        {endDay && endMonthS && dateTile(endDay, endMonthS)}
+        <div className="space-y-0.5 text-left">
+          {endWeekday  && <p className="text-sm font-semibold text-foreground">{endWeekday}</p>}
+          {endDateLong && <p className="text-xs text-muted-foreground">{endDateLong}</p>}
+        </div>
+      </div>
+    </div>
+  ) : (
+    // ── Einzeltermin: bisherige Darstellung ───────────────────────────────
     <>
       {parsed && day && monthS && dateTile(day, monthS)}
-      {parsedEnd && endDay && endMonthS && (
-        <>
-          <span className="shrink-0 text-sm font-semibold text-muted-foreground/60" aria-hidden="true">–</span>
-          {dateTile(endDay, endMonthS)}
-        </>
-      )}
       <div className="min-w-0 flex-1 space-y-0.5 text-left">
-        {weekday && <p className="text-sm font-semibold text-foreground">{weekday}</p>}
+        {weekday  && <p className="text-sm font-semibold text-foreground">{weekday}</p>}
         {dateLong && <p className="text-xs text-muted-foreground">{dateLong}</p>}
-        {timeStr && (
-          <span className="inline-flex items-center gap-1 mt-1 rounded-full border bg-background/60 px-2 py-0.5 text-xs font-medium text-foreground">
-            <Clock className="h-3 w-3 shrink-0 opacity-60" aria-hidden="true" />
-            {timeStr}
-          </span>
-        )}
-        {!timeStr && timeOfDay && (
-          <span className="inline-flex items-center gap-1 mt-1 rounded-full border bg-background/60 px-2 py-0.5 text-xs font-medium text-foreground">
-            <Sun className="h-3 w-3 shrink-0 opacity-60" aria-hidden="true" />
-            {timeOfDay}
-          </span>
-        )}
+        {timeChip}
       </div>
     </>
   );
