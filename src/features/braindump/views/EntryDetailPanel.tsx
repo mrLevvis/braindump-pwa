@@ -142,23 +142,29 @@ function TimingCard({ date, endDate, startTime, endTime, timeOfDay, accentBg, bo
     </span>
   ) : null;
 
+  const rangeTimeChip = (time: string) => (
+    <span className="inline-flex items-center gap-1 mt-1 rounded-full border bg-background/60 px-2 py-0.5 text-xs font-medium text-foreground">
+      <Clock className="h-3 w-3 shrink-0 opacity-60" aria-hidden="true" />
+      {time} Uhr
+    </span>
+  );
+
   const inner = parsedEnd ? (
     // ── Mehrtägiger Zeitraum: zwei vollständige Blöcke mit Bindestrich ──────
     <div className="flex items-center gap-3 min-w-0 flex-1 flex-wrap">
       <div className="flex items-center gap-3 shrink-0">
         {day && monthS && dateTile(day, monthS)}
         <div className="space-y-0.5 text-left">
-          {weekday   && <p className="text-sm font-semibold text-foreground">{weekday}</p>}
-          {dateLong  && <p className="text-xs text-muted-foreground">{dateLong}</p>}
-          {timeChip}
+          {weekday && <p className="text-sm font-semibold text-foreground">{weekday}</p>}
+          {rangeTimeChip(startTime ?? '00:00')}
         </div>
       </div>
       <span className="text-base font-semibold text-muted-foreground/50 shrink-0 px-1" aria-hidden="true">–</span>
       <div className="flex items-center gap-3 shrink-0">
         {endDay && endMonthS && dateTile(endDay, endMonthS)}
         <div className="space-y-0.5 text-left">
-          {endWeekday  && <p className="text-sm font-semibold text-foreground">{endWeekday}</p>}
-          {endDateLong && <p className="text-xs text-muted-foreground">{endDateLong}</p>}
+          {endWeekday && <p className="text-sm font-semibold text-foreground">{endWeekday}</p>}
+          {rangeTimeChip(endTime ?? '23:59')}
         </div>
       </div>
     </div>
