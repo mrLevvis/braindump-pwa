@@ -244,8 +244,8 @@ function EventCard({ entry, selectionMode }: Readonly<CardProps>) {
               )}
               <div className="min-w-0 flex-1 space-y-1.5">
                 <p className="text-sm font-semibold leading-snug">{title}</p>
-                {timeStr && <p className="text-xs text-muted-foreground">{timeStr}</p>}
-                {timeOfDayLabel && (
+                {!endDateBlock && timeStr && <p className="text-xs text-muted-foreground">{timeStr}</p>}
+                {!endDateBlock && timeOfDayLabel && (
                   <p className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Clock className="h-3 w-3 shrink-0 opacity-60" aria-hidden="true" />
                     {timeOfDayLabel}
