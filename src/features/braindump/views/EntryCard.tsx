@@ -221,7 +221,7 @@ function EventCard({ entry, selectionMode }: Readonly<CardProps>) {
                     <span className="text-base font-bold text-white leading-none">{dateBlock?.day}</span>
                     <span className="text-[10px] font-medium text-white/80 uppercase tracking-wide">{dateBlock?.month}</span>
                   </div>
-                  <span className="text-sm font-semibold text-white/60">–</span>
+                  <span className="text-sm font-semibold text-foreground/50">–</span>
                   <div className={['flex flex-col items-center justify-center rounded-lg px-2.5 py-1.5 min-w-[2.75rem]', accentBg].join(' ')}>
                     <span className="text-base font-bold text-white leading-none">{endDateBlock.day}</span>
                     <span className="text-[10px] font-medium text-white/80 uppercase tracking-wide">{endDateBlock.month}</span>
