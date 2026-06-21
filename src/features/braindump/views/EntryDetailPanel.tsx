@@ -173,8 +173,7 @@ function TimingCard({ date, endDate, startTime, endTime, timeOfDay, accentBg, bo
     <>
       {parsed && day && monthS && dateTile(day, monthS)}
       <div className="min-w-0 flex-1 space-y-0.5 text-left">
-        {weekday  && <p className="text-sm font-semibold text-foreground">{weekday}</p>}
-        {dateLong && <p className="text-xs text-muted-foreground">{dateLong}</p>}
+        {weekday && <p className="text-sm font-semibold text-foreground">{weekday}</p>}
         {timeChip}
       </div>
     </>
