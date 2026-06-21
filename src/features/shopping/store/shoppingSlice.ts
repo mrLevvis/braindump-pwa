@@ -1,5 +1,5 @@
 import type { ShoppingItem } from '../types/ShoppingItem';
-import { fetchShoppingItems, toggleShoppingItem, deleteShoppingItem, updateShoppingItemPrice } from '../services/shoppingItemsService';
+import { fetchShoppingItems, toggleShoppingItem, deleteShoppingItem, updateShoppingItemPrice, updateShoppingItemNotes, updateShoppingItemDeadline } from '../services/shoppingItemsService';
 import { showErrorToast } from '../../../hooks/useErrorToast';
 
 export interface ShoppingSlice {
@@ -8,6 +8,8 @@ export interface ShoppingSlice {
   toggleItem: (id: string, isDone: boolean) => Promise<void>;
   removeItem: (id: string) => Promise<void>;
   updateItemPrice: (id: string, price: number | null) => Promise<void>;
+  updateItemNotes: (id: string, notes: string | null) => Promise<void>;
+  updateItemDeadline: (id: string, deadline: string | null) => Promise<void>;
 }
 
 type SetSlice = (partial: Partial<ShoppingSlice>) => void;
@@ -41,6 +43,26 @@ export const createShoppingSlice = (set: SetSlice, get: GetSlice): ShoppingSlice
   updateItemPrice: async (id, price) => {
     set({ items: get().items.map(i => i.id === id ? { ...i, estimated_price: price } : i) });
     const result = await updateShoppingItemPrice(id, price);
+    if (result.status === 'error') {
+      showErrorToast(result.message);
+      const items = await fetchShoppingItems().catch(() => null);
+      if (items) set({ items });
+    }
+  },
+
+  updateItemNotes: async (id, notes) => {
+    set({ items: get().items.map(i => i.id === id ? { ...i, notes } : i) });
+    const result = await updateShoppingItemNotes(id, notes);
+    if (result.status === 'error') {
+      showErrorToast(result.message);
+      const items = await fetchShoppingItems().catch(() => null);
+      if (items) set({ items });
+    }
+  },
+
+  updateItemDeadline: async (id, deadline) => {
+    set({ items: get().items.map(i => i.id === id ? { ...i, deadline } : i) });
+    const result = await updateShoppingItemDeadline(id, deadline);
     if (result.status === 'error') {
       showErrorToast(result.message);
       const items = await fetchShoppingItems().catch(() => null);

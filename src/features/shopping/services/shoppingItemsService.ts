@@ -5,7 +5,7 @@
  */
 
 import { supabase } from '../../braindump/services/ApiClient';
-import type { ShoppingItem, DeleteResult, ToggleResult, UpdatePriceResult, UpdateLabelResult } from '../types/ShoppingItem';
+import type { ShoppingItem, DeleteResult, ToggleResult, UpdatePriceResult, UpdateLabelResult, UpdateNotesResult, UpdateDeadlineResult } from '../types/ShoppingItem';
 
 const TABLE = 'shopping_items';
 
@@ -92,4 +92,26 @@ export async function updateShoppingItemPrice(id: string, price: number | null):
   if (error) return { status: 'error', message: error.message };
   if (count === 0) return { status: 'not_found' };
   return { status: 'updated', price };
+}
+
+export async function updateShoppingItemNotes(id: string, notes: string | null): Promise<UpdateNotesResult> {
+  const { error, count } = await supabase
+    .from(TABLE)
+    .update({ notes: notes || null }, { count: 'exact' })
+    .eq('id', id);
+
+  if (error) return { status: 'error', message: error.message };
+  if (count === 0) return { status: 'not_found' };
+  return { status: 'updated' };
+}
+
+export async function updateShoppingItemDeadline(id: string, deadline: string | null): Promise<UpdateDeadlineResult> {
+  const { error, count } = await supabase
+    .from(TABLE)
+    .update({ deadline: deadline || null }, { count: 'exact' })
+    .eq('id', id);
+
+  if (error) return { status: 'error', message: error.message };
+  if (count === 0) return { status: 'not_found' };
+  return { status: 'updated', deadline };
 }

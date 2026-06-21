@@ -11,6 +11,7 @@ export interface ShoppingItem {
   source_dump: string | null;
   estimated_price: number | null;
   deadline: string | null;
+  notes: string | null;
 }
 
 export type ToggleResult =
@@ -30,5 +31,15 @@ export type UpdatePriceResult =
 
 export type UpdateLabelResult =
   | { status: 'updated' }
+  | { status: 'not_found' }
+  | { status: 'error'; message: string };
+
+export type UpdateNotesResult =
+  | { status: 'updated' }
+  | { status: 'not_found' }
+  | { status: 'error'; message: string };
+
+export type UpdateDeadlineResult =
+  | { status: 'updated'; deadline: string | null }
   | { status: 'not_found' }
   | { status: 'error'; message: string };

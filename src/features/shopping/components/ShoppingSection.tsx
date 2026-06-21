@@ -1,7 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useBrainDumpStore } from '../../braindump/store';
 import { ShoppingItemRow } from './ShoppingItemRow';
+import { ShoppingItemDetailPanel } from './ShoppingItemDetailPanel';
 import { sortShoppingItemsByDeadline } from '../utils/shoppingUtils';
+import type { ShoppingItem } from '../types/ShoppingItem';
 
 const SECTION_CLS = ['space-y-2'].join(' ');
 
@@ -30,7 +32,9 @@ export function ShoppingSection() {
   const loadItems       = useBrainDumpStore((s) => s.loadItems);
   const toggleItem      = useBrainDumpStore((s) => s.toggleItem);
   const removeItem      = useBrainDumpStore((s) => s.removeItem);
-  const updateItemPrice = useBrainDumpStore((s) => s.updateItemPrice);
+
+  const [detailItem, setDetailItem]   = useState<ShoppingItem | null>(null);
+  const [detailOpen, setDetailOpen]   = useState(false);
 
   useEffect(() => { loadItems(); }, [loadItems]);
 
@@ -40,6 +44,16 @@ export function ShoppingSection() {
   const totalOpen = pricedItems.filter((i) => !i.is_done).reduce((sum, i) => sum + (i.estimated_price ?? 0), 0);
   const hasTotal = pricedItems.length > 0;
   const someChecked = items.some((i) => i.is_done);
+
+  const openDetail = (item: ShoppingItem) => {
+    setDetailItem(item);
+    setDetailOpen(true);
+  };
+
+  // keep detailItem in sync with store so panel reflects optimistic updates
+  const liveDetailItem = detailItem
+    ? (items.find((i) => i.id === detailItem.id) ?? detailItem)
+    : null;
 
   return (
     <section className={SECTION_CLS} aria-label="Einkaufsliste">
@@ -56,7 +70,7 @@ export function ShoppingSection() {
                 item={item}
                 onToggle={toggleItem}
                 onDelete={removeItem}
-                onPriceUpdate={updateItemPrice}
+                onOpenDetail={openDetail}
               />
             ))}
           </ul>
@@ -73,6 +87,12 @@ export function ShoppingSection() {
           )}
         </>
       )}
+
+      <ShoppingItemDetailPanel
+        item={liveDetailItem}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+      />
     </section>
   );
 }
