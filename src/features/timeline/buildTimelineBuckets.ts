@@ -2,9 +2,32 @@ import type { BrainDumpEntry, RecurrenceException } from '../braindump/types';
 import type { TimelineData } from './types';
 import { expandRecurringSeries } from './expandRecurringSeries';
 import { sortTasksTopologically } from '../braindump/utils/dependencies';
+import { shiftDate } from '../../lib/dateUtils';
 
 // Sorts after any valid HH:MM so timeless entries land at the end of their day
 const TIME_END_OF_DAY = '99:99';
+
+function expandMultiDayEvent(entry: BrainDumpEntry): BrainDumpEntry[] {
+  const { date, endDate } = entry.payload;
+  if (!date || !endDate || endDate <= date) return [entry];
+
+  // Strip time fields so every occurrence lands in allDay (→ sticky band), not the timed grid.
+  const { startTime: _s, endTime: _e, ...timelessPayload } = entry.payload;
+
+  const result: BrainDumpEntry[] = [{ ...entry, payload: timelessPayload }];
+  let current = shiftDate(date, 1);
+  while (current <= endDate) {
+    result.push({
+      ...entry,
+      id: `${entry.id}__mde__${current}`,
+      _isMultiDayExpansion: true,
+      _multiDayStart: date,
+      payload: { ...timelessPayload, date: current },
+    });
+    current = shiftDate(current, 1);
+  }
+  return result;
+}
 
 function byDateThenTime(a: BrainDumpEntry, b: BrainDumpEntry): number {
   const dateCmp = a.payload.date!.localeCompare(b.payload.date!);
@@ -34,8 +57,13 @@ export function buildTimelineBuckets(
     expandRecurringSeries(master, exceptions, overrideMap, windowStart, windowEnd)
   );
 
-  // Alle datierten Einträge: reguläre + expandierte Occurrences
-  const allDated = [...regular, ...expanded].filter(e => e.payload.date != null);
+  // Multi-Day-Events (EVENT mit endDate) werden für jeden Tag im Bereich expandiert.
+  const multiDayExpanded = regular.flatMap(e =>
+    e.category === 'EVENT' && e.payload.endDate ? expandMultiDayEvent(e) : [e]
+  );
+
+  // Alle datierten Einträge: reguläre (inkl. Multi-Day-Expansion) + expandierte Occurrences
+  const allDated = [...multiDayExpanded, ...expanded].filter(e => e.payload.date != null);
 
   const undated = sortTasksTopologically(
     regular.filter(e => e.payload.date == null && e.category === 'TASK')

@@ -89,6 +89,7 @@ Gib das JSON exakt in dieser Form zurück:
       // Für TASK / EVENT / NOTE:
       "payload": {
         "date": "YYYY-MM-DD (wenn startTime oder deadline gesetzt und kein anderes Datum genannt: immer ${todayIso}; sonst nur wenn Datum gemeint/berechenbar)",
+        "endDate": "YYYY-MM-DD (NUR für EVENT, NUR wenn ein explizites Enddatum aus dem Text hervorgeht — nicht schätzen; muss strikt nach date liegen; nutze die Lookup-Tabelle zur Auflösung)",
         "startTime": "HH:MM (Beginn, nur wenn eine konkrete Startzeit genannt wird, sonst weglassen)",
         "endTime": "HH:MM (Ende — immer setzen wenn startTime vorhanden: explizit falls genannt, sonst EVENT +60 Min., TASK +30 Min.)",
         "deadline": "HH:MM (Fälligkeit — NUR für TASK, NUR wenn explizit 'bis [Uhrzeit]' oder 'spätestens [Uhrzeit]' steht UND kein startTime gesetzt ist)",
@@ -156,6 +157,7 @@ Regeln:
   "noch 10 Mal" / "10 Termine" → end:{type:"count",count:10}
   "bis Ende des Jahres" / "bis [Datum]" → end:{type:"until",date:"YYYY-MM-DD"}
   sonst → end:{type:"forever"}
+- "endDate" NUR für EVENT setzen, NUR wenn aus dem Text ein explizites Enddatum hervorgeht (z.B. "vom 3. bis 5.", "bis Freitag", "3 Tage"). Niemals raten oder schätzen. Nutze die Lookup-Tabelle zur Datumsauflösung. endDate muss strikt nach date liegen.
 - "title" enthält NIEMALS ein Datum, eine Uhrzeit oder eine relative Zeitangabe (z.B. niemals "morgen", "Freitag", "15 Uhr", "um 10", "bis 17 Uhr"). Zeit gehört ausschließlich in "payload.date", "payload.startTime" und "payload.endTime".
   FALSCH: "Zahnarzt Freitag 15 Uhr" | RICHTIG: "Zahnarzt"
 
@@ -232,6 +234,14 @@ Ausgabe:
 {
   "entries": [
     {"category":"SHOPPING","title":"Einkaufsliste","sourceExcerpt":"Milch, Brot, Butter kaufen","summary":["3 Artikel: Milch, Brot, Butter"],"payload":{"items":[{"label":"Milch","estimatedPrice":1.19},{"label":"Brot","estimatedPrice":2.49},{"label":"Butter","estimatedPrice":1.89}]}}
+  ]
+}
+
+Eingabe: "ich bin morgen und übermorgen krank gemeldet"
+Ausgabe:
+{
+  "entries": [
+    {"category":"EVENT","title":"Krankheit","sourceExcerpt":"ich bin morgen und übermorgen krank gemeldet","summary":["Krank ab morgen bis übermorgen"],"payload":{"date":"${shiftIso(todayIso, 1)}","endDate":"${shiftIso(todayIso, 2)}"}}
   ]
 }
 ${buildContextSection(contextEntries)}`;

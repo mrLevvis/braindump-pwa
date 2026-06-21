@@ -12,6 +12,21 @@ import { GridBlock } from './GridBlock';
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
+const DAY_FMT   = new Intl.DateTimeFormat('de-DE', { day: 'numeric' });
+const MONTH_FMT = new Intl.DateTimeFormat('de-DE', { month: 'short' });
+
+function formatMultiDayRange(startIso: string, endIso: string): string {
+  const s = new Date(`${startIso}T00:00:00`);
+  const e = new Date(`${endIso}T00:00:00`);
+  const sDay = DAY_FMT.format(s);
+  const eDay = DAY_FMT.format(e);
+  const sMon = MONTH_FMT.format(s).replace('.', '');
+  const eMon = MONTH_FMT.format(e).replace('.', '');
+  return sMon === eMon
+    ? `${sDay}.–${eDay}. ${eMon}`
+    : `${sDay}. ${sMon} – ${eDay}. ${eMon}`;
+}
+
 // ─── Class name constants ─────────────────────────────────────────────────────
 
 const HOUR_ROW = 'absolute left-0 right-0 flex items-start';
@@ -38,6 +53,64 @@ const ALL_DAY_ENTRY_BTN = [
   'focus-visible:outline-none', 'focus-visible:ring-2', 'focus-visible:ring-ring',
 ].join(' ');
 
+
+// ─── StickyEventBand ─────────────────────────────────────────────────────────
+
+const STICKY_BAND = [
+  'sticky', 'top-0', 'z-20',
+  '-mx-4', 'px-4', 'pb-2', 'pt-1',
+  'bg-background/95', 'backdrop-blur-sm',
+  'border-b', 'border-border/20',
+].join(' ');
+
+const STICKY_CARD_BTN = [
+  'w-full', 'text-left', 'rounded-lg',
+  'focus-visible:outline-none', 'focus-visible:ring-2', 'focus-visible:ring-ring',
+].join(' ');
+
+const STICKY_CARD_INNER = [
+  'flex', 'items-center', 'gap-2',
+  'rounded-lg', 'px-3', 'py-1.5',
+  'bg-sky-500/10', 'dark:bg-sky-500/15',
+  'border', 'border-sky-500/20',
+].join(' ');
+
+interface StickyEventBandProps {
+  events: readonly BrainDumpEntry[];
+  onSelect: (entry: BrainDumpEntry) => void;
+}
+
+function StickyEventBand({ events, onSelect }: Readonly<StickyEventBandProps>) {
+  if (events.length === 0) return null;
+  return (
+    <div className={STICKY_BAND}>
+      <div className="space-y-1">
+        {events.map(event => {
+          const rangeStart = event._multiDayStart ?? event.payload.date;
+          const rangeLabel = rangeStart && event.payload.endDate
+            ? formatMultiDayRange(rangeStart, event.payload.endDate)
+            : null;
+          const title = event.title ?? event.original_text;
+          return (
+            <button key={event.id} type="button" className={STICKY_CARD_BTN} onClick={() => onSelect(event)}>
+              <div className={STICKY_CARD_INNER}>
+                <span className="h-2 w-2 rounded-full bg-sky-500 shrink-0" aria-hidden="true" />
+                <p className="text-xs font-medium text-sky-700 dark:text-sky-300 truncate flex-1 min-w-0">
+                  {title}
+                </p>
+                {rangeLabel && (
+                  <span className="text-[10px] text-sky-600/70 dark:text-sky-400/70 shrink-0 tabular-nums">
+                    {rangeLabel}
+                  </span>
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 // ─── AllDayEntry ──────────────────────────────────────────────────────────────
 
@@ -217,6 +290,15 @@ export function DayGrid({ date, entries, allDay, isToday, now, pxPerHour, nowLin
     ? (now.getHours() * 60 + now.getMinutes()) * (pxPerHour / 60)
     : null;
 
+  const multiDayEvents = useMemo(
+    () => allDay.filter(e => e.category === 'EVENT' && e.payload.endDate),
+    [allDay],
+  );
+  const regularAllDay = useMemo(
+    () => allDay.filter(e => !(e.category === 'EVENT' && e.payload.endDate)),
+    [allDay],
+  );
+
   const deadlineByTime = useMemo(() => {
     const map = new Map<string, BrainDumpEntry[]>();
     for (const e of allDay) {
@@ -235,12 +317,15 @@ export function DayGrid({ date, entries, allDay, isToday, now, pxPerHour, nowLin
 
   return (
     <div className="flex flex-col gap-3">
-      {/* ── All-day entries (dated, no startTime) ───────────────────────────── */}
-      {allDay.length > 0 && (
+      {/* ── Sticky band for multi-day events ────────────────────────────────── */}
+      <StickyEventBand events={multiDayEvents} onSelect={onSelect} />
+
+      {/* ── All-day entries (dated, no startTime, no endDate) ───────────────── */}
+      {regularAllDay.length > 0 && (
         <div>
           <p className={ALL_DAY_LABEL}>Ganztags</p>
           <div className="space-y-1.5">
-            {allDay.map(entry => (
+            {regularAllDay.map(entry => (
               <AllDayEntry key={entry.id} entry={entry} onSelect={onSelect} onToggle={onToggle} />
             ))}
           </div>
@@ -259,6 +344,16 @@ export function DayGrid({ date, entries, allDay, isToday, now, pxPerHour, nowLin
             <span className={HOUR_LABEL}>{String(h).padStart(2, '0')}</span>
             <div className={GRID_LINE} />
           </div>
+        ))}
+
+        {/* Vertical lines for multi-day events — in the left gutter (0…48px) */}
+        {multiDayEvents.map((event, i) => (
+          <div
+            key={`vline-${event.id}`}
+            className="absolute top-0 bottom-0 w-0.5 bg-sky-500/50 z-0 pointer-events-none"
+            style={{ left: `${2 + i * 4}px` }}
+            aria-hidden="true"
+          />
         ))}
 
         {/* Block area (right of label column) */}

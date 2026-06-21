@@ -72,6 +72,7 @@ export interface ShoppingItemEntry {
 
 export interface EntryPayload {
   date?: string;         // YYYY-MM-DD
+  endDate?: string;      // YYYY-MM-DD — nur EVENT; inklusives Enddatum eines Zeitraums
   startTime?: string;    // HH:MM (Beginn)
   endTime?: string;      // HH:MM (Ende, nur wenn Zeitspanne, > startTime)
   deadline?: string;     // HH:MM (Fälligkeit) — nur TASK, wenn explizit "bis [Uhrzeit]" ohne startTime
@@ -132,8 +133,8 @@ export function normalizeEntryContract(entry: StructuredEntry): StructuredEntry 
   }
 
   // NOTE mit Datum/Uhrzeit: Zeitfelder strippen, Kategorie bleibt NOTE.
-  if (entry.category === 'NOTE' && (entry.payload.date || entry.payload.startTime || entry.payload.endTime || entry.payload.deadline || entry.payload.timeOfDay)) {
-    const { date: _d, startTime: _s, endTime: _e, deadline: _dl, timeOfDay: _t, ...stripped } = entry.payload;
+  if (entry.category === 'NOTE' && (entry.payload.date || entry.payload.endDate || entry.payload.startTime || entry.payload.endTime || entry.payload.deadline || entry.payload.timeOfDay)) {
+    const { date: _d, endDate: _ed, startTime: _s, endTime: _e, deadline: _dl, timeOfDay: _t, ...stripped } = entry.payload;
     return { ...entry, payload: stripped };
   }
 
@@ -146,6 +147,17 @@ export function normalizeEntryContract(entry: StructuredEntry): StructuredEntry 
     if (!validFormat || !afterStart) {
       const { endTime: _e, ...withoutEnd } = entry.payload;
       return { ...entry, payload: withoutEnd };
+    }
+  }
+
+  // endDate nur für EVENT; muss YYYY-MM-DD sein und strikt nach date liegen.
+  if (entry.payload.endDate != null) {
+    const { date, endDate } = entry.payload;
+    const validFormat = /^\d{4}-\d{2}-\d{2}$/.test(endDate);
+    const afterStart = date != null && endDate > date;
+    if (entry.category !== 'EVENT' || !validFormat || !afterStart) {
+      const { endDate: _ed, ...withoutEndDate } = entry.payload;
+      return { ...entry, payload: withoutEndDate };
     }
   }
 

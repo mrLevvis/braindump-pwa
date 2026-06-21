@@ -98,6 +98,7 @@ export const TIME_OF_DAY_LABEL: Record<TimeOfDay, string> = {
 
 export interface EntryPayload {
   date?: string;         // ISO Datum (YYYY-MM-DD), falls im Text impliziert/erwähnt
+  endDate?: string;      // YYYY-MM-DD — nur EVENT; inklusives Enddatum eines Zeitraums
   startTime?: string;    // HH:MM (Beginn), falls im Text erwähnt
   endTime?: string;      // HH:MM (Ende), nur wenn Zeitspanne und > startTime
   deadline?: string;     // HH:MM (Fälligkeit) — nur TASK, wenn explizit "bis [Uhrzeit]" ohne startTime
@@ -129,6 +130,9 @@ export interface BrainDumpEntry {
   _isVirtualOccurrence?: boolean;
   _occurrenceDate?: string;
   _seriesMasterId?: string;
+  // Runtime-only: wird von expandMultiDayEvents gesetzt (Tage 2…N eines endDate-Zeitraums)
+  _isMultiDayExpansion?: boolean;
+  _multiDayStart?: string;  // Originales Startdatum (payload.date des Masters), für korrekte Range-Anzeige
 }
 
 /**

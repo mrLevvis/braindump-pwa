@@ -25,6 +25,19 @@ function parseDateBlock(iso: string): { day: string; month: string } | null {
   };
 }
 
+function parseDateRange(startIso: string, endIso: string): string | null {
+  const s = new Date(`${startIso}T00:00:00`);
+  const e = new Date(`${endIso}T00:00:00`);
+  if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return null;
+  const sDay = DAY_FMT.format(s);
+  const eDay = DAY_FMT.format(e);
+  const sMon = MONTH_FMT.format(s).replace('.', '');
+  const eMon = MONTH_FMT.format(e).replace('.', '');
+  return sMon === eMon
+    ? `${sDay}.–${eDay}. ${eMon}`
+    : `${sDay}. ${sMon} – ${eDay}. ${eMon}`;
+}
+
 function fmtTime(startTime?: string, endTime?: string): string | null {
   if (!startTime) return null;
   return endTime ? `${startTime}–${endTime} Uhr` : `${startTime} Uhr`;
@@ -196,7 +209,11 @@ function EventCard({ entry, selectionMode }: Readonly<CardProps>) {
   const { tintBackground, accentBg } = CATEGORY_STYLES.EVENT;
   const title = entry.title?.trim() || 'Untitled';
   const tags = entry.payload?.tags ?? [];
-  const dateBlock = entry.payload?.date ? parseDateBlock(entry.payload.date) : null;
+  const endDate = entry.payload?.endDate;
+  const dateRange = entry.payload?.date && endDate
+    ? parseDateRange(entry.payload.date, endDate)
+    : null;
+  const dateBlock = !dateRange && entry.payload?.date ? parseDateBlock(entry.payload.date) : null;
   const timeStr = fmtTime(entry.payload?.startTime, entry.payload?.endTime);
   const timeOfDayLabel = !timeStr && entry.payload?.timeOfDay ? TIME_OF_DAY_LABEL[entry.payload.timeOfDay] : null;
   const selectedRing = selectionMode?.isSelected ? 'ring-2 ring-primary ring-offset-1' : '';
@@ -216,7 +233,9 @@ function EventCard({ entry, selectionMode }: Readonly<CardProps>) {
                 className={['shrink-0 flex flex-col items-center justify-center rounded-lg px-2.5 py-1.5 min-w-[2.75rem]', accentBg].join(' ')}
                 aria-hidden="true"
               >
-                {dateBlock ? (
+                {dateRange ? (
+                  <span className="text-[10px] font-bold text-white leading-tight text-center">{dateRange}</span>
+                ) : dateBlock ? (
                   <>
                     <span className="text-base font-bold text-white leading-none">{dateBlock.day}</span>
                     <span className="text-[10px] font-medium text-white/80 uppercase tracking-wide">{dateBlock.month}</span>
