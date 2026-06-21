@@ -17,6 +17,7 @@ import { structureText } from "./structureText.ts";
 import type { ContextEntry, EntryAdditionalInfo, StructuredEntry } from "../_shared/contract.ts";
 import { ENTRY_CATEGORIES, normalizeEntryContract } from "../_shared/contract.ts";
 import { transcribeAudio } from "./transcribeAudio.ts";
+import { fetchPriceHistory, resolveItemPrice } from "../_shared/priceHistory.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -181,15 +182,29 @@ Deno.serve(async (request) => {
       );
     }
 
-    const rows = shoppingEntries.flatMap(e =>
+    // AI kann Strings (altes Format) oder Objekte (neues Format) liefern – beide fangen.
+    const itemsFlat = shoppingEntries.flatMap(e =>
       (e.payload.items ?? []).map((raw) => {
-        // AI kann Strings (altes Format) oder Objekte (neues Format) liefern – beide fangen.
         const isObj = raw !== null && typeof raw === 'object';
         const label: string = isObj ? (raw as { label: string }).label : String(raw);
-        const estimatedPrice: number | null = isObj ? ((raw as { estimatedPrice?: number }).estimatedPrice ?? null) : null;
-        return { label, estimated_price: estimatedPrice, is_done: false, source_dump: captureId, user_id: userId };
+        const aiPrice: number | null = isObj ? ((raw as { estimatedPrice?: number }).estimatedPrice ?? null) : null;
+        return { label, aiPrice };
       })
     );
+
+    // Preis-Historien parallel abrufen; neuere Käufe fließen stärker gewichtet ein.
+    const priceHistories = await Promise.all(
+      itemsFlat.map(({ label }) => fetchPriceHistory(supabase, userId, label))
+    );
+
+    const rows = itemsFlat.map(({ label, aiPrice }, i) => ({
+      label,
+      estimated_price: resolveItemPrice(priceHistories[i], aiPrice),
+      is_done: false,
+      source_dump: captureId,
+      user_id: userId,
+    }));
+
     if (rows.length > 0) {
       const { error: dbError } = await supabase.from('shopping_items').insert(rows);
       if (dbError) {

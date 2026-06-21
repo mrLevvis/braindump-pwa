@@ -23,6 +23,7 @@ import { getCorsHeaders } from "../_shared/cors.ts";
 import { structureText } from "../process-brain-dump/structureText.ts";
 import type { StructuredEntry } from "../_shared/contract.ts";
 import { ENTRY_CATEGORIES, normalizeEntryContract } from "../_shared/contract.ts";
+import { fetchPriceHistory, resolveItemPrice } from "../_shared/priceHistory.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -113,7 +114,9 @@ Deno.serve(async (request) => {
   const entry = normalizeEntryContract(rawEntry as StructuredEntry);
 
   // 7. SHOPPING-Items atomar ersetzen, falls ein captureId vorliegt.
-  //    DELETE zuerst, dann INSERT — so gibt es keinen Moment mit doppelten Items.
+  //    Reihenfolge: Preis-Historie abfragen → DELETE → INSERT.
+  //    Historie wird VOR dem DELETE gelesen, damit die aktuellen Preise als
+  //    Datenpunkte einfließen (nach dem Löschen wären sie weg).
   //    user_id muss explizit gesetzt werden, weil auth.uid() im Service-Role-Kontext NULL ist.
   if (entry.category === "SHOPPING" && captureId) {
     const userId = getUserIdFromJWT(request);
@@ -123,6 +126,19 @@ Deno.serve(async (request) => {
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // KI kann Strings (altes Format) oder Objekte (neues Format) liefern — beide fangen.
+    const itemsFlat = (entry.payload.items ?? []).map((raw) => {
+      const isObj = raw !== null && typeof raw === "object";
+      const label: string = isObj ? (raw as { label: string }).label : String(raw);
+      const aiPrice: number | null = isObj ? ((raw as { estimatedPrice?: number }).estimatedPrice ?? null) : null;
+      return { label, aiPrice };
+    });
+
+    // Preis-Historien VOR dem Löschen abrufen — aktuelle Einträge zählen als Datenpunkte.
+    const priceHistories = await Promise.all(
+      itemsFlat.map(({ label }) => fetchPriceHistory(supabase, userId, label))
+    );
 
     const { error: deleteError } = await supabase
       .from("shopping_items")
@@ -136,13 +152,13 @@ Deno.serve(async (request) => {
       );
     }
 
-    const rows = (entry.payload.items ?? []).map((raw) => {
-      // KI kann Strings (altes Format) oder Objekte (neues Format) liefern — beide fangen.
-      const isObj = raw !== null && typeof raw === "object";
-      const label: string = isObj ? (raw as { label: string }).label : String(raw);
-      const estimatedPrice: number | null = isObj ? ((raw as { estimatedPrice?: number }).estimatedPrice ?? null) : null;
-      return { label, estimated_price: estimatedPrice, is_done: false, source_dump: captureId, user_id: userId };
-    });
+    const rows = itemsFlat.map(({ label, aiPrice }, i) => ({
+      label,
+      estimated_price: resolveItemPrice(priceHistories[i], aiPrice),
+      is_done: false,
+      source_dump: captureId,
+      user_id: userId,
+    }));
 
     if (rows.length > 0) {
       const { error: insertError } = await supabase.from("shopping_items").insert(rows);
