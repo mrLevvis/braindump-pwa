@@ -25,18 +25,6 @@ function parseDateBlock(iso: string): { day: string; month: string } | null {
   };
 }
 
-function parseDateRange(startIso: string, endIso: string): string | null {
-  const s = new Date(`${startIso}T00:00:00`);
-  const e = new Date(`${endIso}T00:00:00`);
-  if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return null;
-  const sDay = DAY_FMT.format(s);
-  const eDay = DAY_FMT.format(e);
-  const sMon = MONTH_FMT.format(s).replace('.', '');
-  const eMon = MONTH_FMT.format(e).replace('.', '');
-  return sMon === eMon
-    ? `${sDay}.–${eDay}. ${eMon}`
-    : `${sDay}. ${sMon} – ${eDay}. ${eMon}`;
-}
 
 function fmtTime(startTime?: string, endTime?: string): string | null {
   if (!startTime) return null;
@@ -210,10 +198,8 @@ function EventCard({ entry, selectionMode }: Readonly<CardProps>) {
   const title = entry.title?.trim() || 'Untitled';
   const tags = entry.payload?.tags ?? [];
   const endDate = entry.payload?.endDate;
-  const dateRange = entry.payload?.date && endDate
-    ? parseDateRange(entry.payload.date, endDate)
-    : null;
-  const dateBlock = !dateRange && entry.payload?.date ? parseDateBlock(entry.payload.date) : null;
+  const dateBlock = entry.payload?.date ? parseDateBlock(entry.payload.date) : null;
+  const endDateBlock = endDate ? parseDateBlock(endDate) : null;
   const timeStr = fmtTime(entry.payload?.startTime, entry.payload?.endTime);
   const timeOfDayLabel = !timeStr && entry.payload?.timeOfDay ? TIME_OF_DAY_LABEL[entry.payload.timeOfDay] : null;
   const selectedRing = selectionMode?.isSelected ? 'ring-2 ring-primary ring-offset-1' : '';
@@ -229,21 +215,33 @@ function EventCard({ entry, selectionMode }: Readonly<CardProps>) {
         <button type="button" className={CARD_BTN} onClick={handleClick}>
           <Card className={[CARD_BASE, tintBackground, selectedRing].join(' ')} size="sm">
             <CardContent className="flex items-start gap-3 px-4">
-              <div
-                className={['shrink-0 flex flex-col items-center justify-center rounded-lg px-2.5 py-1.5 min-w-[2.75rem]', accentBg].join(' ')}
-                aria-hidden="true"
-              >
-                {dateRange ? (
-                  <span className="text-[10px] font-bold text-white leading-tight text-center">{dateRange}</span>
-                ) : dateBlock ? (
-                  <>
-                    <span className="text-base font-bold text-white leading-none">{dateBlock.day}</span>
-                    <span className="text-[10px] font-medium text-white/80 uppercase tracking-wide">{dateBlock.month}</span>
-                  </>
-                ) : (
-                  <Calendar className="h-5 w-5 text-white" />
-                )}
-              </div>
+              {endDateBlock ? (
+                <div className="flex items-center gap-1.5 shrink-0" aria-hidden="true">
+                  <div className={['flex flex-col items-center justify-center rounded-lg px-2.5 py-1.5 min-w-[2.75rem]', accentBg].join(' ')}>
+                    <span className="text-base font-bold text-white leading-none">{dateBlock?.day}</span>
+                    <span className="text-[10px] font-medium text-white/80 uppercase tracking-wide">{dateBlock?.month}</span>
+                  </div>
+                  <span className="text-sm font-semibold text-white/60">–</span>
+                  <div className={['flex flex-col items-center justify-center rounded-lg px-2.5 py-1.5 min-w-[2.75rem]', accentBg].join(' ')}>
+                    <span className="text-base font-bold text-white leading-none">{endDateBlock.day}</span>
+                    <span className="text-[10px] font-medium text-white/80 uppercase tracking-wide">{endDateBlock.month}</span>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className={['shrink-0 flex flex-col items-center justify-center rounded-lg px-2.5 py-1.5 min-w-[2.75rem]', accentBg].join(' ')}
+                  aria-hidden="true"
+                >
+                  {dateBlock ? (
+                    <>
+                      <span className="text-base font-bold text-white leading-none">{dateBlock.day}</span>
+                      <span className="text-[10px] font-medium text-white/80 uppercase tracking-wide">{dateBlock.month}</span>
+                    </>
+                  ) : (
+                    <Calendar className="h-5 w-5 text-white" />
+                  )}
+                </div>
+              )}
               <div className="min-w-0 flex-1 space-y-1.5">
                 <p className="text-sm font-semibold leading-snug">{title}</p>
                 {timeStr && <p className="text-xs text-muted-foreground">{timeStr}</p>}
