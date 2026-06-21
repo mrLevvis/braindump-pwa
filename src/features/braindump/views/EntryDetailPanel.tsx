@@ -99,19 +99,22 @@ function parseLocalDate(iso: string): Date | null {
 
 // ─── TimingCard ───────────────────────────────────────────────────────────────
 
-function TimingCard({ date, startTime, endTime, timeOfDay, accentBg, borderClass, bgClass, onNavigate }: Readonly<{
-  date?: string; startTime?: string; endTime?: string; timeOfDay?: string;
+function TimingCard({ date, endDate, startTime, endTime, timeOfDay, accentBg, borderClass, bgClass, onNavigate }: Readonly<{
+  date?: string; endDate?: string; startTime?: string; endTime?: string; timeOfDay?: string;
   accentBg: string; borderClass: string; bgClass: string;
   onNavigate?: () => void;
 }>) {
   if (!date && !startTime) return null;
 
-  const parsed   = date ? parseLocalDate(date) : null;
-  const day      = parsed ? FMT_DAY.format(parsed) : null;
-  const monthS   = parsed ? FMT_MONTH_S.format(parsed).replace('.', '') : null;
-  const weekday  = parsed ? FMT_WEEKDAY.format(parsed) : null;
-  const dateLong = parsed ? FMT_DATE_L.format(parsed) : null;
-  const timeStr  = startTime
+  const parsed      = date    ? parseLocalDate(date)    : null;
+  const parsedEnd   = endDate ? parseLocalDate(endDate) : null;
+  const day         = parsed ? FMT_DAY.format(parsed) : null;
+  const monthS      = parsed ? FMT_MONTH_S.format(parsed).replace('.', '') : null;
+  const weekday     = parsed ? FMT_WEEKDAY.format(parsed) : null;
+  const dateLong    = parsed ? FMT_DATE_L.format(parsed) : null;
+  const endWeekday  = parsedEnd ? FMT_WEEKDAY.format(parsedEnd) : null;
+  const endDateLong = parsedEnd ? FMT_DATE_L.format(parsedEnd) : null;
+  const timeStr     = startTime
     ? endTime ? `${startTime} – ${endTime} Uhr` : `${startTime} Uhr`
     : null;
 
@@ -129,6 +132,11 @@ function TimingCard({ date, startTime, endTime, timeOfDay, accentBg, borderClass
       <div className="min-w-0 flex-1 space-y-0.5 text-left">
         {weekday && <p className="text-sm font-semibold text-foreground">{weekday}</p>}
         {dateLong && <p className="text-xs text-muted-foreground">{dateLong}</p>}
+        {endDateLong && (
+          <p className="text-xs text-muted-foreground">
+            bis {endWeekday}, {endDateLong}
+          </p>
+        )}
         {timeStr && (
           <span className="inline-flex items-center gap-1 mt-1 rounded-full border bg-background/60 px-2 py-0.5 text-xs font-medium text-foreground">
             <Clock className="h-3 w-3 shrink-0 opacity-60" aria-hidden="true" />
@@ -733,6 +741,7 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
                 {(date || entry.payload?.startTime || entry.payload?.timeOfDay) && (
                   <TimingCard
                     date={date}
+                    endDate={entry.payload?.endDate}
                     startTime={entry.payload?.startTime}
                     endTime={entry.payload?.endTime}
                     timeOfDay={entry.payload?.timeOfDay ? TIME_OF_DAY_LABEL[entry.payload.timeOfDay] : undefined}

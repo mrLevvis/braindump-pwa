@@ -64,6 +64,7 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
   const [title, setTitle] = useState(entry.title ?? '');
   const [category, setCategory] = useState<EntryCategory>(entry.category);
   const [date, setDate] = useState(entry.payload?.date ?? '');
+  const [endDate, setEndDate] = useState(entry.payload?.endDate ?? '');
   const [startTime, setStartTime] = useState(entry.payload?.startTime ?? '');
   const [endTime, setEndTime] = useState(entry.payload?.endTime ?? '');
   const [deadline, setDeadline] = useState(entry.payload?.deadline ?? '');
@@ -146,6 +147,7 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
       category,
       payload: {
         ...(category !== 'NOTE' && date ? { date } : {}),
+        ...(category === 'EVENT' && endDate && endDate > (date || '') ? { endDate } : {}),
         ...(category !== 'NOTE' && startTime ? { startTime } : {}),
         ...(category !== 'NOTE' && endTime && startTime ? { endTime } : {}),
         ...(category === 'TASK' && deadline ? { deadline } : {}),
@@ -206,6 +208,16 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
                 <p className="text-[10px] text-muted-foreground">Bis</p>
                 <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
               </div>
+            </div>
+            <div className="space-y-1 mt-2">
+              <p className="text-[10px] text-muted-foreground">Enddatum (optional, für mehrtägige Einträge)</p>
+              <Input
+                type="date"
+                value={endDate}
+                min={date || undefined}
+                onChange={e => setEndDate(e.target.value)}
+                className="sm:max-w-[calc(33.33%-0.5rem)]"
+              />
             </div>
             {!startTime && (
               <div className="space-y-1 mt-2">
