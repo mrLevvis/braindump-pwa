@@ -123,27 +123,36 @@ function DraftPreviewCard({ draft, onClick, onDelete }: Readonly<{ draft: EntryD
   if (draft.category === 'EVENT') {
     const { tintBackground, accentBg } = CATEGORY_STYLES.EVENT;
     const dateBlock = draft.payload?.date ? parseDateBlock(draft.payload.date) : null;
+    const endDateBlock = draft.payload?.endDate ? parseDateBlock(draft.payload.endDate) : null;
+    const dateTile = (block: { day: string; month: string } | null) => (
+      <div className={['flex flex-col items-center justify-center rounded-lg px-2.5 py-1.5 min-w-[2.75rem]', accentBg].join(' ')}>
+        {block ? (
+          <>
+            <span className="text-base font-bold text-white leading-none">{block.day}</span>
+            <span className="text-[10px] font-medium text-white/80 uppercase tracking-wide">{block.month}</span>
+          </>
+        ) : (
+          <Calendar className="h-5 w-5 text-white" />
+        )}
+      </div>
+    );
     return (
       <div className="relative">
         <button type="button" className={CARD_BTN} onClick={onClick}>
           <Card className={[CARD_BASE, tintBackground].join(' ')} size="sm">
             <CardContent className="flex items-start gap-3 px-4 pr-10">
-              <div
-                className={['shrink-0 flex flex-col items-center justify-center rounded-lg px-2.5 py-1.5 min-w-[2.75rem]', accentBg].join(' ')}
-                aria-hidden="true"
-              >
-                {dateBlock ? (
-                  <>
-                    <span className="text-base font-bold text-white leading-none">{dateBlock.day}</span>
-                    <span className="text-[10px] font-medium text-white/80 uppercase tracking-wide">{dateBlock.month}</span>
-                  </>
-                ) : (
-                  <Calendar className="h-5 w-5 text-white" />
-                )}
-              </div>
+              {endDateBlock ? (
+                <div className="flex items-center gap-1.5 shrink-0" aria-hidden="true">
+                  {dateTile(dateBlock)}
+                  <span className="text-sm font-semibold text-foreground/50">–</span>
+                  {dateTile(endDateBlock)}
+                </div>
+              ) : (
+                <div className="shrink-0" aria-hidden="true">{dateTile(dateBlock)}</div>
+              )}
               <div className="min-w-0 flex-1 space-y-1.5">
                 <p className="text-sm font-semibold leading-snug">{title}</p>
-                {timeStr && <p className="text-xs text-muted-foreground">{timeStr}</p>}
+                {!endDateBlock && timeStr && <p className="text-xs text-muted-foreground">{timeStr}</p>}
                 {draft.recurrence && (
                   <span className="inline-flex items-center gap-1 text-xs text-sky-600 dark:text-sky-400">
                     <RefreshCw className="h-3 w-3 shrink-0" aria-hidden="true" />

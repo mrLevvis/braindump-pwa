@@ -132,7 +132,9 @@ export interface BrainDumpEntry {
   _seriesMasterId?: string;
   // Runtime-only: wird von expandMultiDayEvents gesetzt (Tage 2…N eines endDate-Zeitraums)
   _isMultiDayExpansion?: boolean;
-  _multiDayStart?: string;  // Originales Startdatum (payload.date des Masters), für korrekte Range-Anzeige
+  _multiDayStart?: string;      // Originales Startdatum (payload.date des Masters), für korrekte Range-Anzeige
+  _multiDayStartTime?: string;  // Originale startTime, für Linien-Positionierung im DayGrid
+  _multiDayEndTime?: string;    // Originale endTime, für Linien-Positionierung im DayGrid
 }
 
 /**

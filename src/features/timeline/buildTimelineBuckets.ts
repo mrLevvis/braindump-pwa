@@ -8,17 +8,23 @@ import { shiftDate } from '../../lib/dateUtils';
 const TIME_END_OF_DAY = '99:99';
 
 function expandMultiDayEvent(entry: BrainDumpEntry): BrainDumpEntry[] {
-  const { date, endDate } = entry.payload;
+  const { date, endDate, startTime, endTime } = entry.payload;
   if (!date || !endDate || endDate <= date) return [entry];
 
   // Strip time fields so every occurrence lands in allDay (→ sticky band), not the timed grid.
+  // Carry original times as runtime fields so DayGrid can position the vertical line correctly.
   const { startTime: _s, endTime: _e, ...timelessPayload } = entry.payload;
+  const timeCarry = {
+    _multiDayStartTime: startTime,
+    _multiDayEndTime: endTime,
+  };
 
-  const result: BrainDumpEntry[] = [{ ...entry, payload: timelessPayload }];
+  const result: BrainDumpEntry[] = [{ ...entry, ...timeCarry, payload: timelessPayload }];
   let current = shiftDate(date, 1);
   while (current <= endDate) {
     result.push({
       ...entry,
+      ...timeCarry,
       id: `${entry.id}__mde__${current}`,
       _isMultiDayExpansion: true,
       _multiDayStart: date,

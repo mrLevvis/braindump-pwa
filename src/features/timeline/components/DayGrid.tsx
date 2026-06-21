@@ -299,6 +299,39 @@ export function DayGrid({ date, entries, allDay, isToday, now, pxPerHour, nowLin
     [allDay],
   );
 
+  // Compute the vertical bounds of the sticky band container within the 24h grid.
+  // Top: offset to startTime only when ALL events are on their first day and all have times.
+  // Bottom: capped at endTime only when ALL events are on their last day and all have times.
+  const { bandTopPx, bandBottomPx } = useMemo(() => {
+    if (multiDayEvents.length === 0) return { bandTopPx: 0, bandBottomPx: gridHeight };
+
+    const allFirstDay = multiDayEvents.every(e => !e._isMultiDayExpansion);
+    let topPx = 0;
+    if (allFirstDay) {
+      const startPxs = multiDayEvents
+        .filter(e => e._multiDayStartTime)
+        .map(e => {
+          const [h, m] = e._multiDayStartTime!.split(':').map(Number);
+          return (h * 60 + m) * (pxPerHour / 60);
+        });
+      if (startPxs.length === multiDayEvents.length) topPx = Math.min(...startPxs);
+    }
+
+    const allLastDay = multiDayEvents.every(e => e.payload.date === e.payload.endDate);
+    let bottomPx = gridHeight;
+    if (allLastDay) {
+      const endPxs = multiDayEvents
+        .filter(e => e._multiDayEndTime)
+        .map(e => {
+          const [h, m] = e._multiDayEndTime!.split(':').map(Number);
+          return (h * 60 + m) * (pxPerHour / 60);
+        });
+      if (endPxs.length === multiDayEvents.length) bottomPx = Math.max(...endPxs);
+    }
+
+    return { bandTopPx: topPx, bandBottomPx: bottomPx };
+  }, [multiDayEvents, gridHeight, pxPerHour]);
+
   const deadlineByTime = useMemo(() => {
     const map = new Map<string, BrainDumpEntry[]>();
     for (const e of allDay) {
@@ -317,9 +350,6 @@ export function DayGrid({ date, entries, allDay, isToday, now, pxPerHour, nowLin
 
   return (
     <div className="flex flex-col gap-3">
-      {/* ── Sticky band for multi-day events ────────────────────────────────── */}
-      <StickyEventBand events={multiDayEvents} onSelect={onSelect} />
-
       {/* ── All-day entries (dated, no startTime, no endDate) ───────────────── */}
       {regularAllDay.length > 0 && (
         <div>
@@ -346,15 +376,39 @@ export function DayGrid({ date, entries, allDay, isToday, now, pxPerHour, nowLin
           </div>
         ))}
 
-        {/* Vertical lines for multi-day events — in the left gutter (0…48px) */}
-        {multiDayEvents.map((event, i) => (
+        {/* Sticky band for multi-day events — bounded by startTime / endTime */}
+        {multiDayEvents.length > 0 && (
           <div
-            key={`vline-${event.id}`}
-            className="absolute top-0 bottom-0 w-0.5 bg-sky-500/50 z-0 pointer-events-none"
-            style={{ left: `${2 + i * 4}px` }}
-            aria-hidden="true"
-          />
-        ))}
+            className="absolute left-0 right-0 z-20"
+            style={{ top: `${bandTopPx}px`, height: `${Math.max(0, bandBottomPx - bandTopPx)}px` }}
+          >
+            <StickyEventBand events={multiDayEvents} onSelect={onSelect} />
+          </div>
+        )}
+
+        {/* Vertical lines for multi-day events — in the left gutter (0…48px) */}
+        {multiDayEvents.map((event, i) => {
+          const isFirstDay = !event._isMultiDayExpansion;
+          const isLastDay  = event.payload.date === event.payload.endDate;
+          let topPx    = 0;
+          let bottomPx = gridHeight;
+          if (isFirstDay && event._multiDayStartTime) {
+            const [h, m] = event._multiDayStartTime.split(':').map(Number);
+            topPx = (h * 60 + m) * (pxPerHour / 60);
+          }
+          if (isLastDay && event._multiDayEndTime) {
+            const [h, m] = event._multiDayEndTime.split(':').map(Number);
+            bottomPx = (h * 60 + m) * (pxPerHour / 60);
+          }
+          return (
+            <div
+              key={`vline-${event.id}`}
+              className="absolute w-0.5 bg-sky-500/50 z-0 pointer-events-none"
+              style={{ left: `${2 + i * 4}px`, top: `${topPx}px`, height: `${Math.max(0, bottomPx - topPx)}px` }}
+              aria-hidden="true"
+            />
+          );
+        })}
 
         {/* Block area (right of label column) */}
         <div className={BLOCK_AREA}>
