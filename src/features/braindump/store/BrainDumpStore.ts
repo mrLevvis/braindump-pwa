@@ -19,9 +19,7 @@ import {
  * Globaler Zustand-Store für das BrainDump-Feature.
  * Hält Einträge + Statusflags. ShoppingSlice ist per Zustand-Slice-Pattern eingemischt.
  */
-export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a) => {
-  const set = a[0];
-  const get = a[1];
+export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((set, get) => {
 
   // Full state refresh after mutations that affect both entries and exceptions.
   // Optimistic actions (toggle, updateEntry) skip this and revert on failure instead.
@@ -103,8 +101,6 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a)
             }));
 
             set(() => ({ pendingPreview: { captureId, drafts, additionalInfos } }));
-        } catch (e) {
-            throw e;
         } finally {
             set(() => ({ isProcessing: false }));
         }

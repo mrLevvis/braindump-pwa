@@ -15,7 +15,7 @@ import { useErrorToast, useSuccessToast } from './hooks/useErrorToast';
 import { useVoiceRecording } from './hooks/useVoiceRecording';
 import { LoginPage } from './features/auth';
 import { FeedbackButton, AdminView } from './features/issues';
-import { useAuthStore } from './store/authSlice';
+import { useAuthStore } from './features/auth/store';
 import { supabase } from './features/braindump/services/ApiClient';
 
 const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL ?? '';

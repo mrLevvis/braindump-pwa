@@ -101,7 +101,11 @@ export function expandRecurringSeries(
       .map(e => [e.original_date, e])
   );
 
-  // Iteration ab startDate (max 5 Jahre zurück, damit count korrekt gezählt wird)
+  // Iteration ab startDate (max 5 Jahre zurück, damit count korrekt gezählt wird).
+  // PERF-NOTE: Für end:{type:'count'} muss die gesamte Serie ab startDate tageweise
+  // durchlaufen werden, um occurrenceCount korrekt hochzuzählen, bevor das Fenster
+  // beginnt. Bei sehr vielen langen count-Serien ist das O(n·interval). Unkritisch
+  // solange Serien selten sind; als analytische Formel pro Freq lösbar wenn nötig.
   const fiveYearsAgo = addDays(ws, -1825);
   const iterFrom = startDate > fiveYearsAgo ? startDate : fiveYearsAgo;
 
