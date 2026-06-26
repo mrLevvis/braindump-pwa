@@ -23,6 +23,13 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a)
   const set = a[0];
   const get = a[1];
 
+  // Full state refresh after mutations that affect both entries and exceptions.
+  // Optimistic actions (toggle, updateEntry) skip this and revert on failure instead.
+  const refreshAll = async () => {
+    const [entries, exceptions] = await Promise.all([fetchEntries(), fetchRecurrenceExceptions()]);
+    if (entries) set(() => ({ entries, recurrenceExceptions: exceptions }));
+  };
+
   // Syncs payload.tags on the shopping entry to the current item labels,
   // and refreshes the global items list — called after any item mutation.
   const syncShoppingEntry = async (captureId: string) => {
@@ -62,13 +69,8 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a)
         set(() => ({ isProcessing: status }));
     },
 
-    updateEntryList: () => {
-        fetchEntries().then((data) => {
-            if (data) set(() => ({ entries: data }));
-        });
-        fetchRecurrenceExceptions().then((data) => {
-            set(() => ({ recurrenceExceptions: data }));
-        });
+    updateEntryList: async () => {
+        await refreshAll();
     },
 
     clearData: () => {
@@ -135,8 +137,7 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a)
             );
         }
 
-        const [data, exceptions] = await Promise.all([fetchEntries(), fetchRecurrenceExceptions()]);
-        if (data) set(() =>({ entries: data, recurrenceExceptions: exceptions }));
+        await refreshAll();
         set(() => ({ pendingPreview: null }));
         get().loadItems();
     },
@@ -181,10 +182,7 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a)
         }
         // scope === 'following'
         const result = await deleteFollowing(masterId, date, get().entries);
-        if (result.status === 'deleted') {
-            const [entries, exceptions] = await Promise.all([fetchEntries(), fetchRecurrenceExceptions()]);
-            if (entries) set(() => ({ entries, recurrenceExceptions: exceptions }));
-        }
+        if (result.status === 'deleted') await refreshAll();
         return result;
     },
 
@@ -194,18 +192,12 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((...a)
         }
         if (scope === 'single') {
             const result = await createSingleOverride(masterId, date, patch, get().entries);
-            if (result.status === 'updated') {
-                const [entries, exceptions] = await Promise.all([fetchEntries(), fetchRecurrenceExceptions()]);
-                if (entries) set(() => ({ entries, recurrenceExceptions: exceptions }));
-            }
+            if (result.status === 'updated') await refreshAll();
             return result;
         }
         // scope === 'following'
         const result = await splitSeriesAt(masterId, date, patch, get().entries);
-        if (result.status === 'updated') {
-            const [entries, exceptions] = await Promise.all([fetchEntries(), fetchRecurrenceExceptions()]);
-            if (entries) set(() => ({ entries, recurrenceExceptions: exceptions }));
-        }
+        if (result.status === 'updated') await refreshAll();
         return result;
     },
 

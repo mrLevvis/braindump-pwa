@@ -5,12 +5,7 @@ import {
     insertRecurrenceException,
     updateEntry as updateEntryApi,
 } from './ApiClient';
-
-function prevDayStr(date: string): string {
-    const d = new Date(`${date}T00:00:00`);
-    d.setDate(d.getDate() - 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
+import { addDays } from '../../../lib/dateUtils';
 
 /** Kürzt den Master bis zum Vortag von `date` und löscht alle Exceptions ab `date`. */
 export async function deleteFollowing(
@@ -21,7 +16,7 @@ export async function deleteFollowing(
     const master = entries.find(e => e.id === masterId);
     if (!master?.recurrence) return { status: 'not_found' };
 
-    const untilDate = prevDayStr(date);
+    const untilDate = addDays(date, -1);
     const result = await updateEntryApi(masterId, {
         recurrence: { ...master.recurrence, end: { type: 'until', date: untilDate } },
     });
@@ -41,7 +36,7 @@ export async function splitSeriesAt(
     const master = entries.find(e => e.id === masterId);
     if (!master?.recurrence) return { status: 'not_found' };
 
-    const untilDate = prevDayStr(date);
+    const untilDate = addDays(date, -1);
     await updateEntryApi(masterId, {
         recurrence: { ...master.recurrence, end: { type: 'until', date: untilDate } },
     });

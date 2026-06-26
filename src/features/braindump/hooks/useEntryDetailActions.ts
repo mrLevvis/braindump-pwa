@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useBrainDumpStore } from '../store';
 import { useDeleteEntry, useDeleteOccurrence, useReprocessEntry, useUpdateEntry, useUpdateOccurrence } from '@/hooks';
 import { useErrorToast, useSuccessToast } from '@/hooks';
-import { getSuccessors, calcDeltaDays, addDays } from '../utils/dependencies';
+import { addDays } from '@/lib/dateUtils';
+import { getSuccessors, calcDeltaDays } from '../utils/dependencies';
 import type { BrainDumpEntry, EntryPatch, RecurrenceScope } from '../types';
 
 const DELETE_FEEDBACK = {

@@ -4,7 +4,12 @@
  */
 
 
-// ─── Recurrence types (mirror of supabase/functions/_shared/contract.ts) ──────
+// ─── Recurrence types ────────────────────────────────────────────────────────
+// Deliberately duplicated from supabase/functions/_shared/contract.ts.
+// Deno Edge Functions cannot share source with the Vite frontend, so a shared
+// package is not currently viable. Drift risk is accepted; when the recurrence
+// schema changes, update BOTH files and bump a version comment here.
+// Last synced: 2026-06
 
 export type RecurrenceFreq = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
 export type Weekday = 'MO' | 'TU' | 'WE' | 'TH' | 'FR' | 'SA' | 'SU';
@@ -60,7 +65,7 @@ export interface BrainDumpState {
   toggleTaskCompleted: (id: string, completed: boolean) => Promise<ToggleResult>;
   updateEntry: (id: string, patch: EntryPatch) => Promise<UpdateResult>;
   reprocessEntry: (id: string, patch: EntryPatch) => Promise<UpdateResult>;
-  updateEntryList: () => void;
+  updateEntryList: () => Promise<void>;
   prioritizeDayTasks: (date: string, tasks: readonly BrainDumpEntry[]) => Promise<void>;
   clearData: () => void;
   addItemToEntry: (captureId: string, label: string) => Promise<void>;

@@ -78,16 +78,6 @@ export function sortTasksTopologically(tasks: BrainDumpEntry[]): BrainDumpEntry[
   return result;
 }
 
-/** Verschiebt ein ISO-Datum (YYYY-MM-DD) um `delta` Tage. */
-export function addDays(dateIso: string, delta: number): string {
-  const d = new Date(`${dateIso}T00:00:00`);
-  d.setDate(d.getDate() + delta);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
 /** Berechnet die Differenz in ganzen Tagen zwischen zwei ISO-Daten (from → to). */
 export function calcDeltaDays(fromDate: string, toDate: string): number {
   const from = new Date(`${fromDate}T00:00:00`);

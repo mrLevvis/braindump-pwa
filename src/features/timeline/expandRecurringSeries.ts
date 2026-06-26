@@ -5,6 +5,7 @@
  */
 
 import type { BrainDumpEntry, RecurrenceRule, RecurrenceException, Weekday } from '../braindump/types';
+import { parseLocal, toIso } from '../../lib/dateUtils';
 
 // JS getDay() → Weekday-Kürzel
 const JS_DOW_TO_WD: readonly Weekday[] = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
@@ -12,14 +13,7 @@ const WD_TO_JS_DOW: Record<Weekday, number> = {
   SU: 0, MO: 1, TU: 2, WE: 3, TH: 4, FR: 5, SA: 6,
 };
 
-function parseLocal(iso: string): Date {
-  return new Date(`${iso}T00:00:00`);
-}
-
-function toIso(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
+// Advances a Date object by n days (distinct from the ISO-string addDays in dateUtils)
 function addDays(d: Date, n: number): Date {
   const r = new Date(d);
   r.setDate(r.getDate() + n);
