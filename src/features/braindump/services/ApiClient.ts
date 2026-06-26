@@ -58,6 +58,17 @@ type BrainDumpEntryRow = Omit<BrainDumpEntry, 'captureId' | 'sourceExcerpt' | 'c
     depends_on?: string[] | null;
 };
 
+function mapRow({ capture_id, source_excerpt, completed, series_entry_id, depends_on, ...rest }: BrainDumpEntryRow): BrainDumpEntry {
+    return {
+        ...rest,
+        completed: completed ?? false,
+        captureId: capture_id ?? undefined,
+        sourceExcerpt: source_excerpt ?? undefined,
+        seriesEntryId: series_entry_id ?? undefined,
+        dependsOn: depends_on ?? undefined,
+    };
+}
+
 /**
  * Fetcht alle brain dump entries aus der Datenbank, sortiert nach Erstellungsdatum (neueste zuerst).
  * @returns Ein Array von BrainDumpEntry-Objekten oder null, wenn ein Fehler auftritt.
@@ -69,26 +80,20 @@ export async function fetchEntries(): Promise<BrainDumpEntry[] | null> {
         .order('created_at', { ascending: false });
     const rows = handlePostgrestError<BrainDumpEntryRow[]>('Error fetching entries:', error, data as BrainDumpEntryRow[] | null);
     if (!rows) return null;
-    return rows.map(({ capture_id, source_excerpt, completed, series_entry_id, depends_on, ...rest }) => ({
-        ...rest,
-        completed: completed ?? false,
-        captureId: capture_id ?? undefined,
-        sourceExcerpt: source_excerpt ?? undefined,
-        seriesEntryId: series_entry_id ?? undefined,
-        dependsOn: depends_on ?? undefined,
-    }));
+    return rows.map(mapRow);
 }
 
 /**
- * Fügt einen neuen Eintrag in die Datenbank ein.
- * @param entry Das InsertEntry-Objekt, das die Daten des neuen Eintrags enthält.
- * @returns Ein Array mit dem eingefügten Eintrag oder null, wenn ein Fehler auftritt.
+ * Fügt einen neuen Eintrag in die Datenbank ein und gibt die vollständige Zeile (inkl. generierter ID) zurück.
  */
-export async function insertEntry(entry: InsertEntry): Promise<InsertEntry | null> {
+export async function insertEntry(entry: InsertEntry): Promise<BrainDumpEntry | null> {
     const { data, error } = await supabase
         .from(BRAINDUMP_ENTRIES_DB)
-        .insert([entry]);
-    return handlePostgrestError<InsertEntry>('Error inserting entry:', error, data);
+        .insert([entry])
+        .select()
+        .single();
+    const row = handlePostgrestError<BrainDumpEntryRow>('Error inserting entry:', error, data as BrainDumpEntryRow | null);
+    return row ? mapRow(row) : null;
 }
 
 /**

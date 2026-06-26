@@ -1,10 +1,8 @@
 import { useState } from 'react';
-import { Circle, CircleCheck, ChevronDown, ChevronRight, Clock, GitFork, Pencil, Plus, RefreshCw, ShoppingCart, Square, SquareCheck, Timer, Sun, Trash2 } from 'lucide-react';
+import { Circle, CircleCheck, ChevronDown, ChevronRight, Clock, GitFork, RefreshCw, ShoppingCart, Sun, Timer } from 'lucide-react';
 import { useNow } from '@/hooks';
-import type { ShoppingItem } from '../../shopping/types/ShoppingItem';
 import { useBrainDumpStore } from '../store';
 import type { EntryCategory } from '../types';
-import { useDeleteEntry, useDeleteOccurrence, useErrorToast, useReprocessEntry, useSuccessToast, useUpdateEntry, useUpdateOccurrence } from '@/hooks';
 import { useTaskCompletionFlow } from './TaskCompletionDialog';
 import { formatCreatedDateTime, formatCreatedTime } from '../utils/formatTime';
 import {
@@ -19,8 +17,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import type { BrainDumpEntry, DeleteResult, RecurrenceScope, UpdateResult } from '../types';
-import { getSuccessors, calcDeltaDays, addDays } from '../utils/dependencies';
+import type { BrainDumpEntry, EntryPatch, RecurrenceScope } from '../types';
+import { getSuccessors } from '../utils/dependencies';
 import { TIME_OF_DAY_LABEL } from '../types/BrainDump';
 import { CATEGORY_STYLES, CategoryBadge, TagBadgeList } from '../categoryStyles';
 import { RecurrenceScopeDialog } from './RecurrenceScopeDialog';
@@ -28,6 +26,8 @@ import { formatRecurrenceRule } from '../../timeline/recurrenceUtils';
 import { useDaySelectionStore } from '../../timeline/store/DaySelectionStore';
 import { DetailPanelMenu } from './DetailPanelMenu';
 import { EntryEditForm } from './EntryEditForm';
+import { ShoppingItemsSection } from './ShoppingItemsSection';
+import { useEntryDetailActions } from '../hooks/useEntryDetailActions';
 
 // ─── Per-category panel styles ────────────────────────────────────────────────
 
@@ -196,12 +196,6 @@ function TimingCard({ date, endDate, startTime, endTime, timeOfDay, accentBg, bo
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const DELETE_FEEDBACK: Record<DeleteResult['status'], string> = {
-  deleted:   'Eintrag gelöscht.',
-  not_found: 'Kein passender Eintrag gefunden.',
-  error:     'Löschen fehlgeschlagen.',
-};
-
 const EXCERPT_HIGHLIGHT: Record<EntryCategory, string> = {
   TASK:     'bg-violet-500/25 dark:bg-violet-500/30 rounded-sm',
   EVENT:    'bg-sky-500/25 dark:bg-sky-500/30 rounded-sm',
@@ -346,232 +340,24 @@ function OriginalText({ text, excerpt, category, borderClass, bgClass }: Readonl
   );
 }
 
-// ─── ShoppingItemsSection ────────────────────────────────────────────────────
-
-function formatItemPrice(price: number): string {
-  return `~${price.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
-}
-
-function ShoppingItemsSection({ captureId, labelCls, sectionCls }: Readonly<{
-  captureId: string; labelCls: string; sectionCls: string;
-}>) {
-  const allItems            = useBrainDumpStore(s => s.items);
-  const toggleItem          = useBrainDumpStore(s => s.toggleItem);
-  const updateItemPrice     = useBrainDumpStore(s => s.updateItemPrice);
-  const addItemToEntry      = useBrainDumpStore(s => s.addItemToEntry);
-  const updateItemLabel     = useBrainDumpStore(s => s.updateItemLabel);
-  const removeItemFromEntry = useBrainDumpStore(s => s.removeItemFromEntry);
-
-  const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
-  const [priceDraft, setPriceDraft]         = useState('');
-  const [editingLabelId, setEditingLabelId] = useState<string | null>(null);
-  const [labelDraft, setLabelDraft]         = useState('');
-  const [newLabel, setNewLabel]             = useState('');
-  const [isAddingItem, setIsAddingItem]     = useState(false);
-
-  const items = allItems.filter(i => i.source_dump === captureId);
-
-  const startPriceEdit = (item: ShoppingItem) => {
-    setPriceDraft(
-      item.estimated_price != null
-        ? item.estimated_price.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-        : ''
-    );
-    setEditingPriceId(item.id);
-  };
-
-  const commitPrice = (id: string) => {
-    const trimmed = priceDraft.trim();
-    if (!trimmed) {
-      void updateItemPrice(id, null);
-    } else {
-      const parsed = parseFloat(trimmed.replace(',', '.'));
-      if (!Number.isNaN(parsed) && parsed >= 0) {
-        void updateItemPrice(id, Math.round(parsed * 100) / 100);
-      }
-    }
-    setEditingPriceId(null);
-  };
-
-  const startLabelEdit = (item: ShoppingItem) => {
-    setLabelDraft(item.label);
-    setEditingLabelId(item.id);
-  };
-
-  const commitLabel = (id: string, originalLabel: string) => {
-    const trimmed = labelDraft.trim();
-    if (trimmed && trimmed !== originalLabel) {
-      void updateItemLabel(id, captureId, trimmed);
-    }
-    setEditingLabelId(null);
-  };
-
-  const handleAddItem = () => {
-    const trimmed = newLabel.trim();
-    setNewLabel('');
-    setIsAddingItem(false);
-    if (trimmed) void addItemToEntry(captureId, trimmed);
-  };
-
-  return (
-    <section className="space-y-2" aria-label="Einkaufsartikel">
-      <p className={labelCls}>Artikel</p>
-      <ul className={sectionCls}>
-        {items.map(item => (
-          <li key={item.id} className="flex items-center gap-2 rounded-md px-0.5 group">
-            {/* Toggle */}
-            <button
-              type="button"
-              role="checkbox"
-              aria-checked={item.is_done}
-              onClick={() => void toggleItem(item.id, !item.is_done)}
-              className="shrink-0 py-0.5 rounded transition-colors hover:bg-black/5 dark:hover:bg-white/5"
-              aria-label={item.is_done ? 'Als unerledigt markieren' : 'Als erledigt markieren'}
-            >
-              {item.is_done
-                ? <SquareCheck className="h-4 w-4 text-emerald-500" aria-hidden="true" />
-                : <Square className="h-4 w-4 text-muted-foreground/50" aria-hidden="true" />}
-            </button>
-
-            {/* Label */}
-            {editingLabelId === item.id ? (
-              <input
-                type="text"
-                autoFocus
-                value={labelDraft}
-                onChange={e => setLabelDraft(e.target.value)}
-                onBlur={() => commitLabel(item.id, item.label)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') { e.preventDefault(); commitLabel(item.id, item.label); }
-                  else if (e.key === 'Escape') setEditingLabelId(null);
-                }}
-                className="flex-1 min-w-0 text-sm bg-transparent border-b border-emerald-400 focus:outline-none"
-                aria-label="Artikelname bearbeiten"
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={() => startLabelEdit(item)}
-                className={`flex-1 min-w-0 text-left text-sm py-0.5 rounded transition-colors hover:bg-black/5 dark:hover:bg-white/5 ${
-                  item.is_done ? 'line-through text-muted-foreground' : ''
-                }`}
-              >
-                {item.label}
-              </button>
-            )}
-
-            {/* Price */}
-            {editingPriceId === item.id ? (
-              <input
-                type="text"
-                inputMode="decimal"
-                autoFocus
-                value={priceDraft}
-                onChange={e => setPriceDraft(e.target.value)}
-                onBlur={() => commitPrice(item.id)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') { e.preventDefault(); commitPrice(item.id); }
-                  else if (e.key === 'Escape') setEditingPriceId(null);
-                }}
-                className="w-14 shrink-0 text-xs text-right tabular-nums bg-transparent border-b border-emerald-400 focus:outline-none"
-                aria-label="Preis in Euro"
-              />
-            ) : item.estimated_price != null ? (
-              <button
-                type="button"
-                onClick={() => startPriceEdit(item)}
-                className="shrink-0 flex items-center gap-0.5 group/price text-xs text-muted-foreground/70 tabular-nums hover:text-foreground transition-colors rounded px-0.5"
-                aria-label="Preis bearbeiten"
-              >
-                {formatItemPrice(item.estimated_price)}
-                <Pencil className="h-2.5 w-2.5 opacity-0 group-hover/price:opacity-60 transition-opacity" aria-hidden="true" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => startPriceEdit(item)}
-                className="shrink-0 p-0.5 rounded text-muted-foreground/30 hover:text-muted-foreground transition-colors"
-                aria-label="Preis hinzufügen"
-              >
-                <Plus className="h-3 w-3" aria-hidden="true" />
-              </button>
-            )}
-
-            {/* Delete */}
-            <button
-              type="button"
-              onClick={() => void removeItemFromEntry(item.id, captureId)}
-              className="shrink-0 p-0.5 rounded text-muted-foreground/25 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-              aria-label="Artikel löschen"
-            >
-              <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-            </button>
-          </li>
-        ))}
-
-        {/* Add new item */}
-        {isAddingItem ? (
-          <li className="flex items-center gap-2 rounded-md px-0.5 pt-1">
-            <Plus className="h-4 w-4 shrink-0 text-muted-foreground/30" aria-hidden="true" />
-            <input
-              type="text"
-              autoFocus
-              placeholder="Neuer Artikel..."
-              value={newLabel}
-              onChange={e => setNewLabel(e.target.value)}
-              onBlur={handleAddItem}
-              onKeyDown={e => {
-                if (e.key === 'Enter') { e.preventDefault(); handleAddItem(); }
-                else if (e.key === 'Escape') { setIsAddingItem(false); setNewLabel(''); }
-              }}
-              className="flex-1 text-sm bg-transparent border-b border-emerald-400 focus:outline-none placeholder:text-muted-foreground/40"
-              aria-label="Neuer Artikel"
-            />
-          </li>
-        ) : (
-          <li className="pt-1">
-            <button
-              type="button"
-              onClick={() => setIsAddingItem(true)}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors rounded px-0.5 py-0.5"
-            >
-              <Plus className="h-3 w-3" aria-hidden="true" />
-              Artikel hinzufügen
-            </button>
-          </li>
-        )}
-      </ul>
-    </section>
-  );
-}
-
 // ─── EntryDetailPanel ─────────────────────────────────────────────────────────
 
 export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
   entry: BrainDumpEntry; open: boolean; onOpenChange: (open: boolean) => void;
 }>) {
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isScopeDeleteOpen, setIsScopeDeleteOpen] = useState(false);
-  const [isScopeEditOpen, setIsScopeEditOpen] = useState(false);
-  const [editScope, setEditScope] = useState<RecurrenceScope | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isOriginalTextOpen, setIsOriginalTextOpen] = useState(false);
-  const [shiftQueue, setShiftQueue] = useState<Array<{ entryId: string; delta: number }>>([]);
+  const [isDeleteDialogOpen,  setIsDeleteDialogOpen]  = useState(false);
+  const [isScopeDeleteOpen,   setIsScopeDeleteOpen]   = useState(false);
+  const [isScopeEditOpen,     setIsScopeEditOpen]     = useState(false);
+  const [editScope,           setEditScope]           = useState<RecurrenceScope | null>(null);
+  const [isEditing,           setIsEditing]           = useState(false);
+  const [isOriginalTextOpen,  setIsOriginalTextOpen]  = useState(false);
 
   const allEntries = useBrainDumpStore(s => s.entries);
 
   const isRecurring = entry._isVirtualOccurrence === true || entry.recurrence != null;
 
-  const deleteEntry                  = useDeleteEntry();
-  const deleteOccurrence             = useDeleteOccurrence();
-  const updateEntry                  = useUpdateEntry();
-  const reprocessEntry               = useReprocessEntry();
-  const updateOccurrence             = useUpdateOccurrence();
-  const { triggerToggle, dialogs }   = useTaskCompletionFlow();
-  const showSuccessToast             = useSuccessToast();
-  const showErrorToast               = useErrorToast();
+  const actions = useEntryDetailActions(entry, onOpenChange);
+  const { triggerToggle, dialogs } = useTaskCompletionFlow();
 
   const s     = PANEL_STYLES[entry.category];
   const title = entry.title?.trim() || 'Untitled';
@@ -582,102 +368,11 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
   const sectionCls = `space-y-1 rounded-lg border ${s.sectionBorder} ${s.sectionBg} p-3`;
   const bulletCls  = `mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${s.bulletColor}`;
 
-  const handleSave = async (patch: Parameters<typeof updateEntry>[1]) => {
-    if (isSaving) return;
-    setIsSaving(true);
-    try {
-      let result: UpdateResult;
-      if (entry._isVirtualOccurrence) {
-        const masterId = entry._seriesMasterId ?? entry.id;
-        const occDate = entry._occurrenceDate ?? entry.payload.date ?? '';
-        result = await updateOccurrence(masterId, occDate, patch, editScope ?? 'single');
-      } else {
-        result = await reprocessEntry(entry.id, patch);
-      }
-      if (result.status === 'updated') {
-        setIsEditing(false);
-        setEditScope(null);
-
-        // Verschiebe-Dialog: prüfen ob Nachfolger durch Datumsänderung verletzt werden
-        if (!entry._isVirtualOccurrence) {
-          const newDate = patch.payload?.date;
-          const oldDate = entry.payload.date;
-          if (newDate && oldDate && newDate !== oldDate) {
-            const delta = calcDeltaDays(oldDate, newDate);
-            const freshEntries = useBrainDumpStore.getState().entries;
-            const violating = getSuccessors(entry.id, freshEntries).filter(
-              s => s.payload.date != null && s.payload.date < newDate
-            );
-            if (violating.length > 0) {
-              setShiftQueue(violating.map(s => ({ entryId: s.id, delta })));
-            }
-          }
-        }
-      } else {
-        showErrorToast(result.status === 'error' ? result.message : 'Eintrag nicht gefunden.');
-      }
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleShiftConfirm = async () => {
-    const current = shiftQueue[0];
-    if (!current) return;
-    const freshEntries = useBrainDumpStore.getState().entries;
-    const target = freshEntries.find(e => e.id === current.entryId);
-    if (!target?.payload.date) { setShiftQueue(prev => prev.slice(1)); return; }
-
-    const newDate = addDays(target.payload.date, current.delta);
-    const result = await updateEntry(current.entryId, { payload: { ...target.payload, date: newDate } });
-
-    const afterEntries = useBrainDumpStore.getState().entries;
-    const nextViolating = result.status === 'updated'
-      ? getSuccessors(current.entryId, afterEntries).filter(
-          s => s.payload.date != null && s.payload.date < newDate
-        )
-      : [];
-
-    setShiftQueue(prev => [
-      ...prev.slice(1),
-      ...nextViolating.map(s => ({ entryId: s.id, delta: current.delta })),
-    ]);
-  };
-
-  const handleShiftReject = () => setShiftQueue(prev => prev.slice(1));
-
-  const handleDeleteConfirm = async () => {
-    if (isDeleting) return;
-    setIsDeleting(true);
-    try {
-      const result = await deleteEntry(entry.id);
-      setIsDeleteDialogOpen(false);
-      if (result.status === 'deleted') {
-        onOpenChange(false);
-        showSuccessToast(DELETE_FEEDBACK.deleted);
-      } else {
-        showErrorToast(result.status === 'error' ? result.message : DELETE_FEEDBACK.not_found);
-      }
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const handleScopeDelete = async (scope: RecurrenceScope) => {
-    if (isDeleting) return;
-    setIsDeleting(true);
-    try {
-      const masterId = entry._isVirtualOccurrence ? (entry._seriesMasterId ?? entry.id) : entry.id;
-      const date = entry._occurrenceDate ?? entry.payload.date ?? '';
-      const result = await deleteOccurrence(masterId, date, scope);
-      if (result.status === 'deleted') {
-        onOpenChange(false);
-        showSuccessToast(DELETE_FEEDBACK.deleted);
-      } else {
-        showErrorToast(result.status === 'error' ? result.message : DELETE_FEEDBACK.not_found);
-      }
-    } finally {
-      setIsDeleting(false);
+  const handleSave = async (patch: EntryPatch) => {
+    const saved = await actions.save(patch, editScope);
+    if (saved) {
+      setIsEditing(false);
+      setEditScope(null);
     }
   };
 
@@ -720,7 +415,7 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
               entry={entry}
               onSave={handleSave}
               onCancel={() => setIsEditing(false)}
-              isSaving={isSaving}
+              isSaving={actions.isSaving}
             />
             <time dateTime={entry.created_at} className="px-6 pb-4 text-[10px] text-muted-foreground">
               erstellt am {formatCreatedDateTime(entry.created_at)} um {formatCreatedTime(entry.created_at)} Uhr
@@ -915,9 +610,16 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
             <AlertDialogDescription>Diese Aktion kann nicht rückgängig gemacht werden.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={handleDeleteConfirm} disabled={isDeleting}>
-              {isDeleting ? 'Lösche...' : 'Löschen'}
+            <AlertDialogCancel disabled={actions.isDeleting}>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={actions.isDeleting}
+              onClick={async () => {
+                await actions.deleteEntry();
+                setIsDeleteDialogOpen(false);
+              }}
+            >
+              {actions.isDeleting ? 'Lösche...' : 'Löschen'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -927,7 +629,7 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
         open={isScopeDeleteOpen}
         onOpenChange={setIsScopeDeleteOpen}
         mode="delete"
-        onConfirm={handleScopeDelete}
+        onConfirm={actions.deleteScopedEntry}
       />
 
       <RecurrenceScopeDialog
@@ -940,11 +642,11 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
 
     {dialogs}
 
-    {shiftQueue.length > 0 && (() => {
-      const current = shiftQueue[0];
-      const target = allEntries.find(e => e.id === current.entryId);
+    {actions.shiftQueue.length > 0 && (() => {
+      const current = actions.shiftQueue[0];
+      const target  = allEntries.find(e => e.id === current.entryId);
       if (!target) return null;
-      const absDelta = Math.abs(current.delta);
+      const absDelta  = Math.abs(current.delta);
       const direction = current.delta > 0 ? 'nach hinten' : 'nach vorne';
       return (
         <AlertDialog open={true} onOpenChange={() => {}}>
@@ -956,8 +658,8 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={handleShiftReject}>Nein</AlertDialogCancel>
-              <AlertDialogAction onClick={() => void handleShiftConfirm()}>Ja</AlertDialogAction>
+              <AlertDialogCancel onClick={actions.shiftReject}>Nein</AlertDialogCancel>
+              <AlertDialogAction onClick={() => void actions.shiftConfirm()}>Ja</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
