@@ -90,7 +90,6 @@ const PANEL_STYLES: Record<EntryCategory, PanelStyle> = {
 const FMT_DAY      = new Intl.DateTimeFormat('de-DE', { day: 'numeric' });
 const FMT_MONTH_S  = new Intl.DateTimeFormat('de-DE', { month: 'short' });
 const FMT_WEEKDAY  = new Intl.DateTimeFormat('de-DE', { weekday: 'long' });
-const FMT_DATE_L   = new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'long', year: 'numeric' });
 
 function parseLocalDate(iso: string): Date | null {
   const d = new Date(`${iso}T00:00:00`);
@@ -113,9 +112,7 @@ function TimingCard({ date, endDate, startTime, endTime, timeOfDay, accentBg, bo
   const endDay       = parsedEnd ? FMT_DAY.format(parsedEnd) : null;
   const endMonthS    = parsedEnd ? FMT_MONTH_S.format(parsedEnd).replace('.', '') : null;
   const weekday      = parsed    ? FMT_WEEKDAY.format(parsed)    : null;
-  const dateLong     = parsed    ? FMT_DATE_L.format(parsed)     : null;
   const endWeekday   = parsedEnd ? FMT_WEEKDAY.format(parsedEnd) : null;
-  const endDateLong  = parsedEnd ? FMT_DATE_L.format(parsedEnd)  : null;
   const timeStr      = startTime
     ? endTime ? `${startTime} – ${endTime} Uhr` : `${startTime} Uhr`
     : null;
