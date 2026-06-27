@@ -21,23 +21,26 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
       # Migrations 005-017 wurden manuell im Supabase-Editor ausgeführt und
-      # sind nicht in der CLI-Migrationshistorie. Als "applied" markieren damit
-      # db push sie nicht nochmal ausführt.
+      # fehlen in der CLI-Migrationshistorie. Einmalig per SQL nachtragen.
       - name: Repair migration history
         run: |
-          supabase migration repair --status applied 005_complete_task_only
-          supabase migration repair --status applied 006_enable_rls
-          supabase migration repair --status applied 007_add_shopping_items
-          supabase migration repair --status applied 008_scope_entries_by_user
-          supabase migration repair --status applied 009_add_issues
-          supabase migration repair --status applied 010_add_shopping_estimated_price
-          supabase migration repair --status applied 011_add_recurrence
-          supabase migration repair --status applied 012_recurrence_exceptions
-          supabase migration repair --status applied 013_issue_screenshots
-          supabase migration repair --status applied 014_add_shopping_deadline
-          supabase migration repair --status applied 015_add_depends_on
-          supabase migration repair --status applied 016_shopping_price_history_index
-          supabase migration repair --status applied 017_add_shopping_notes
+          supabase db execute --sql "
+            INSERT INTO supabase_migrations.schema_migrations (version) VALUES
+              ('005_complete_task_only'),
+              ('006_enable_rls'),
+              ('007_add_shopping_items'),
+              ('008_scope_entries_by_user'),
+              ('009_add_issues'),
+              ('010_add_shopping_estimated_price'),
+              ('011_add_recurrence'),
+              ('012_recurrence_exceptions'),
+              ('013_issue_screenshots'),
+              ('014_add_shopping_deadline'),
+              ('015_add_depends_on'),
+              ('016_shopping_price_history_index'),
+              ('017_add_shopping_notes')
+            ON CONFLICT DO NOTHING;
+          "
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
