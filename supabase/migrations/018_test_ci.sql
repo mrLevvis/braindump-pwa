@@ -1,1 +1,1 @@
--- CI/CD test migration: no-op comment to verify GitHub Actions workflow (v3)
+-- CI/CD test migration: no-op comment to verify GitHub Actions workflow (v4)

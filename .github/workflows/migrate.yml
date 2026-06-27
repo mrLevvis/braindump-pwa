@@ -24,7 +24,7 @@ jobs:
       # fehlen in der CLI-Migrationshistorie. Einmalig per SQL nachtragen.
       - name: Repair migration history
         run: |
-          supabase db execute --sql "
+          supabase db query "
             INSERT INTO supabase_migrations.schema_migrations (version) VALUES
               ('005_complete_task_only'),
               ('006_enable_rls'),
