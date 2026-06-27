@@ -20,7 +20,29 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
-      - run: supabase db push
+      # Migrations 005-017 wurden manuell im Supabase-Editor ausgeführt und
+      # sind nicht in der CLI-Migrationshistorie. Als "applied" markieren damit
+      # db push sie nicht nochmal ausführt.
+      - name: Repair migration history
+        run: |
+          supabase migration repair --status applied 005_complete_task_only
+          supabase migration repair --status applied 006_enable_rls
+          supabase migration repair --status applied 007_add_shopping_items
+          supabase migration repair --status applied 008_scope_entries_by_user
+          supabase migration repair --status applied 009_add_issues
+          supabase migration repair --status applied 010_add_shopping_estimated_price
+          supabase migration repair --status applied 011_add_recurrence
+          supabase migration repair --status applied 012_recurrence_exceptions
+          supabase migration repair --status applied 013_issue_screenshots
+          supabase migration repair --status applied 014_add_shopping_deadline
+          supabase migration repair --status applied 015_add_depends_on
+          supabase migration repair --status applied 016_shopping_price_history_index
+          supabase migration repair --status applied 017_add_shopping_notes
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+      - run: supabase db push --yes
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
