@@ -98,7 +98,7 @@ Gib das JSON exakt in dieser Form zurück:
       }
 
       // Für SHOPPING (stattdessen):
-      // "payload": { "items": [{"label": "Artikel 1", "estimatedPrice": 1.29}, {"label": "Artikel 2", "estimatedPrice": 2.49}] }
+      // "payload": { "items": [{"label": "Artikel 1", "estimatedPrice": 1.29, "category": "LEBENSMITTEL"}, {"label": "Artikel 2", "estimatedPrice": 2.49, "category": "HYGIENE"}] }
 
       // Für EVENT mit Wiederholung (optional, zusätzlich zu payload):
       // "recurrence": {
@@ -124,7 +124,14 @@ Kategorien:
 Regeln:
 - "entries" ist IMMER ein Array — auch wenn nur ein Gedanke im Dump steckt (dann Länge 1).
 - "category" ist IMMER exakt einer der vier Großbuchstaben-Werte.
-- SHOPPING: Alles was gekauft/bestellt/besorgt werden soll (einzeln oder als Liste) → EIN Entry, alle Artikel in payload.items. payload.items ist ein Array von Objekten mit "label" (String, nur der Artikelname ohne Verben wie "kaufen") und "estimatedPrice" (Zahl in EUR, realistischer Supermarktpreis in Deutschland, z.B. Milch 1.19, Brot 2.49, Butter 1.89). Kein date, startTime, endTime, tags im SHOPPING-payload.
+- SHOPPING: Alles was gekauft/bestellt/besorgt werden soll (einzeln oder als Liste) → EIN Entry, alle Artikel in payload.items. payload.items ist ein Array von Objekten mit "label" (String, nur der Artikelname ohne Verben wie "kaufen"), "estimatedPrice" (Zahl in EUR, realistischer Supermarktpreis in Deutschland, z.B. Milch 1.19, Brot 2.49, Butter 1.89) und "category" (Artikel-Kategorie, s. u.). Kein date, startTime, endTime, tags im SHOPPING-payload.
+  SHOPPING-Kategorien ("category" je Artikel, bei Unsicherheit immer "SONSTIGES"):
+  "LEBENSMITTEL": Lebensmittel, Getränke, Obst, Gemüse, Milchprodukte, Fleisch, Backwaren
+  "HAUSHALT":     Reinigungsmittel, Waschmittel, Küchenutensilien, Papierprodukte, Haushaltsgeräte
+  "ELEKTRONIK":   Batterien, Kabel, Geräte, Glühbirnen, Elektrozubehör
+  "KLEIDUNG":     Kleidungsstücke, Schuhe, Accessoires
+  "HYGIENE":      Körperpflege, Zahnpflege, Shampoo, Deodorant, Rasierer, Kosmetik
+  "SONSTIGES":    alles andere
 - "sourceExcerpt" enthält den relevanten Wortlaut aus dem Original möglichst wörtlich, niemals leer.
 - "summary" ist ein Array von Stichpunkten (kurze Sätze/Fragmente) die Details aus dem sourceExcerpt aufschlüsseln. Kein Stichpunkt wiederholt bloß den title. IMMER mindestens 1 Stichpunkt — auch bei trivialen Entries fasst du den Kern in einem Satz zusammen.
 - Felder in "payload", die nicht im Text vorkommen, lässt du komplett weg.
@@ -168,7 +175,7 @@ Ausgabe:
 {
   "entries": [
     {"category":"EVENT","title":"Zahnarzttermin","sourceExcerpt":"Zahnarzt morgen um 10 Uhr","summary":["Termin morgen um 10 Uhr"],"payload":{"date":"${tomorrowIso}","startTime":"10:00","endTime":"11:00"}},
-    {"category":"SHOPPING","title":"Einkaufsliste","sourceExcerpt":"Milch kaufen","summary":["1 Artikel: Milch"],"payload":{"items":[{"label":"Milch","estimatedPrice":1.19}]}}
+    {"category":"SHOPPING","title":"Einkaufsliste","sourceExcerpt":"Milch kaufen","summary":["1 Artikel: Milch"],"payload":{"items":[{"label":"Milch","estimatedPrice":1.19,"category":"LEBENSMITTEL"}]}}
   ]
 }
 
@@ -176,7 +183,7 @@ Eingabe: "ich muss noch Zahnpasta bestellen"
 Ausgabe:
 {
   "entries": [
-    {"category":"SHOPPING","title":"Einkaufsliste","sourceExcerpt":"ich muss noch Zahnpasta bestellen","summary":["1 Artikel: Zahnpasta"],"payload":{"items":[{"label":"Zahnpasta","estimatedPrice":2.49}]}}
+    {"category":"SHOPPING","title":"Einkaufsliste","sourceExcerpt":"ich muss noch Zahnpasta bestellen","summary":["1 Artikel: Zahnpasta"],"payload":{"items":[{"label":"Zahnpasta","estimatedPrice":2.49,"category":"HYGIENE"}]}}
   ]
 }
 
@@ -233,7 +240,7 @@ Eingabe: "Milch, Brot, Butter kaufen"
 Ausgabe:
 {
   "entries": [
-    {"category":"SHOPPING","title":"Einkaufsliste","sourceExcerpt":"Milch, Brot, Butter kaufen","summary":["3 Artikel: Milch, Brot, Butter"],"payload":{"items":[{"label":"Milch","estimatedPrice":1.19},{"label":"Brot","estimatedPrice":2.49},{"label":"Butter","estimatedPrice":1.89}]}}
+    {"category":"SHOPPING","title":"Einkaufsliste","sourceExcerpt":"Milch, Brot, Butter kaufen","summary":["3 Artikel: Milch, Brot, Butter"],"payload":{"items":[{"label":"Milch","estimatedPrice":1.19,"category":"LEBENSMITTEL"},{"label":"Brot","estimatedPrice":2.49,"category":"LEBENSMITTEL"},{"label":"Butter","estimatedPrice":1.89,"category":"LEBENSMITTEL"}]}}
   ]
 }
 

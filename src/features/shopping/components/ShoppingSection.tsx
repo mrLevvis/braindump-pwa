@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useBrainDumpStore } from '../../braindump/store';
 import { ShoppingItemRow } from './ShoppingItemRow';
 import { ShoppingItemDetailPanel } from './ShoppingItemDetailPanel';
-import { sortShoppingItemsByDeadline } from '../utils/shoppingUtils';
-import type { ShoppingItem } from '../types/ShoppingItem';
+import { groupByCategory } from '../utils/shoppingUtils';
+import type { ShoppingItem, ShoppingCategory } from '../types/ShoppingItem';
 
 const SECTION_CLS = ['space-y-2'].join(' ');
 
@@ -23,6 +23,20 @@ const FOOTER_CLS = [
   'px-4', 'py-2.5', 'text-sm',
 ].join(' ');
 
+const GROUP_HEADER_CLS = [
+  'text-xs', 'font-semibold', 'uppercase', 'tracking-wide',
+  'text-muted-foreground', 'px-1', 'pb-1',
+].join(' ');
+
+const CATEGORY_LABELS: Record<ShoppingCategory, string> = {
+  LEBENSMITTEL: 'Lebensmittel',
+  HAUSHALT: 'Haushalt',
+  ELEKTRONIK: 'Elektronik',
+  KLEIDUNG: 'Kleidung',
+  HYGIENE: 'Hygiene',
+  SONSTIGES: 'Sonstiges',
+};
+
 function formatTotal(amount: number): string {
   return `~${amount.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 }
@@ -38,7 +52,7 @@ export function ShoppingSection() {
 
   useEffect(() => { loadItems(); }, [loadItems]);
 
-  const sorted = sortShoppingItemsByDeadline(items);
+  const groups = groupByCategory(items);
   const pricedItems = items.filter((i) => i.estimated_price != null);
   const totalAll = pricedItems.reduce((sum, i) => sum + (i.estimated_price ?? 0), 0);
   const totalOpen = pricedItems.filter((i) => !i.is_done).reduce((sum, i) => sum + (i.estimated_price ?? 0), 0);
@@ -63,17 +77,24 @@ export function ShoppingSection() {
         </p>
       ) : (
         <>
-          <ul className={LIST_CLS}>
-            {sorted.map((item) => (
-              <ShoppingItemRow
-                key={item.id}
-                item={item}
-                onToggle={toggleItem}
-                onDelete={removeItem}
-                onOpenDetail={openDetail}
-              />
+          <div className="space-y-3">
+            {groups.map(({ category, items: groupItems }) => (
+              <div key={category}>
+                <p className={GROUP_HEADER_CLS}>{CATEGORY_LABELS[category]}</p>
+                <ul className={LIST_CLS}>
+                  {groupItems.map((item) => (
+                    <ShoppingItemRow
+                      key={item.id}
+                      item={item}
+                      onToggle={toggleItem}
+                      onDelete={removeItem}
+                      onOpenDetail={openDetail}
+                    />
+                  ))}
+                </ul>
+              </div>
             ))}
-          </ul>
+          </div>
           {hasTotal && (
             <div className={FOOTER_CLS}>
               <span className="text-muted-foreground">Geschätzte Summe</span>

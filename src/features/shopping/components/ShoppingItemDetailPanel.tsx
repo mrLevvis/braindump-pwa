@@ -3,9 +3,19 @@ import { CalendarClock, ShoppingCart, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useBrainDumpStore } from '../../braindump/store';
-import type { ShoppingItem } from '../types/ShoppingItem';
+import { SHOPPING_CATEGORIES } from '../types/ShoppingItem';
+import type { ShoppingItem, ShoppingCategory } from '../types/ShoppingItem';
 
 const FIELD_LABEL_CLS = 'text-xs font-medium text-muted-foreground w-24 shrink-0 pt-1.5';
+
+const CATEGORY_LABELS: Record<ShoppingCategory, string> = {
+  LEBENSMITTEL: 'Lebensmittel',
+  HAUSHALT: 'Haushalt',
+  ELEKTRONIK: 'Elektronik',
+  KLEIDUNG: 'Kleidung',
+  HYGIENE: 'Hygiene',
+  SONSTIGES: 'Sonstiges',
+};
 
 const INPUT_CLS = [
   'flex-1 bg-transparent text-sm leading-snug',
@@ -44,6 +54,7 @@ export function ShoppingItemDetailPanel({ item, open, onOpenChange }: Readonly<P
   const updateItemPrice = useBrainDumpStore((s) => s.updateItemPrice);
   const updateItemNotes = useBrainDumpStore((s) => s.updateItemNotes);
   const updateItemDeadline = useBrainDumpStore((s) => s.updateItemDeadline);
+  const updateItemCategory = useBrainDumpStore((s) => s.updateItemCategory);
   const updateItemLabel = useBrainDumpStore((s) => s.updateItemLabel);
   const removeItemFromEntry = useBrainDumpStore((s) => s.removeItemFromEntry);
 
@@ -139,6 +150,21 @@ export function ShoppingItemDetailPanel({ item, open, onOpenChange }: Readonly<P
           </label>
 
           <div className="h-px bg-border" />
+
+          {/* Kategorie */}
+          <div className="flex items-start gap-3">
+            <span className={FIELD_LABEL_CLS}>Kategorie</span>
+            <select
+              value={item.category}
+              onChange={(e) => void updateItemCategory(item.id, e.target.value as ShoppingCategory)}
+              className={[INPUT_CLS, 'cursor-pointer'].join(' ')}
+              aria-label="Kategorie"
+            >
+              {SHOPPING_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>{CATEGORY_LABELS[cat]}</option>
+              ))}
+            </select>
+          </div>
 
           {/* Bezeichnung */}
           <div className="flex items-start gap-3">

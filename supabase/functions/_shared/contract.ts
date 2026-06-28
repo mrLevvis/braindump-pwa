@@ -8,6 +8,17 @@
 /** Die erlaubten Kategorien als Array (= die eine Wahrheit, zur Laufzeit nutzbar). */
 export const ENTRY_CATEGORIES = ["TASK", "EVENT", "NOTE", "SHOPPING"] as const;
 
+/** Shopping-Artikel-Kategorien (geschlossener Enum, eine Wahrheit für die Edge-Function-Laufzeit). */
+export const SHOPPING_CATEGORIES = [
+  'LEBENSMITTEL',
+  'HAUSHALT',
+  'ELEKTRONIK',
+  'KLEIDUNG',
+  'HYGIENE',
+  'SONSTIGES',
+] as const;
+export type ShoppingCategory = typeof SHOPPING_CATEGORIES[number];
+
 // ─── Recurrence ───────────────────────────────────────────────────────────────
 
 export type RecurrenceFreq = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
@@ -64,10 +75,11 @@ export const TIME_OF_DAY_VALUES = ['morgens', 'vormittags', 'mittags', 'nachmitt
 export type TimeOfDay = typeof TIME_OF_DAY_VALUES[number];
 
 /** Die Nutzlast eines Eintrags. */
-/** Ein Einkaufsartikel mit optionaler KI-Preisschätzung (in EUR). */
+/** Ein Einkaufsartikel mit optionaler KI-Preisschätzung (in EUR) und Kategorie. */
 export interface ShoppingItemEntry {
   label: string;
   estimatedPrice?: number;
+  category?: ShoppingCategory;
 }
 
 export interface EntryPayload {

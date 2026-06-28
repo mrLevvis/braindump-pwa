@@ -3,6 +3,16 @@
  * Domänen-Modell für abhakbare Einkaufs-Items aus der shopping_items-Tabelle.
  */
 
+export const SHOPPING_CATEGORIES = [
+  'LEBENSMITTEL',
+  'HAUSHALT',
+  'ELEKTRONIK',
+  'KLEIDUNG',
+  'HYGIENE',
+  'SONSTIGES',
+] as const;
+export type ShoppingCategory = typeof SHOPPING_CATEGORIES[number];
+
 export interface ShoppingItem {
   id: string;
   created_at: string;
@@ -12,6 +22,7 @@ export interface ShoppingItem {
   estimated_price: number | null;
   deadline: string | null;
   notes: string | null;
+  category: ShoppingCategory;
 }
 
 export type ToggleResult =
@@ -41,5 +52,10 @@ export type UpdateNotesResult =
 
 export type UpdateDeadlineResult =
   | { status: 'updated'; deadline: string | null }
+  | { status: 'not_found' }
+  | { status: 'error'; message: string };
+
+export type UpdateCategoryResult =
+  | { status: 'updated'; category: ShoppingCategory }
   | { status: 'not_found' }
   | { status: 'error'; message: string };

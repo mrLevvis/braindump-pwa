@@ -22,7 +22,8 @@ import { createClient } from "@supabase/supabase-js";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { structureText } from "../process-brain-dump/structureText.ts";
 import type { StructuredEntry } from "../_shared/contract.ts";
-import { ENTRY_CATEGORIES, normalizeEntryContract } from "../_shared/contract.ts";
+import { ENTRY_CATEGORIES, SHOPPING_CATEGORIES, normalizeEntryContract } from "../_shared/contract.ts";
+import type { ShoppingCategory } from "../_shared/contract.ts";
 import { fetchPriceHistory, resolveItemPrice } from "../_shared/priceHistory.ts";
 
 const supabase = createClient(
@@ -132,7 +133,9 @@ Deno.serve(async (request) => {
       const isObj = raw !== null && typeof raw === "object";
       const label: string = isObj ? (raw as { label: string }).label : String(raw);
       const aiPrice: number | null = isObj ? ((raw as { estimatedPrice?: number }).estimatedPrice ?? null) : null;
-      return { label, aiPrice };
+      const rawCategory = isObj ? (raw as { category?: string }).category : undefined;
+      const category: ShoppingCategory = (SHOPPING_CATEGORIES as readonly string[]).includes(rawCategory ?? '') ? rawCategory as ShoppingCategory : 'SONSTIGES';
+      return { label, aiPrice, category };
     });
 
     // Preis-Historien VOR dem Löschen abrufen — aktuelle Einträge zählen als Datenpunkte.
@@ -152,8 +155,9 @@ Deno.serve(async (request) => {
       );
     }
 
-    const rows = itemsFlat.map(({ label, aiPrice }, i) => ({
+    const rows = itemsFlat.map(({ label, aiPrice, category }, i) => ({
       label,
+      category,
       estimated_price: resolveItemPrice(priceHistories[i], aiPrice),
       is_done: false,
       source_dump: captureId,
