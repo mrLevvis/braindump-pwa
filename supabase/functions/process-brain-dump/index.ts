@@ -15,8 +15,8 @@ import { createClient } from "@supabase/supabase-js";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { structureText } from "./structureText.ts";
 import type { ContextEntry, EntryAdditionalInfo, StructuredEntry } from "../_shared/contract.ts";
-import { ENTRY_CATEGORIES, SHOPPING_CATEGORIES, normalizeEntryContract } from "../_shared/contract.ts";
-import type { ShoppingCategory } from "../_shared/contract.ts";
+import { ENTRY_CATEGORIES, SHOPPING_CATEGORIES, SHOPPING_UNITS, normalizeEntryContract } from "../_shared/contract.ts";
+import type { ShoppingCategory, ShoppingUnit } from "../_shared/contract.ts";
 import { transcribeAudio } from "./transcribeAudio.ts";
 import { fetchPriceHistory, resolveItemPrice } from "../_shared/priceHistory.ts";
 
@@ -191,7 +191,15 @@ Deno.serve(async (request) => {
         const aiPrice: number | null = isObj ? ((raw as { estimatedPrice?: number }).estimatedPrice ?? null) : null;
         const rawCategory = isObj ? (raw as { category?: string }).category : undefined;
         const category: ShoppingCategory = (SHOPPING_CATEGORIES as readonly string[]).includes(rawCategory ?? '') ? rawCategory as ShoppingCategory : 'SONSTIGES';
-        return { label, aiPrice, category };
+        const rawUnit = isObj ? (raw as { unit?: string }).unit : undefined;
+        const validUnit = (SHOPPING_UNITS as readonly string[]).includes(rawUnit ?? '');
+        const unit: ShoppingUnit = validUnit ? rawUnit as ShoppingUnit : 'STUECK';
+        const rawCount = isObj ? (raw as { count?: unknown }).count : undefined;
+        const count: number = typeof rawCount === 'number' && rawCount >= 1 ? Math.round(rawCount) : 1;
+        const rawAmount = isObj ? (raw as { amount?: unknown }).amount : undefined;
+        // Invariante: amount ist null genau dann wenn unit = STUECK
+        const amount: number | null = unit !== 'STUECK' && typeof rawAmount === 'number' && rawAmount > 0 ? rawAmount : null;
+        return { label, aiPrice, category, count, amount, unit };
       })
     );
 
@@ -200,10 +208,13 @@ Deno.serve(async (request) => {
       itemsFlat.map(({ label }) => fetchPriceHistory(supabase, userId, label))
     );
 
-    const rows = itemsFlat.map(({ label, aiPrice, category }, i) => ({
+    const rows = itemsFlat.map(({ label, aiPrice, category, count, amount, unit }, i) => ({
       label,
       category,
       estimated_price: resolveItemPrice(priceHistories[i], aiPrice),
+      count,
+      amount,
+      unit,
       is_done: false,
       source_dump: captureId,
       user_id: userId,

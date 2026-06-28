@@ -13,6 +13,9 @@ export const SHOPPING_CATEGORIES = [
 ] as const;
 export type ShoppingCategory = typeof SHOPPING_CATEGORIES[number];
 
+export const SHOPPING_UNITS = ['STUECK', 'G', 'KG', 'ML', 'L', 'CM', 'M'] as const;
+export type ShoppingUnit = typeof SHOPPING_UNITS[number];
+
 export interface ShoppingItem {
   id: string;
   created_at: string;
@@ -23,6 +26,9 @@ export interface ShoppingItem {
   deadline: string | null;
   notes: string | null;
   category: ShoppingCategory;
+  count: number;
+  amount: number | null;
+  unit: ShoppingUnit;
 }
 
 export type ToggleResult =
@@ -57,5 +63,20 @@ export type UpdateDeadlineResult =
 
 export type UpdateCategoryResult =
   | { status: 'updated'; category: ShoppingCategory }
+  | { status: 'not_found' }
+  | { status: 'error'; message: string };
+
+export type UpdateCountResult =
+  | { status: 'updated'; count: number }
+  | { status: 'not_found' }
+  | { status: 'error'; message: string };
+
+export type UpdateAmountResult =
+  | { status: 'updated'; amount: number | null }
+  | { status: 'not_found' }
+  | { status: 'error'; message: string };
+
+export type UpdateUnitResult =
+  | { status: 'updated'; unit: ShoppingUnit }
   | { status: 'not_found' }
   | { status: 'error'; message: string };

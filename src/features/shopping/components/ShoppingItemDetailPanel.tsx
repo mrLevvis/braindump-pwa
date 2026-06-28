@@ -3,8 +3,8 @@ import { CalendarClock, ShoppingCart, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useBrainDumpStore } from '../../braindump/store';
-import { SHOPPING_CATEGORIES } from '../types/ShoppingItem';
-import type { ShoppingItem, ShoppingCategory } from '../types/ShoppingItem';
+import { SHOPPING_CATEGORIES, SHOPPING_UNITS } from '../types/ShoppingItem';
+import type { ShoppingItem, ShoppingCategory, ShoppingUnit } from '../types/ShoppingItem';
 
 const FIELD_LABEL_CLS = 'text-xs font-medium text-muted-foreground w-24 shrink-0 pt-1.5';
 
@@ -15,6 +15,16 @@ const CATEGORY_LABELS: Record<ShoppingCategory, string> = {
   KLEIDUNG: 'Kleidung',
   HYGIENE: 'Hygiene',
   SONSTIGES: 'Sonstiges',
+};
+
+const UNIT_LABELS: Record<ShoppingUnit, string> = {
+  STUECK: 'Stück',
+  G: 'g',
+  KG: 'kg',
+  ML: 'ml',
+  L: 'l',
+  CM: 'cm',
+  M: 'm',
 };
 
 const INPUT_CLS = [
@@ -56,12 +66,17 @@ export function ShoppingItemDetailPanel({ item, open, onOpenChange }: Readonly<P
   const updateItemDeadline = useBrainDumpStore((s) => s.updateItemDeadline);
   const updateItemCategory = useBrainDumpStore((s) => s.updateItemCategory);
   const updateItemLabel = useBrainDumpStore((s) => s.updateItemLabel);
+  const updateItemCount = useBrainDumpStore((s) => s.updateItemCount);
+  const updateItemAmount = useBrainDumpStore((s) => s.updateItemAmount);
+  const updateItemUnit = useBrainDumpStore((s) => s.updateItemUnit);
   const removeItemFromEntry = useBrainDumpStore((s) => s.removeItemFromEntry);
 
   const [labelDraft, setLabelDraft]     = useState('');
   const [priceDraft, setPriceDraft]     = useState('');
   const [deadlineDraft, setDeadlineDraft] = useState('');
   const [notesDraft, setNotesDraft]     = useState('');
+  const [countDraft, setCountDraft]     = useState('1');
+  const [amountDraft, setAmountDraft]   = useState('');
 
   useEffect(() => {
     if (open && item) {
@@ -69,6 +84,8 @@ export function ShoppingItemDetailPanel({ item, open, onOpenChange }: Readonly<P
       setPriceDraft(item.estimated_price != null ? formatPriceForInput(item.estimated_price) : '');
       setDeadlineDraft(item.deadline ?? '');
       setNotesDraft(item.notes ?? '');
+      setCountDraft(String(item.count));
+      setAmountDraft(item.amount != null ? String(item.amount) : '');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, item?.id]);
@@ -101,6 +118,22 @@ export function ShoppingItemDetailPanel({ item, open, onOpenChange }: Readonly<P
     const value = notesDraft.trim() || null;
     if (value === (item.notes ?? null)) return;
     void updateItemNotes(item.id, value);
+  };
+
+  const commitCount = () => {
+    const parsed = parseInt(countDraft.trim(), 10);
+    const value = !Number.isNaN(parsed) && parsed >= 1 ? parsed : 1;
+    if (value === item.count) return;
+    void updateItemCount(item.id, value);
+  };
+
+  const commitAmount = () => {
+    if (item.unit === 'STUECK') return;
+    const trimmed = amountDraft.trim().replace(',', '.');
+    const parsed = trimmed ? parseFloat(trimmed) : NaN;
+    const value = !Number.isNaN(parsed) && parsed > 0 ? parsed : null;
+    if (value === item.amount) return;
+    void updateItemAmount(item.id, value);
   };
 
   const handleDelete = () => {
@@ -195,6 +228,49 @@ export function ShoppingItemDetailPanel({ item, open, onOpenChange }: Readonly<P
               placeholder="0,00"
               aria-label="Geschätzter Preis in Euro"
             />
+          </div>
+
+          {/* Menge */}
+          <div className="flex items-start gap-3">
+            <span className={FIELD_LABEL_CLS}>Anzahl</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={countDraft}
+              onChange={(e) => setCountDraft(e.target.value)}
+              onBlur={commitCount}
+              onKeyDown={handleKeyDown(commitCount)}
+              className={[INPUT_CLS, 'w-12 flex-none'].join(' ')}
+              placeholder="1"
+              aria-label="Anzahl"
+            />
+          </div>
+
+          {/* Menge pro Stück + Einheit */}
+          <div className="flex items-start gap-3">
+            <span className={FIELD_LABEL_CLS}>Menge</span>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={amountDraft}
+              onChange={(e) => setAmountDraft(e.target.value)}
+              onBlur={commitAmount}
+              onKeyDown={handleKeyDown(commitAmount)}
+              disabled={item.unit === 'STUECK'}
+              className={[INPUT_CLS, 'w-16 flex-none', item.unit === 'STUECK' ? 'opacity-30 cursor-not-allowed' : ''].join(' ')}
+              placeholder="–"
+              aria-label="Menge pro Stück"
+            />
+            <select
+              value={item.unit}
+              onChange={(e) => void updateItemUnit(item.id, e.target.value as ShoppingUnit)}
+              className={[INPUT_CLS, 'cursor-pointer flex-1'].join(' ')}
+              aria-label="Einheit"
+            >
+              {SHOPPING_UNITS.map((u) => (
+                <option key={u} value={u}>{UNIT_LABELS[u]}</option>
+              ))}
+            </select>
           </div>
 
           {/* Deadline */}

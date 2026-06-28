@@ -1,5 +1,5 @@
-import type { ShoppingItem, ShoppingCategory } from '../types/ShoppingItem';
-import { fetchShoppingItems, toggleShoppingItem, deleteShoppingItem, updateShoppingItemPrice, updateShoppingItemNotes, updateShoppingItemDeadline, updateShoppingItemCategory } from '../services/shoppingItemsService';
+import type { ShoppingItem, ShoppingCategory, ShoppingUnit } from '../types/ShoppingItem';
+import { fetchShoppingItems, toggleShoppingItem, deleteShoppingItem, updateShoppingItemPrice, updateShoppingItemNotes, updateShoppingItemDeadline, updateShoppingItemCategory, updateShoppingItemCount, updateShoppingItemAmount, updateShoppingItemUnit } from '../services/shoppingItemsService';
 import { showErrorToast } from '../../../hooks/useErrorToast';
 
 export interface ShoppingSlice {
@@ -11,6 +11,9 @@ export interface ShoppingSlice {
   updateItemNotes: (id: string, notes: string | null) => Promise<void>;
   updateItemDeadline: (id: string, deadline: string | null) => Promise<void>;
   updateItemCategory: (id: string, category: ShoppingCategory) => Promise<void>;
+  updateItemCount: (id: string, count: number) => Promise<void>;
+  updateItemAmount: (id: string, amount: number | null) => Promise<void>;
+  updateItemUnit: (id: string, unit: ShoppingUnit) => Promise<void>;
 }
 
 type SetSlice = (partial: Partial<ShoppingSlice>) => void;
@@ -74,6 +77,37 @@ export const createShoppingSlice = (set: SetSlice, get: GetSlice): ShoppingSlice
   updateItemCategory: async (id, category) => {
     set({ items: get().items.map(i => i.id === id ? { ...i, category } : i) });
     const result = await updateShoppingItemCategory(id, category);
+    if (result.status === 'error') {
+      showErrorToast(result.message);
+      const items = await fetchShoppingItems().catch(() => null);
+      if (items) set({ items });
+    }
+  },
+
+  updateItemCount: async (id, count) => {
+    set({ items: get().items.map(i => i.id === id ? { ...i, count } : i) });
+    const result = await updateShoppingItemCount(id, count);
+    if (result.status === 'error') {
+      showErrorToast(result.message);
+      const items = await fetchShoppingItems().catch(() => null);
+      if (items) set({ items });
+    }
+  },
+
+  updateItemAmount: async (id, amount) => {
+    set({ items: get().items.map(i => i.id === id ? { ...i, amount } : i) });
+    const result = await updateShoppingItemAmount(id, amount);
+    if (result.status === 'error') {
+      showErrorToast(result.message);
+      const items = await fetchShoppingItems().catch(() => null);
+      if (items) set({ items });
+    }
+  },
+
+  updateItemUnit: async (id, unit) => {
+    // Invariante spiegeln: bei STUECK auch amount im Store auf null setzen
+    set({ items: get().items.map(i => i.id === id ? { ...i, unit, amount: unit === 'STUECK' ? null : i.amount } : i) });
+    const result = await updateShoppingItemUnit(id, unit);
     if (result.status === 'error') {
       showErrorToast(result.message);
       const items = await fetchShoppingItems().catch(() => null);

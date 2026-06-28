@@ -98,7 +98,7 @@ Gib das JSON exakt in dieser Form zurück:
       }
 
       // Für SHOPPING (stattdessen):
-      // "payload": { "items": [{"label": "Artikel 1", "estimatedPrice": 1.29, "category": "LEBENSMITTEL"}, {"label": "Artikel 2", "estimatedPrice": 2.49, "category": "HYGIENE"}] }
+      // "payload": { "items": [{"label": "Mehl", "estimatedPrice": 1.29, "category": "LEBENSMITTEL", "count": 2, "amount": 500, "unit": "G"}, {"label": "Zahnbürste", "estimatedPrice": 1.99, "category": "HYGIENE", "count": 3, "unit": "STUECK"}] }
 
       // Für EVENT mit Wiederholung (optional, zusätzlich zu payload):
       // "recurrence": {
@@ -124,7 +124,21 @@ Kategorien:
 Regeln:
 - "entries" ist IMMER ein Array — auch wenn nur ein Gedanke im Dump steckt (dann Länge 1).
 - "category" ist IMMER exakt einer der vier Großbuchstaben-Werte.
-- SHOPPING: Alles was gekauft/bestellt/besorgt werden soll (einzeln oder als Liste) → EIN Entry, alle Artikel in payload.items. payload.items ist ein Array von Objekten mit "label" (String, nur der Artikelname ohne Verben wie "kaufen"), "estimatedPrice" (Zahl in EUR, realistischer Supermarktpreis in Deutschland, z.B. Milch 1.19, Brot 2.49, Butter 1.89) und "category" (Artikel-Kategorie, s. u.). Kein date, startTime, endTime, tags im SHOPPING-payload.
+- SHOPPING: Alles was gekauft/bestellt/besorgt werden soll (einzeln oder als Liste) → EIN Entry, alle Artikel in payload.items. payload.items ist ein Array von Objekten mit "label" (String, nur der Artikelname ohne Verben wie "kaufen" und OHNE Mengenangabe), "estimatedPrice" (Zahl in EUR, realistischer Supermarktpreis in Deutschland, z.B. Milch 1.19, Brot 2.49, Butter 1.89), "category" (Artikel-Kategorie, s. u.) sowie "count" (Anzahl), "amount" (Menge pro Stück) und "unit" (Einheit). Kein date, startTime, endTime, tags im SHOPPING-payload.
+  Mengenfelder je Artikel:
+  "count": ganzzahlige Anzahl der Einheiten (z.B. 3 bei "3 Flaschen", 2 bei "2× 500g"). Standard: 1. IMMER setzen.
+  "amount": Menge pro Stück als Dezimalzahl (z.B. 500 bei "500g", 1.5 bei "1,5 l"). Nur setzen wenn unit ≠ "STUECK".
+  "unit": einer der Werte "STUECK" | "G" | "KG" | "ML" | "L" | "CM" | "M". IMMER setzen. Mapping:
+    "g" / "Gramm" → "G"
+    "kg" / "Kilo" / "Kilogramm" → "KG"
+    "ml" / "Milliliter" → "ML"
+    "l" / "Liter" → "L"
+    "cm" / "Zentimeter" → "CM"
+    "m" / "Meter" (ohne "ml") → "M"
+    Stückzahlen / "Packung" / "Flasche" / "Dose" / "Päckchen" / keine Einheit → "STUECK"
+  "label" enthält NUR den Artikelnamen (z.B. "500g Mehl" → label:"Mehl", count:1, amount:500, unit:"G").
+  Kombinierte Fälle: "3× 1 l Milch" → label:"Milch", count:3, amount:1, unit:"L".
+  Reine Stückzahl: "3 Zahnbürsten" → label:"Zahnbürste", count:3, unit:"STUECK" (kein amount).
   SHOPPING-Kategorien ("category" je Artikel, bei Unsicherheit immer "SONSTIGES"):
   "LEBENSMITTEL": Lebensmittel, Getränke, Obst, Gemüse, Milchprodukte, Fleisch, Backwaren
   "HAUSHALT":     Reinigungsmittel, Waschmittel, Küchenutensilien, Papierprodukte, Haushaltsgeräte
@@ -175,7 +189,7 @@ Ausgabe:
 {
   "entries": [
     {"category":"EVENT","title":"Zahnarzttermin","sourceExcerpt":"Zahnarzt morgen um 10 Uhr","summary":["Termin morgen um 10 Uhr"],"payload":{"date":"${tomorrowIso}","startTime":"10:00","endTime":"11:00"}},
-    {"category":"SHOPPING","title":"Einkaufsliste","sourceExcerpt":"Milch kaufen","summary":["1 Artikel: Milch"],"payload":{"items":[{"label":"Milch","estimatedPrice":1.19,"category":"LEBENSMITTEL"}]}}
+    {"category":"SHOPPING","title":"Einkaufsliste","sourceExcerpt":"Milch kaufen","summary":["1 Artikel: Milch"],"payload":{"items":[{"label":"Milch","estimatedPrice":1.19,"category":"LEBENSMITTEL","count":1,"unit":"STUECK"}]}}
   ]
 }
 
@@ -183,7 +197,7 @@ Eingabe: "ich muss noch Zahnpasta bestellen"
 Ausgabe:
 {
   "entries": [
-    {"category":"SHOPPING","title":"Einkaufsliste","sourceExcerpt":"ich muss noch Zahnpasta bestellen","summary":["1 Artikel: Zahnpasta"],"payload":{"items":[{"label":"Zahnpasta","estimatedPrice":2.49,"category":"HYGIENE"}]}}
+    {"category":"SHOPPING","title":"Einkaufsliste","sourceExcerpt":"ich muss noch Zahnpasta bestellen","summary":["1 Artikel: Zahnpasta"],"payload":{"items":[{"label":"Zahnpasta","estimatedPrice":2.49,"category":"HYGIENE","count":1,"unit":"STUECK"}]}}
   ]
 }
 
@@ -240,7 +254,15 @@ Eingabe: "Milch, Brot, Butter kaufen"
 Ausgabe:
 {
   "entries": [
-    {"category":"SHOPPING","title":"Einkaufsliste","sourceExcerpt":"Milch, Brot, Butter kaufen","summary":["3 Artikel: Milch, Brot, Butter"],"payload":{"items":[{"label":"Milch","estimatedPrice":1.19,"category":"LEBENSMITTEL"},{"label":"Brot","estimatedPrice":2.49,"category":"LEBENSMITTEL"},{"label":"Butter","estimatedPrice":1.89,"category":"LEBENSMITTEL"}]}}
+    {"category":"SHOPPING","title":"Einkaufsliste","sourceExcerpt":"Milch, Brot, Butter kaufen","summary":["3 Artikel: Milch, Brot, Butter"],"payload":{"items":[{"label":"Milch","estimatedPrice":1.19,"category":"LEBENSMITTEL","count":1,"unit":"STUECK"},{"label":"Brot","estimatedPrice":2.49,"category":"LEBENSMITTEL","count":1,"unit":"STUECK"},{"label":"Butter","estimatedPrice":1.89,"category":"LEBENSMITTEL","count":1,"unit":"STUECK"}]}}
+  ]
+}
+
+Eingabe: "2× 500g Mehl, 1,5 Liter Milch, 3 Zahnbürsten, 50 cm Kabel kaufen"
+Ausgabe:
+{
+  "entries": [
+    {"category":"SHOPPING","title":"Einkaufsliste","sourceExcerpt":"2× 500g Mehl, 1,5 Liter Milch, 3 Zahnbürsten, 50 cm Kabel kaufen","summary":["4 Artikel: Mehl, Milch, Zahnbürste, Kabel"],"payload":{"items":[{"label":"Mehl","estimatedPrice":2.58,"category":"LEBENSMITTEL","count":2,"amount":500,"unit":"G"},{"label":"Milch","estimatedPrice":1.79,"category":"LEBENSMITTEL","count":1,"amount":1.5,"unit":"L"},{"label":"Zahnbürste","estimatedPrice":1.99,"category":"HYGIENE","count":3,"unit":"STUECK"},{"label":"Kabel","estimatedPrice":3.99,"category":"ELEKTRONIK","count":1,"amount":50,"unit":"CM"}]}}
   ]
 }
 

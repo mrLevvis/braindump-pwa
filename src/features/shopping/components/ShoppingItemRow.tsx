@@ -1,6 +1,24 @@
 import { CalendarClock, Trash2 } from 'lucide-react';
-import type { ShoppingItem } from '../types/ShoppingItem';
+import type { ShoppingItem, ShoppingUnit } from '../types/ShoppingItem';
 import { isDeadlineOverdue } from '../utils/shoppingUtils';
+
+const UNIT_DISPLAY: Record<ShoppingUnit, string> = {
+  STUECK: '×',
+  G: 'g',
+  KG: 'kg',
+  ML: 'ml',
+  L: 'l',
+  CM: 'cm',
+  M: 'm',
+};
+
+function formatMenge(count: number, amount: number | null, unit: ShoppingUnit): string | null {
+  if (unit === 'STUECK' && count === 1) return null;
+  if (unit === 'STUECK') return `${count}×`;
+  const amountStr = `${amount}${UNIT_DISPLAY[unit]}`;
+  if (count === 1) return amountStr;
+  return `${count}× ${amountStr}`;
+}
 
 const ROW_CLS = ['flex', 'items-center', 'gap-3', 'py-2.5', 'px-1'].join(' ');
 
@@ -65,6 +83,21 @@ export function ShoppingItemRow({ item, onToggle, onDelete, onOpenDetail }: Read
       >
         {item.label}
       </button>
+      {(() => {
+        const mengeStr = formatMenge(item.count, item.amount, item.unit);
+        if (!mengeStr) return null;
+        return (
+          <span
+            className={[
+              'shrink-0', 'text-xs', 'tabular-nums', 'text-muted-foreground',
+              item.is_done ? 'opacity-40' : '',
+            ].join(' ')}
+            aria-label={`Menge: ${mengeStr}`}
+          >
+            {mengeStr}
+          </span>
+        );
+      })()}
       {item.deadline && (
         <span
           className={[

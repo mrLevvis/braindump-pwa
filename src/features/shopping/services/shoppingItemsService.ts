@@ -5,7 +5,7 @@
  */
 
 import { supabase } from '../../braindump/services/ApiClient';
-import type { ShoppingItem, ShoppingCategory, DeleteResult, ToggleResult, UpdatePriceResult, UpdateLabelResult, UpdateNotesResult, UpdateDeadlineResult, UpdateCategoryResult } from '../types/ShoppingItem';
+import type { ShoppingItem, ShoppingCategory, ShoppingUnit, DeleteResult, ToggleResult, UpdatePriceResult, UpdateLabelResult, UpdateNotesResult, UpdateDeadlineResult, UpdateCategoryResult, UpdateCountResult, UpdateAmountResult, UpdateUnitResult } from '../types/ShoppingItem';
 
 const TABLE = 'shopping_items';
 
@@ -125,4 +125,41 @@ export async function updateShoppingItemCategory(id: string, category: ShoppingC
   if (error) return { status: 'error', message: error.message };
   if (count === 0) return { status: 'not_found' };
   return { status: 'updated', category };
+}
+
+export async function updateShoppingItemCount(id: string, count: number): Promise<UpdateCountResult> {
+  const { error, count: rowCount } = await supabase
+    .from(TABLE)
+    .update({ count }, { count: 'exact' })
+    .eq('id', id);
+
+  if (error) return { status: 'error', message: error.message };
+  if (rowCount === 0) return { status: 'not_found' };
+  return { status: 'updated', count };
+}
+
+export async function updateShoppingItemAmount(id: string, amount: number | null): Promise<UpdateAmountResult> {
+  const { error, count } = await supabase
+    .from(TABLE)
+    .update({ amount }, { count: 'exact' })
+    .eq('id', id);
+
+  if (error) return { status: 'error', message: error.message };
+  if (count === 0) return { status: 'not_found' };
+  return { status: 'updated', amount };
+}
+
+export async function updateShoppingItemUnit(id: string, unit: ShoppingUnit): Promise<UpdateUnitResult> {
+  // Beim Wechsel zu STUECK muss amount auf null gesetzt werden (Invariante).
+  const update: { unit: ShoppingUnit; amount?: null } = { unit };
+  if (unit === 'STUECK') update.amount = null;
+
+  const { error, count } = await supabase
+    .from(TABLE)
+    .update(update, { count: 'exact' })
+    .eq('id', id);
+
+  if (error) return { status: 'error', message: error.message };
+  if (count === 0) return { status: 'not_found' };
+  return { status: 'updated', unit };
 }

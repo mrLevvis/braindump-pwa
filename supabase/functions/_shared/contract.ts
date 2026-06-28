@@ -19,6 +19,10 @@ export const SHOPPING_CATEGORIES = [
 ] as const;
 export type ShoppingCategory = typeof SHOPPING_CATEGORIES[number];
 
+/** Shopping-Einheiten (geschlossener Enum). */
+export const SHOPPING_UNITS = ['STUECK', 'G', 'KG', 'ML', 'L', 'CM', 'M'] as const;
+export type ShoppingUnit = typeof SHOPPING_UNITS[number];
+
 // ─── Recurrence ───────────────────────────────────────────────────────────────
 
 export type RecurrenceFreq = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
@@ -75,11 +79,14 @@ export const TIME_OF_DAY_VALUES = ['morgens', 'vormittags', 'mittags', 'nachmitt
 export type TimeOfDay = typeof TIME_OF_DAY_VALUES[number];
 
 /** Die Nutzlast eines Eintrags. */
-/** Ein Einkaufsartikel mit optionaler KI-Preisschätzung (in EUR) und Kategorie. */
+/** Ein Einkaufsartikel mit optionaler KI-Preisschätzung (in EUR), Kategorie und Mengenangabe. */
 export interface ShoppingItemEntry {
   label: string;
   estimatedPrice?: number;
   category?: ShoppingCategory;
+  count?: number;
+  amount?: number;
+  unit?: ShoppingUnit;
 }
 
 export interface EntryPayload {
