@@ -17,7 +17,7 @@ flowchart TD
     LLM_RESULT -- "Mehrere Entries" --> CASE_B["Fall B\n→ dump-flow-b.md"]
     LLM_RESULT -- "SHOPPING-Entry\n+ Items" --> CASE_C["Fall C\n→ dump-flow-c.md"]
     LLM_RESULT -- "Zusatzinfo zu\nbestehendem Entry" --> CASE_D["Fall D\n→ dump-flow-d.md"]
-    LLM_RESULT -- "Mix: neue Entries\n+ Zusatzinfos" --> CASE_MIX["Fall D (Sonderfall)\nMix aus B + D"]
+    LLM_RESULT -- "Mix: neue Entries\n+ Zusatzinfos" --> CASE_MIX["Fall D (Sonderfall)\n→ dump-flow-d-mix.md"]
 
     CASE_A & CASE_B & CASE_C & CASE_D & CASE_MIX --> PREVIEW["IngestPreviewSheet\n(pendingPreview: IngestPreview)"]
 
