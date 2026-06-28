@@ -313,6 +313,99 @@ function DeadlineCountdown({ date, deadline, completed }: Readonly<{ date?: stri
   );
 }
 
+// ─── EventCountdownCard ───────────────────────────────────────────────────────
+
+type EventCountdownStep = 'past' | 'ongoing' | 'now' | 'minutes' | 'hours' | 'today' | 'tomorrow' | 'soon' | 'far';
+
+function getEventCountdownStep(date: string, endDate: string | undefined, startTime: string | undefined, now: Date): EventCountdownStep {
+  const todayIso = now.toISOString().slice(0, 10);
+  const effectiveEnd = endDate ?? date;
+
+  if (effectiveEnd < todayIso) return 'past';
+  if (endDate && date < todayIso && todayIso <= endDate) return 'ongoing';
+
+  if (date === todayIso) {
+    if (startTime) {
+      const [hh, mm] = startTime.split(':').map(Number);
+      const target = new Date(`${date}T00:00:00`);
+      target.setHours(hh, mm, 0, 0);
+      const diffMs = target.getTime() - now.getTime();
+      if (diffMs <= 0) return 'now';
+      if (diffMs < 60 * 60_000) return 'minutes';
+      return 'hours';
+    }
+    return 'today';
+  }
+
+  const startOfDate = new Date(`${date}T00:00:00`);
+  const diffDays = Math.ceil((startOfDate.getTime() - now.getTime()) / 86_400_000);
+  if (diffDays === 1) return 'tomorrow';
+  if (diffDays <= 7) return 'soon';
+  return 'far';
+}
+
+const EVENT_COUNTDOWN_STEPS = {
+  past:     { container: 'bg-zinc-500/10 border-zinc-400/30 dark:bg-zinc-500/15 dark:border-zinc-400/40', text: 'text-zinc-600 dark:text-zinc-400', sub: 'text-zinc-500/60 dark:text-zinc-400/60' },
+  ongoing:  { container: 'bg-emerald-500/10 border-emerald-400/40 dark:bg-emerald-500/20 dark:border-emerald-400/50', text: 'text-emerald-700 dark:text-emerald-400', sub: 'text-emerald-600/60 dark:text-emerald-400/70' },
+  now:      { container: 'bg-emerald-500/10 border-emerald-400/40 dark:bg-emerald-500/20 dark:border-emerald-400/50', text: 'text-emerald-700 dark:text-emerald-400', sub: 'text-emerald-600/60 dark:text-emerald-400/70' },
+  minutes:  { container: 'bg-rose-500/10 border-rose-400/40 dark:bg-rose-500/20 dark:border-rose-400/50', text: 'text-rose-700 dark:text-rose-400', sub: 'text-rose-600/60 dark:text-rose-400/70' },
+  hours:    { container: 'bg-orange-500/10 border-orange-400/40 dark:bg-orange-500/20 dark:border-orange-400/50', text: 'text-orange-700 dark:text-orange-400', sub: 'text-orange-600/60 dark:text-orange-400/70' },
+  today:    { container: 'bg-yellow-500/10 border-yellow-400/40 dark:bg-yellow-500/20 dark:border-yellow-400/50', text: 'text-yellow-700 dark:text-yellow-400', sub: 'text-yellow-600/60 dark:text-yellow-400/70' },
+  tomorrow: { container: 'bg-yellow-500/10 border-yellow-400/40 dark:bg-yellow-500/20 dark:border-yellow-400/50', text: 'text-yellow-700 dark:text-yellow-400', sub: 'text-yellow-600/60 dark:text-yellow-400/70' },
+  soon:     { container: 'bg-sky-500/10 border-sky-400/40 dark:bg-sky-500/20 dark:border-sky-400/50', text: 'text-sky-700 dark:text-sky-400', sub: 'text-sky-600/60 dark:text-sky-400/70' },
+  far:      { container: '', text: '', sub: '' },
+} as const;
+
+function getEventCountdownLabel(step: EventCountdownStep, startTime: string | undefined, date: string, now: Date): { main: string; sub: string } {
+  if (step === 'past') return { main: 'Vergangen', sub: 'Dieser Termin hat bereits stattgefunden.' };
+  if (step === 'ongoing') return { main: 'Läuft gerade', sub: 'Der Termin ist noch nicht beendet.' };
+  if (step === 'now') return { main: `Jetzt · ${startTime} Uhr`, sub: 'Der Termin hat gerade begonnen.' };
+  if (step === 'today') return { main: 'Heute', sub: 'Kein genaue Uhrzeit angegeben.' };
+  if (step === 'tomorrow') return { main: 'Morgen', sub: startTime ? `Beginn um ${startTime} Uhr` : 'Kein genaue Uhrzeit angegeben.' };
+
+  if (step === 'minutes' || step === 'hours') {
+    const [hh, mm] = (startTime as string).split(':').map(Number);
+    const target = new Date(`${date}T00:00:00`);
+    target.setHours(hh, mm, 0, 0);
+    const diffMs = target.getTime() - now.getTime();
+    if (step === 'minutes') {
+      const min = Math.ceil(diffMs / 60_000);
+      return { main: `In ${min} Minuten`, sub: `Beginn um ${startTime} Uhr` };
+    }
+    const h = Math.floor(diffMs / 3_600_000);
+    return { main: `In ${h} Stunden`, sub: `Beginn um ${startTime} Uhr` };
+  }
+
+  if (step === 'soon') {
+    const startOfDate = new Date(`${date}T00:00:00`);
+    const diffDays = Math.ceil((startOfDate.getTime() - now.getTime()) / 86_400_000);
+    return { main: `In ${diffDays} Tagen`, sub: startTime ? `Beginn um ${startTime} Uhr` : '' };
+  }
+
+  return { main: '', sub: '' };
+}
+
+function EventCountdownCard({ date, endDate, startTime }: Readonly<{ date?: string; endDate?: string; startTime?: string }>) {
+  const now = useNow();
+  if (!date) return null;
+
+  const step = getEventCountdownStep(date, endDate, startTime, now);
+  if (step === 'far') return null;
+
+  const cls = EVENT_COUNTDOWN_STEPS[step];
+  const { main, sub } = getEventCountdownLabel(step, startTime, date, now);
+
+  return (
+    <div className={`rounded-xl border flex items-center gap-2.5 px-3 py-2.5 ${cls.container}`}>
+      <Timer className={`h-4 w-4 shrink-0 ${cls.text}`} aria-hidden="true" />
+      <div className="flex-1 min-w-0">
+        <p className={`text-sm font-semibold leading-snug ${cls.text}`}>{main}</p>
+        {sub && <p className={`text-xs mt-0.5 ${cls.sub}`}>{sub}</p>}
+      </div>
+    </div>
+  );
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function navigateTimeline(date?: string, entryId?: string) {
@@ -473,6 +566,9 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
                 )}
                 {entry.category === 'TASK' && entry.payload?.deadline && (
                   <DeadlineCountdown date={date} deadline={entry.payload.deadline} completed={entry.completed} />
+                )}
+                {entry.category === 'EVENT' && (
+                  <EventCountdownCard date={date} endDate={entry.payload?.endDate} startTime={entry.payload?.startTime} />
                 )}
               </section>
             )}

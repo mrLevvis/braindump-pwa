@@ -73,6 +73,92 @@ function DeadlineChip({ date, deadline }: Readonly<{ date?: string; deadline: st
   );
 }
 
+// ─── Event countdown chip ─────────────────────────────────────────────────────
+
+type EventCountdownStep = 'past' | 'ongoing' | 'now' | 'minutes' | 'hours' | 'today' | 'tomorrow' | 'soon' | 'far';
+
+function getEventCountdownStep(date: string, endDate: string | undefined, startTime: string | undefined, now: Date): EventCountdownStep {
+  const todayIso = now.toISOString().slice(0, 10);
+  const effectiveEnd = endDate ?? date;
+
+  if (effectiveEnd < todayIso) return 'past';
+  if (endDate && date < todayIso && todayIso <= endDate) return 'ongoing';
+
+  if (date === todayIso) {
+    if (startTime) {
+      const [hh, mm] = startTime.split(':').map(Number);
+      const target = new Date(`${date}T00:00:00`);
+      target.setHours(hh, mm, 0, 0);
+      const diffMs = target.getTime() - now.getTime();
+      if (diffMs <= 0) return 'now';
+      if (diffMs < 60 * 60_000) return 'minutes';
+      return 'hours';
+    }
+    return 'today';
+  }
+
+  const startOfDate = new Date(`${date}T00:00:00`);
+  const diffDays = Math.ceil((startOfDate.getTime() - now.getTime()) / 86_400_000);
+  if (diffDays === 1) return 'tomorrow';
+  if (diffDays <= 7) return 'soon';
+  return 'far';
+}
+
+const EVENT_CHIP_CLS: Record<Exclude<EventCountdownStep, 'far'>, string> = {
+  past:     'bg-zinc-500/10 border-zinc-400/30 text-zinc-500 dark:bg-zinc-500/15 dark:border-zinc-400/40 dark:text-zinc-400',
+  ongoing:  'bg-emerald-500/10 border-emerald-400/30 text-emerald-700 dark:bg-emerald-500/20 dark:border-emerald-400/50 dark:text-emerald-400',
+  now:      'bg-emerald-500/10 border-emerald-400/30 text-emerald-700 dark:bg-emerald-500/20 dark:border-emerald-400/50 dark:text-emerald-400',
+  minutes:  'bg-rose-500/10 border-rose-400/30 text-rose-700 dark:bg-rose-500/20 dark:border-rose-400/50 dark:text-rose-400',
+  hours:    'bg-orange-500/10 border-orange-400/30 text-orange-700 dark:bg-orange-500/20 dark:border-orange-400/50 dark:text-orange-400',
+  today:    'bg-yellow-500/10 border-yellow-400/30 text-yellow-700 dark:bg-yellow-500/20 dark:border-yellow-400/50 dark:text-yellow-400',
+  tomorrow: 'bg-yellow-500/10 border-yellow-400/30 text-yellow-700 dark:bg-yellow-500/20 dark:border-yellow-400/50 dark:text-yellow-400',
+  soon:     'bg-sky-500/10 border-sky-400/30 text-sky-700 dark:bg-sky-500/20 dark:border-sky-400/50 dark:text-sky-400',
+};
+
+function getEventChipLabel(step: EventCountdownStep, startTime: string | undefined, date: string, now: Date): string {
+  if (step === 'past') return 'vergangen';
+  if (step === 'ongoing') return 'läuft';
+  if (step === 'now') return `jetzt · ${startTime} Uhr`;
+  if (step === 'today' || step === 'tomorrow') {
+    return step === 'today' ? 'heute' : 'morgen';
+  }
+  if (step === 'minutes' || step === 'hours') {
+    const [hh, mm] = (startTime as string).split(':').map(Number);
+    const target = new Date(`${date}T00:00:00`);
+    target.setHours(hh, mm, 0, 0);
+    const diffMs = target.getTime() - now.getTime();
+    if (step === 'minutes') {
+      const min = Math.ceil(diffMs / 60_000);
+      return `in ${min} min · ${startTime} Uhr`;
+    }
+    const h = Math.floor(diffMs / 3_600_000);
+    return `in ${h} h · ${startTime} Uhr`;
+  }
+  if (step === 'soon') {
+    const startOfDate = new Date(`${date}T00:00:00`);
+    const diffDays = Math.ceil((startOfDate.getTime() - now.getTime()) / 86_400_000);
+    return `in ${diffDays} Tagen`;
+  }
+  return '';
+}
+
+function EventCountdownChip({ date, endDate, startTime }: Readonly<{ date?: string; endDate?: string; startTime?: string }>) {
+  const now = useNow();
+  if (!date) return null;
+
+  const step = getEventCountdownStep(date, endDate, startTime, now);
+  if (step === 'far') return null;
+
+  const label = getEventChipLabel(step, startTime, date, now);
+
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-medium ${EVENT_CHIP_CLS[step]}`}>
+      <Timer className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
+      {label}
+    </span>
+  );
+}
+
 // ─── Shared class constants ───────────────────────────────────────────────────
 
 const CARD_BASE = ['gap-3', 'rounded-2xl', 'py-4', 'transition', 'hover:shadow-sm'].join(' ');
@@ -252,6 +338,7 @@ function EventCard({ entry, selectionMode }: Readonly<CardProps>) {
                   </p>
                 )}
                 <TagBadgeList tags={tags} />
+                <EventCountdownChip date={entry.payload?.date} endDate={entry.payload?.endDate} startTime={entry.payload?.startTime} />
               </div>
             </CardContent>
             <CardFooter className={FOOTER_CLS}>
