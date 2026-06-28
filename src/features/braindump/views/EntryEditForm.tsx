@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
-import { X, Plus } from 'lucide-react';
+import { X, Plus, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -9,6 +9,7 @@ import { RecurrencePickerSection } from './RecurrencePickerSection';
 import { useBrainDumpStore } from '../store';
 import { wouldCreateCycle } from '../utils/dependencies';
 import { useErrorToast } from '@/hooks';
+import { useKiSuggestions } from '../hooks/useKiSuggestions';
 
 // Matches Input's visual style but grows with content instead of clipping.
 const AUTOGROW_CLS = [
@@ -38,6 +39,11 @@ const SELECT_CLS = [
   'text-foreground placeholder:text-muted-foreground',
   'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30',
   'disabled:cursor-not-allowed disabled:opacity-50',
+].join(' ');
+
+const KI_SUGGESTION_CLS = [
+  'flex flex-wrap items-center gap-1.5 rounded-lg border border-dashed border-primary/30',
+  'bg-primary/5 px-3 py-2 text-xs',
 ].join(' ');
 
 const CATEGORIES: EntryCategory[] = ['TASK', 'EVENT', 'NOTE', 'SHOPPING'];
@@ -76,12 +82,23 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
   const [predecessorIds, setPredecessorIds] = useState<string[]>(entry.dependsOn ?? []);
   const [predSearch, setPredSearch] = useState('');
   const [predDropdownOpen, setPredDropdownOpen] = useState(false);
+  const [kiTitleDismissed, setKiTitleDismissed] = useState(false);
+  const [kiSummaryDismissed, setKiSummaryDismissed] = useState(false);
 
   const allEntries = useBrainDumpStore(s => s.entries);
   const showErrorToast = useErrorToast();
+  const { isAnalyzing, draft: kiDraft, analyze, dismiss: dismissKi } = useKiSuggestions();
 
   const tagInputRef = useRef<HTMLInputElement>(null);
   const predSearchRef = useRef<HTMLInputElement>(null);
+
+  // Reset KI-dismissed flags whenever a new draft arrives
+  useEffect(() => {
+    if (kiDraft) {
+      setKiTitleDismissed(false);
+      setKiSummaryDismissed(false);
+    }
+  }, [kiDraft]);
 
   const handleCategoryChange = (cat: EntryCategory) => {
     setCategory(cat);
@@ -161,6 +178,23 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
     onSave(patch);
   };
 
+  const handleAnalyzeWithKi = () => {
+    const textParts = [title, ...summary].filter(Boolean);
+    const text = textParts.join('. ') || entry.original_text;
+    void analyze(text, entry.captureId);
+  };
+
+  // KI-suggested tags that the user doesn't already have
+  const kiSuggestedTags = kiDraft?.payload?.tags?.filter(t => !tags.includes(t)) ?? [];
+
+  // KI-suggested title differs from current
+  const kiTitle = kiDraft?.title;
+  const showKiTitle = !kiTitleDismissed && kiTitle && kiTitle !== title;
+
+  // KI-suggested summary
+  const kiSummary = kiDraft?.summary ?? [];
+  const showKiSummary = !kiSummaryDismissed && kiSummary.length > 0;
+
   return (
     <div className="space-y-5 px-6 pb-10">
       <div className={SECTION_CLS}>
@@ -170,6 +204,28 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
           onChange={e => setTitle(e.target.value)}
           placeholder="Titel"
         />
+        {showKiTitle && (
+          <div className={KI_SUGGESTION_CLS}>
+            <Sparkles className="h-3 w-3 shrink-0 text-primary" aria-hidden="true" />
+            <span className="text-muted-foreground">KI:</span>
+            <span className="flex-1">{kiTitle}</span>
+            <button
+              type="button"
+              onClick={() => setTitle(kiTitle)}
+              className="rounded px-1.5 py-0.5 text-xs font-medium text-primary hover:bg-primary/10"
+            >
+              Übernehmen
+            </button>
+            <button
+              type="button"
+              onClick={() => setKiTitleDismissed(true)}
+              aria-label="KI-Titelvorschlag ignorieren"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        )}
       </div>
 
       <div className={SECTION_CLS}>
@@ -226,6 +282,7 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
                   value={timeOfDay}
                   onChange={e => setTimeOfDay(e.target.value as TimeOfDay | '')}
                   className={SELECT_CLS}
+                  aria-label="Grobe Tageszeit"
                 >
                   <option value="">– keine –</option>
                   {TIME_OF_DAY_OPTIONS.map(t => (
@@ -267,6 +324,7 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
                   value={timeOfDay}
                   onChange={e => setTimeOfDay(e.target.value as TimeOfDay | '')}
                   className={SELECT_CLS}
+                  aria-label="Grobe Tageszeit"
                 >
                   <option value="">– keine –</option>
                   {TIME_OF_DAY_OPTIONS.map(t => (
@@ -315,6 +373,37 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
             <Plus className="h-3 w-3" /> Punkt hinzufügen
           </button>
         </div>
+        {showKiSummary && (
+          <div className={cn(KI_SUGGESTION_CLS, 'flex-col items-start gap-2 mt-1')}>
+            <div className="flex w-full items-center gap-1.5">
+              <Sparkles className="h-3 w-3 shrink-0 text-primary" aria-hidden="true" />
+              <span className="flex-1 text-muted-foreground">KI-Zusammenfassung</span>
+              <button
+                type="button"
+                onClick={() => { setSummary(kiSummary); setKiSummaryDismissed(true); }}
+                className="rounded px-1.5 py-0.5 text-xs font-medium text-primary hover:bg-primary/10"
+              >
+                Alle übernehmen
+              </button>
+              <button
+                type="button"
+                onClick={() => setKiSummaryDismissed(true)}
+                aria-label="KI-Zusammenfassung ignorieren"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+            <ul className="w-full space-y-0.5 pl-1">
+              {kiSummary.map((line, i) => (
+                <li key={i} className="flex items-start gap-1.5 text-foreground/80">
+                  <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-muted-foreground/50" aria-hidden="true" />
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       <div className={SECTION_CLS}>
@@ -350,6 +439,23 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
             <Plus className="h-3.5 w-3.5" />
           </Button>
         </div>
+        {kiSuggestedTags.length > 0 && (
+          <div className={KI_SUGGESTION_CLS}>
+            <Sparkles className="h-3 w-3 shrink-0 text-primary" aria-hidden="true" />
+            <span className="text-muted-foreground shrink-0">KI schlägt vor:</span>
+            {kiSuggestedTags.map(tag => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => setTags(prev => [...prev, tag])}
+                className="inline-flex items-center gap-0.5 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary hover:bg-primary/20"
+              >
+                <Plus className="h-2.5 w-2.5" />
+                {tag}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {category === 'TASK' && !entry._isVirtualOccurrence && (
@@ -406,6 +512,33 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
       )}
 
       {bottomSlot}
+
+      {/* KI-Analyse-Trigger */}
+      <div className="flex justify-center pt-1">
+        <button
+          type="button"
+          onClick={handleAnalyzeWithKi}
+          disabled={isAnalyzing || isSaving}
+          className={cn(
+            'flex items-center gap-1.5 rounded-full px-3 py-1 text-xs transition-colors',
+            'text-muted-foreground hover:text-primary hover:bg-primary/5',
+            'disabled:opacity-40 disabled:cursor-not-allowed',
+          )}
+        >
+          <Sparkles className={cn('h-3 w-3', isAnalyzing && 'animate-spin')} aria-hidden="true" />
+          {isAnalyzing ? 'KI analysiert…' : kiDraft ? 'Erneut analysieren' : 'Mit KI analysieren'}
+        </button>
+        {kiDraft && (
+          <button
+            type="button"
+            onClick={dismissKi}
+            className="ml-1 flex items-center gap-1 rounded-full px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-muted"
+          >
+            <X className="h-3 w-3" />
+            Vorschläge verwerfen
+          </button>
+        )}
+      </div>
 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="outline" size="sm" onClick={onCancel} disabled={isSaving}>

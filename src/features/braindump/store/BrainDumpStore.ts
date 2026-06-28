@@ -224,6 +224,14 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((set, 
         }
     },
 
+    resetDayPriority: (date: string) => {
+        set(s => {
+            const next = { ...s.prioritizedDays };
+            delete next[date];
+            return { prioritizedDays: next };
+        });
+    },
+
     updateEntry: async (id: string, patch: EntryPatch): Promise<UpdateResult> => {
         set(s => ({
             entries: s.entries.map(e =>

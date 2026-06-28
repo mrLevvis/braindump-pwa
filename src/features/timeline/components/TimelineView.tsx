@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { ArrowLeft, Clock, Sparkles } from 'lucide-react';
+import { ArrowLeft, Clock, Sparkles, X } from 'lucide-react';
 import { EntryDetailPanel } from '../../braindump/views/EntryDetailPanel';
 import { useZoomStore } from '../store';
 import {
@@ -13,7 +13,7 @@ import {
   useTimelineBuckets,
 } from '../../../hooks/timelineSelectors';
 import { useDaySelectionStore } from '../store/DaySelectionStore';
-import { useEntries, useIsPrioritizing, usePrioritizeDayTasks, usePrioritizedDays } from '../../../hooks/braindumpSelectors';
+import { useEntries, useIsPrioritizing, usePrioritizeDayTasks, usePrioritizedDays, useResetDayPriority } from '../../../hooks/braindumpSelectors';
 import { useTaskCompletionFlow } from '../../braindump/views/TaskCompletionDialog';
 import type { BrainDumpEntry } from '../../braindump/types';
 import { useNow } from '../../../hooks/useNow';
@@ -121,6 +121,7 @@ export function TimelineView({ onBack }: Readonly<Props>) {
   const isPrioritizing = useIsPrioritizing();
   const prioritizeDayTasks = usePrioritizeDayTasks();
   const prioritizedDays = usePrioritizedDays();
+  const resetDayPriority = useResetDayPriority();
   const prioritizedIds = prioritizedDays[selectedDate];
   const hasPriority = prioritizedIds !== undefined;
 
@@ -355,6 +356,18 @@ export function TimelineView({ onBack }: Readonly<Props>) {
             >
               <Sparkles className={['h-4 w-4', isPrioritizing ? PRIO_BTN_SPINNING : ''].join(' ')} aria-hidden="true" />
             </button>
+            {hasPriority && (
+              <button
+                type="button"
+                onClick={() => resetDayPriority(selectedDate)}
+                aria-label="KI-Reihenfolge zurücksetzen"
+                title="KI-Reihenfolge zurücksetzen"
+                className="flex items-center gap-0.5 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary hover:bg-primary/20 transition-colors"
+              >
+                KI aktiv
+                <X className="h-2.5 w-2.5" aria-hidden="true" />
+              </button>
+            )}
             <button
               type="button"
               className={JETZT_BTN}

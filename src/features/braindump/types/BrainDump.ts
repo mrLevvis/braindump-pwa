@@ -67,6 +67,7 @@ export interface BrainDumpState {
   reprocessEntry: (id: string, patch: EntryPatch) => Promise<UpdateResult>;
   updateEntryList: () => Promise<void>;
   prioritizeDayTasks: (date: string, tasks: readonly BrainDumpEntry[]) => Promise<void>;
+  resetDayPriority: (date: string) => void;
   clearData: () => void;
   addItemToEntry: (captureId: string, label: string) => Promise<void>;
   updateItemLabel: (itemId: string, captureId: string, label: string) => Promise<void>;

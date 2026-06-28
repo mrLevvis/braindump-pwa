@@ -217,17 +217,22 @@ export function ShoppingItemDetailPanel({ item, open, onOpenChange }: Readonly<P
           {/* Preis */}
           <div className="flex items-start gap-3">
             <span className={FIELD_LABEL_CLS}>Preis (€)</span>
-            <input
-              type="text"
-              inputMode="decimal"
-              value={priceDraft}
-              onChange={(e) => setPriceDraft(e.target.value)}
-              onBlur={commitPrice}
-              onKeyDown={handleKeyDown(commitPrice)}
-              className={INPUT_CLS}
-              placeholder="0,00"
-              aria-label="Geschätzter Preis in Euro"
-            />
+            <div className="flex-1 space-y-0.5">
+              <input
+                type="text"
+                inputMode="decimal"
+                value={priceDraft}
+                onChange={(e) => setPriceDraft(e.target.value)}
+                onBlur={commitPrice}
+                onKeyDown={handleKeyDown(commitPrice)}
+                className={INPUT_CLS}
+                placeholder="0,00"
+                aria-label="Geschätzter Preis in Euro"
+              />
+              {item.estimated_price != null && (
+                <p className="text-[10px] text-muted-foreground/60">KI-Schätzung — kann abweichen</p>
+              )}
+            </div>
           </div>
 
           {/* Menge */}

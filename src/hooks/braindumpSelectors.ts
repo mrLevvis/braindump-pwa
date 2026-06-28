@@ -105,6 +105,10 @@ export function usePrioritizeDayTasks() {
     return useBrainDumpStore((s) => s.prioritizeDayTasks);
 }
 
+export function useResetDayPriority() {
+    return useBrainDumpStore((s) => s.resetDayPriority);
+}
+
 export function useRecurrenceExceptions() {
     return useBrainDumpStore((s) => s.recurrenceExceptions);
 }
