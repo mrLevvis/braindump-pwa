@@ -7,6 +7,7 @@ Alle wichtigen Befehle auf einen Blick. Tiefer gehende Erklärungen in den jewei
 ## Meine persönliche gängige Befehlskette vor jedem Run
 
 ```bash
+
 scoop update supabase
 supabase db push
 supabase functions deploy process-brain-dump --no-verify-jwt
