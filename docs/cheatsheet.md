@@ -4,6 +4,20 @@ Alle wichtigen Befehle auf einen Blick. Tiefer gehende Erklärungen in den jewei
 
 ---
 
+## Meine persönliche gängige Befehlskette vor jedem Run
+
+```bash
+scoop update supabase
+supabase db push
+supabase functions deploy process-brain-dump --no-verify-jwt
+supabase functions deploy reprocess-entry --no-verify-jwt
+supabase functions deploy prioritize-tasks --no-verify-jwt
+npx tsc --noEmit
+npm run dev
+```
+
+
+
 ## Tägliche Entwicklung
 
 ```bash
