@@ -10,14 +10,27 @@ import type { ShoppingItemDraft } from '../../braindump/types/BrainDump';
 
 const TABLE = 'shopping_items';
 
-export async function insertShoppingItemsFromDraft(
-  captureId: string,
-  items: ShoppingItemDraft[]
-): Promise<void> {
-  if (items.length === 0) return;
+export interface ShoppingItemInsertRow {
+  id?: string;
+  label: string;
+  category: string;
+  estimated_price: number | null;
+  count: number;
+  amount: number | null;
+  unit: string;
+  is_done: boolean;
+  parent_id: string | null;
+}
 
-  // Items, die selbst als parentLabel referenziert werden, bekommen eine vorberechnete
-  // UUID, damit Sub-Items beim Batch-Insert direkt verknüpft werden können.
+/**
+ * Wandelt ShoppingItemDraft[] in insertfertige Rows um — löst Parent-Child-UUIDs
+ * client-seitig auf, damit Sub-Items direkt beim Batch-Insert verknüpft werden können.
+ * Reines Mapping ohne DB-Zugriff; kann sowohl für direktes INSERT als auch für
+ * den confirm_ingest-RPC genutzt werden.
+ */
+export function buildShoppingItemRows(items: ShoppingItemDraft[]): ShoppingItemInsertRow[] {
+  if (items.length === 0) return [];
+
   const referencedAsParent = new Set(
     items.filter(i => i.parentLabel).map(i => i.parentLabel!.toLowerCase())
   );
@@ -28,25 +41,34 @@ export async function insertShoppingItemsFromDraft(
     }
   }
 
-  const rows = items.map((item) => {
+  return items.map((item) => {
     const preassignedId = parentUuidMap.get(item.label.toLowerCase());
     return {
       ...(preassignedId ? { id: preassignedId } : {}),
       label: item.label,
-      category: (item.category ?? 'SONSTIGES') as ShoppingCategory,
+      category: item.category ?? 'SONSTIGES',
       estimated_price: item.estimatedPrice ?? null,
       count: item.count ?? 1,
       amount: item.amount ?? null,
-      unit: (item.unit ?? 'STUECK') as ShoppingUnit,
+      unit: item.unit ?? 'STUECK',
       is_done: false,
-      source_dump: captureId,
       parent_id: item.parentLabel
         ? (parentUuidMap.get(item.parentLabel.toLowerCase()) ?? null)
         : null,
     };
   });
+}
 
-  const { error } = await supabase.from(TABLE).insert(rows);
+export async function insertShoppingItemsFromDraft(
+  captureId: string,
+  items: ShoppingItemDraft[]
+): Promise<void> {
+  const rows = buildShoppingItemRows(items);
+  if (rows.length === 0) return;
+
+  const { error } = await supabase.from(TABLE).insert(
+    rows.map(r => ({ ...r, source_dump: captureId }))
+  );
   if (error) throw new Error(error.message);
 }
 

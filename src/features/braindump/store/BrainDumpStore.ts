@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { BrainDumpState, ContextEntry, DeleteResult, EntryDraft, EntryPatch, IngestPreview, InsertEntry, RecurrenceScope, ToggleResult, UpdateResult } from "../types";
-import { deleteEntry as deleteEntryFromApi, deleteEntriesByIds, fetchEntries, fetchRecurrenceExceptions, insertEntries, insertRecurrenceException, toggleTaskCompleted as toggleApi, updateEntry as updateEntryApi, updateEntryDependsOn as updateDependsOnApi } from "../services";
+import { confirmIngestRpc, deleteEntry as deleteEntryFromApi, deleteEntriesByIds, fetchEntries, fetchRecurrenceExceptions, insertRecurrenceException, toggleTaskCompleted as toggleApi, updateEntry as updateEntryApi, updateEntryDependsOn as updateDependsOnApi } from "../services";
 import { createSingleOverride, deleteFollowing, splitSeriesAt } from "../services/seriesService";
 import { processText, reprocessEntryAI } from "../services/processBrainDump";
 import { prioritizeDayTasks as prioritizeApi } from "../services/prioritizeTasks";
@@ -9,6 +9,7 @@ import { createShoppingSlice } from "../../shopping/store/shoppingSlice";
 import type { ShoppingSlice } from "../../shopping/store/shoppingSlice";
 import {
   addShoppingItem as addShoppingItemToDb,
+  buildShoppingItemRows,
   deleteShoppingItem,
   deleteShoppingItemsBySourceDump,
   fetchShoppingItems,
@@ -108,39 +109,28 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((set, 
     },
 
     confirmIngest: async (preview: IngestPreview) => {
-        const newEntries: InsertEntry[] = preview.drafts.map((d) => ({
+        const entries: InsertEntry[] = preview.drafts.map((d) => ({
             title: d.title,
             original_text: d.original_text,
             category: d.category,
             payload: d.payload,
-            capture_id: d.captureId,
             source_excerpt: d.sourceExcerpt,
             summary: d.summary,
             completed: d.category === 'TASK' ? false : null,
             recurrence: d.recurrence ?? null,
         }));
 
-        await insertEntries(newEntries);
+        const shoppingItems = preview.drafts
+            .filter(d => d.category === 'SHOPPING')
+            .flatMap(d => buildShoppingItemRows(d.payload?.items ?? []));
 
-        // SHOPPING-Items aus den Drafts in die DB schreiben (erst nach User-Bestätigung).
-        const shoppingDrafts = preview.drafts.filter(d => d.category === 'SHOPPING');
-        await Promise.all(
-            shoppingDrafts.map(d =>
-                insertShoppingItemsFromDraft(preview.captureId, d.payload?.items ?? [])
-            )
-        );
-
-        // Zusatzinfos an bestehende Entries anhängen (summary erweitern).
-        if (preview.additionalInfos && preview.additionalInfos.length > 0) {
-            const currentEntries = get().entries;
-            await Promise.all(
-                preview.additionalInfos.map(({ targetEntryId, content }) => {
-                    const target = currentEntries.find(e => e.id === targetEntryId);
-                    if (!target) return Promise.resolve();
-                    return updateEntryApi(targetEntryId, { summary: [...(target.summary ?? []), content] });
-                })
-            );
-        }
+        // Einziger DB-Roundtrip — entries + shopping_items + additionalInfos atomar.
+        await confirmIngestRpc({
+            captureId: preview.captureId,
+            entries,
+            shoppingItems,
+            additionalInfos: preview.additionalInfos ?? [],
+        });
 
         await refreshAll();
         set(() => ({ pendingPreview: null }));

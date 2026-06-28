@@ -1,5 +1,6 @@
 import { createClient, PostgrestError } from '@supabase/supabase-js';
-import type { BrainDumpEntry, DeleteResult, EntryPatch, InsertEntry, RecurrenceException, ToggleResult, UpdateResult } from '../types';
+import type { BrainDumpEntry, DeleteResult, EntryAdditionalInfo, EntryPatch, InsertEntry, RecurrenceException, ToggleResult, UpdateResult } from '../types';
+import type { ShoppingItemInsertRow } from '../../shopping/services/shoppingItemsService';
 import { showErrorToast } from '../../../hooks/useErrorToast';
 
 //const BRAINDUMP_ENTRIES = 'braindump_entries';
@@ -94,6 +95,33 @@ export async function insertEntry(entry: InsertEntry): Promise<BrainDumpEntry | 
         .single();
     const row = handlePostgrestError<BrainDumpEntryRow>('Error inserting entry:', error, data as BrainDumpEntryRow | null);
     return row ? mapRow(row) : null;
+}
+
+/**
+ * Atomarer Ingest-Commit via Postgres-Transaktion (confirm_ingest RPC).
+ * Ersetzt die drei separaten Calls (insertEntries, insertShoppingItemsFromDraft,
+ * additionalInfos-Update) durch einen einzigen DB-Roundtrip.
+ * Wirft bei DB-Fehler — kein Partial-Commit möglich.
+ */
+export async function confirmIngestRpc(params: {
+    captureId: string;
+    entries: readonly InsertEntry[];
+    shoppingItems: ShoppingItemInsertRow[];
+    additionalInfos: readonly EntryAdditionalInfo[];
+}): Promise<void> {
+    const { error } = await supabase.rpc('confirm_ingest', {
+        p_capture_id:       params.captureId,
+        p_entries:          params.entries,
+        p_shopping_items:   params.shoppingItems,
+        p_additional_infos: params.additionalInfos.map(({ targetEntryId, content }) => ({
+            target_entry_id: targetEntryId,
+            content,
+        })),
+    });
+    if (error) {
+        showErrorToast(`Speichern fehlgeschlagen: ${error.message}`);
+        throw new Error(error.message);
+    }
 }
 
 /**
