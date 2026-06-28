@@ -5,11 +5,11 @@ Technische Details der einzelnen Flows → jeweilige `dump-flow-*.md`-Dateien.
 
 ```mermaid
 flowchart TD
-    START([Dump: Text oder Sprache]) --> INPUT_TYPE{Eingabe-Typ?}
+    START([Dump Eingabe]) --> INPUT_TYPE{Eingabe-Typ?}
 
     INPUT_TYPE -- Text --> PROCESS[processText]
     INPUT_TYPE -- Audio --> TRANSCRIBE["transcribeAudio\n(Whisper)"]
-    TRANSCRIBE --> PROCESS
+    TRANSCRIBE -- Text --> PROCESS
 
     PROCESS --> LLM_RESULT{Was gibt der LLM zurück?}
 
@@ -28,6 +28,18 @@ flowchart TD
     EDIT --> CONFIRM
     USER_ACTION -- "Verwerfen" --> DISCARD["discardIngest\nkein DB-Write"]
 
-    CONFIRM --> DONE([Dashboard aktualisiert])
-    DISCARD --> DONE_DISCARD([PreviewSheet geschlossen])
+    CONFIRM --> UPDATED_DASHBOARD([Dashboard aktualisiert])
+    UPDATED_DASHBOARD --> CLOSE([PreviewSheet geschlossen])
+    DISCARD --> CLOSE
 ```
+
+## Referenzen
+
+| Name im Diagramm | Funktion / Datei | Pfad |
+| :--- | :--- | :--- |
+| `transcribeAudio` | Audio → Text via Whisper | `src/features/braindump/services/processBrainDump.ts` |
+| `processText` | Text an Edge Function schicken | `src/features/braindump/services/processBrainDump.ts` |
+| `IngestPreviewSheet` | Bottom Sheet mit Entwurfs-Karten | `src/features/braindump/views/IngestPreviewSheet.tsx` |
+| `EntryEditForm` | Bearbeitungsformular im Preview | `src/features/braindump/views/EntryEditForm.tsx` |
+| `confirmIngest` | Store-Action: Entwürfe in DB schreiben | `src/features/braindump/store/BrainDumpStore.ts` |
+| `discardIngest` | Store-Action: Preview verwerfen | `src/features/braindump/store/BrainDumpStore.ts` |
