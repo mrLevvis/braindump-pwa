@@ -3,7 +3,7 @@ import { X, Plus, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import type { BrainDumpEntry, EntryCategory, EntryPatch, RecurrenceRule, TimeOfDay } from '../types';
+import type { BrainDumpEntry, EntryCategory, EntryPatch, RecurrenceRule, ShoppingItemDraft, TimeOfDay } from '../types';
 import { TIME_OF_DAY_OPTIONS, TIME_OF_DAY_LABEL } from '../types/BrainDump';
 import { RecurrencePickerSection } from './RecurrencePickerSection';
 import { useBrainDumpStore } from '../store';
@@ -82,6 +82,10 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
   const [predecessorIds, setPredecessorIds] = useState<string[]>(entry.dependsOn ?? []);
   const [predSearch, setPredSearch] = useState('');
   const [predDropdownOpen, setPredDropdownOpen] = useState(false);
+  const [shoppingItems, setShoppingItems] = useState<ShoppingItemDraft[]>(
+    () => (entry.payload?.items ?? []).map(item => ({ ...item }))
+  );
+  const [newItemInput, setNewItemInput] = useState('');
   const [kiTitleDismissed, setKiTitleDismissed] = useState(false);
   const [kiSummaryDismissed, setKiSummaryDismissed] = useState(false);
 
@@ -126,6 +130,18 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
 
   const removeTag = (tag: string) => setTags(prev => prev.filter(t => t !== tag));
 
+  const addShoppingItemFromInput = () => {
+    const trimmed = newItemInput.trim();
+    if (trimmed) setShoppingItems(prev => [...prev, { label: trimmed }]);
+    setNewItemInput('');
+  };
+
+  const updateShoppingItemLabel = (i: number, label: string) =>
+    setShoppingItems(prev => prev.map((item, idx) => idx === i ? { ...item, label } : item));
+
+  const removeShoppingItem = (i: number) =>
+    setShoppingItems(prev => prev.filter((_, idx) => idx !== i));
+
   const candidateTasks = allEntries.filter(e =>
     e.category === 'TASK' &&
     e.id !== entry.id &&
@@ -159,6 +175,7 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
   const addSummaryLine = () => setSummary(prev => [...prev, '']);
 
   const handleSave = () => {
+    const validShoppingItems = shoppingItems.filter(i => i.label.trim());
     const patch: EntryPatch = {
       title: title.trim() || undefined,
       category,
@@ -169,7 +186,13 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
         ...(category !== 'NOTE' && endTime && startTime ? { endTime } : {}),
         ...(category === 'TASK' && deadline ? { deadline } : {}),
         ...(category !== 'NOTE' && timeOfDay ? { timeOfDay } : {}),
-        ...(tags.length > 0 ? { tags } : {}),
+        ...(category === 'SHOPPING'
+          ? {
+              items: validShoppingItems,
+              tags: validShoppingItems.filter(i => !i.parentLabel).map(i => i.label.trim()),
+            }
+          : { ...(tags.length > 0 ? { tags } : {}) }
+        ),
       },
       summary: summary.filter(s => s.trim()),
       ...(category === 'EVENT' ? { recurrence: recurrence ?? null } : {}),
@@ -406,6 +429,47 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
         )}
       </div>
 
+      {category === 'SHOPPING' && (
+        <div className={SECTION_CLS}>
+          <p className={LABEL_CLS}>Artikel</p>
+          <div className="space-y-1.5">
+            {shoppingItems.map((item, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/50" aria-hidden="true" />
+                <Input
+                  value={item.label}
+                  onChange={e => updateShoppingItemLabel(i, e.target.value)}
+                  className="h-7 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeShoppingItem(i)}
+                  aria-label="Artikel entfernen"
+                  className="shrink-0 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+            <div className="flex gap-2">
+              <Input
+                value={newItemInput}
+                onChange={e => setNewItemInput(e.target.value)}
+                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                  if (e.key === 'Enter') { e.preventDefault(); addShoppingItemFromInput(); }
+                }}
+                placeholder="Neuer Artikel…"
+                className="h-7 text-sm"
+              />
+              <Button type="button" variant="outline" size="sm" onClick={addShoppingItemFromInput} className="h-7 px-2">
+                <Plus className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {category !== 'SHOPPING' && (
       <div className={SECTION_CLS}>
         <p className={LABEL_CLS}>Tags</p>
         <div className="flex flex-wrap gap-1.5">
@@ -457,6 +521,7 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
           </div>
         )}
       </div>
+      )}
 
       {category === 'TASK' && !entry._isVirtualOccurrence && (
         <div className={SECTION_CLS}>

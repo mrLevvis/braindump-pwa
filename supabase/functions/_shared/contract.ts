@@ -67,9 +67,9 @@ export type EntryCategory = typeof ENTRY_CATEGORIES[number];
  * TASK     — optional datiert. Der einzige flexible Typ.
  * NOTE     — per Definition zeitlos. Datum/Uhrzeit aus der KI-Antwort werden
  *            stillschweigend gestripped; Kategorie bleibt NOTE.
- * SHOPPING — kein Zeitbezug. payload.items enthält die Artikel; die Edge Function
- *            schreibt sie direkt in shopping_items UND gibt den Entry an den Client
- *            zurück, damit er als EntryCard im Dashboard erscheint.
+ * SHOPPING — kein Zeitbezug. payload.items enthält die Artikel (KI-angereichert mit
+ *            Preisschätzungen); kein DB-Write in der EdgeFn. Der Client zeigt sie im
+ *            IngestPreviewSheet, confirmIngest schreibt sie nach Bestätigung in die DB.
  *
  * Konsumenten downstream (z.B. buildTimelineBuckets) dürfen sich auf diesen
  * Vertrag verlassen, ohne eigene Abwehrlogik zu duplizieren.

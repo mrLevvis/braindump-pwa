@@ -6,8 +6,8 @@
  * Unterschiede zu process-brain-dump:
  *  • Eingabe ist gezielter Text (Titel + Summary), nicht ein freier Dump-Text.
  *  • Es wird immer genau ein Entry erwartet und zurückgegeben (kein captureId-Batch).
- *  • SHOPPING-Items werden nicht neu eingefügt, sondern atomisch ersetzt
- *    (DELETE alte Items → INSERT neue Items unter demselben captureId).
+ *  • SHOPPING-Items werden nicht in der EdgeFn geschrieben — Items werden in
+ *    payload.items angereichert zurückgegeben; der Store übernimmt DELETE + INSERT.
  *  • Kein captureId wird serverseitig vergeben — der bestehende captureId des
  *    Entries wird vom Client mitgeliefert.
  *
@@ -22,8 +22,7 @@ import { createClient } from "@supabase/supabase-js";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { structureText } from "../process-brain-dump/structureText.ts";
 import type { StructuredEntry } from "../_shared/contract.ts";
-import { ENTRY_CATEGORIES, SHOPPING_CATEGORIES, SHOPPING_UNITS, normalizeEntryContract } from "../_shared/contract.ts";
-import type { ShoppingCategory, ShoppingUnit } from "../_shared/contract.ts";
+import { ENTRY_CATEGORIES, normalizeEntryContract } from "../_shared/contract.ts";
 import { fetchPriceHistory, resolveItemPrice } from "../_shared/priceHistory.ts";
 
 const supabase = createClient(
@@ -114,84 +113,55 @@ Deno.serve(async (request) => {
   // 6. Zeitbezug-Vertrag normalisieren (identisch zu process-brain-dump Schritt 6).
   const entry = normalizeEntryContract(rawEntry as StructuredEntry);
 
-  // 7. SHOPPING-Items atomar ersetzen, falls ein captureId vorliegt.
-  //    Reihenfolge: Preis-Historie abfragen → DELETE → INSERT.
-  //    Historie wird VOR dem DELETE gelesen, damit die aktuellen Preise als
-  //    Datenpunkte einfließen (nach dem Löschen wären sie weg).
-  //    user_id muss explizit gesetzt werden, weil auth.uid() im Service-Role-Kontext NULL ist.
-  if (entry.category === "SHOPPING" && captureId) {
-    const userId = getUserIdFromJWT(request);
-    if (!userId) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized: no user session for shopping update" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+  // 7. SHOPPING-Items anreichern: Preis-Historien abrufen, estimatedPrice auflösen.
+  //    Kein DB-Write — Items reisen in payload.items zurück zum Client.
+  //    Der aufrufende Store (reprocessEntry) übernimmt DELETE + INSERT nach dem Update.
+  //    user_id muss explizit aus dem JWT geholt werden — im Service-Role-Kontext ist
+  //    auth.uid() immer NULL und würde fetchPriceHistory (user-gefiltert) leer liefern.
+  if (entry.category === "SHOPPING") {
+    const rawItems = entry.payload.items ?? [];
 
-    // KI kann Strings (altes Format) oder Objekte (neues Format) liefern — beide fangen.
-    const itemsFlat = (entry.payload.items ?? []).map((raw) => {
-      const isObj = raw !== null && typeof raw === "object";
-      const label: string = isObj ? (raw as { label: string }).label : String(raw);
-      const aiPrice: number | null = isObj ? ((raw as { estimatedPrice?: number }).estimatedPrice ?? null) : null;
-      const rawCategory = isObj ? (raw as { category?: string }).category : undefined;
-      const category: ShoppingCategory = (SHOPPING_CATEGORIES as readonly string[]).includes(rawCategory ?? '') ? rawCategory as ShoppingCategory : 'SONSTIGES';
-      const rawUnit = isObj ? (raw as { unit?: string }).unit : undefined;
-      const validUnit = (SHOPPING_UNITS as readonly string[]).includes(rawUnit ?? '');
-      const unit: ShoppingUnit = validUnit ? rawUnit as ShoppingUnit : 'STUECK';
-      const rawCount = isObj ? (raw as { count?: unknown }).count : undefined;
-      const count: number = typeof rawCount === 'number' && rawCount >= 1 ? Math.round(rawCount) : 1;
-      const rawAmount = isObj ? (raw as { amount?: unknown }).amount : undefined;
-      // Invariante: amount ist null genau dann wenn unit = STUECK
-      const amount: number | null = unit !== 'STUECK' && typeof rawAmount === 'number' && rawAmount > 0 ? rawAmount : null;
-      return { label, aiPrice, category, count, amount, unit };
-    });
-
-    // Preis-Historien VOR dem Löschen abrufen — aktuelle Einträge zählen als Datenpunkte.
-    const priceHistories = await Promise.all(
-      itemsFlat.map(({ label }) => fetchPriceHistory(supabase, userId, label))
-    );
-
-    const { error: deleteError } = await supabase
-      .from("shopping_items")
-      .delete()
-      .eq("source_dump", captureId);
-
-    if (deleteError) {
-      return new Response(
-        JSON.stringify({ error: "Failed to delete old shopping items", details: deleteError.message }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const rows = itemsFlat.map(({ label, aiPrice, category, count, amount, unit }, i) => ({
-      label,
-      category,
-      estimated_price: resolveItemPrice(priceHistories[i], aiPrice),
-      count,
-      amount,
-      unit,
-      is_done: false,
-      source_dump: captureId,
-      user_id: userId,
-    }));
-
-    if (rows.length > 0) {
-      const { error: insertError } = await supabase.from("shopping_items").insert(rows);
-      if (insertError) {
+    if (rawItems.length > 0) {
+      const userId = getUserIdFromJWT(request);
+      if (!userId) {
         return new Response(
-          JSON.stringify({ error: "Failed to insert new shopping items", details: insertError.message }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ error: "Unauthorized: no user session for shopping enrichment" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-    }
-  }
 
-  // Item-Labels 1:1 als Tags in den Entry-Payload schreiben — kein KI-Ermessen.
-  if (entry.category === "SHOPPING") {
-    entry.payload.tags = (entry.payload.items ?? []).map((raw) => {
-      const isObj = raw !== null && typeof raw === "object";
-      return isObj ? (raw as { label: string }).label : String(raw);
-    });
+      // Preis-Historien parallel abrufen — aktuelle DB-Preise fließen als Datenpunkte ein.
+      const priceHistories = await Promise.all(
+        rawItems.map((raw) => {
+          const isObj = raw !== null && typeof raw === "object";
+          const label = isObj ? (raw as { label: string }).label : String(raw);
+          return fetchPriceHistory(supabase, userId, label);
+        })
+      );
+
+      // Angereicherte Items mit aufgelöstem estimatedPrice zurückschreiben.
+      entry.payload.items = rawItems.map((raw, i) => {
+        const isObj = raw !== null && typeof raw === "object";
+        const label: string = isObj ? (raw as { label: string }).label : String(raw);
+        const aiPrice: number | null = isObj ? ((raw as { estimatedPrice?: number }).estimatedPrice ?? null) : null;
+        const resolved = resolveItemPrice(priceHistories[i], aiPrice);
+        if (isObj) {
+          return { ...(raw as Record<string, unknown>), estimatedPrice: resolved ?? undefined };
+        }
+        return { label, estimatedPrice: resolved ?? undefined };
+      });
+    }
+
+    // Nur Top-Level-Items als Tags — Sub-Items (parentLabel gesetzt) bleiben taglos.
+    entry.payload.tags = (entry.payload.items ?? [])
+      .filter((raw) => {
+        const isObj = raw !== null && typeof raw === "object";
+        return isObj ? !(raw as { parentLabel?: string }).parentLabel : true;
+      })
+      .map((raw) => {
+        const isObj = raw !== null && typeof raw === "object";
+        return isObj ? (raw as { label: string }).label : String(raw);
+      });
   }
 
   // 8. Den neu strukturierten Entry zurückgeben — der Client übernimmt das DB-Update.

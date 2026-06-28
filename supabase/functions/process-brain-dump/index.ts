@@ -169,87 +169,50 @@ Deno.serve(async (request) => {
   // 7. captureId serverseitig vergeben — verbindet alle Entries dieses Dumps.
   const captureId = crypto.randomUUID();
 
-  // 8. SHOPPING-Items direkt in shopping_items schreiben (als sofort verfügbare Einkaufsliste).
+  // 8. SHOPPING-Items anreichern: Preis-Historien abrufen, estimatedPrice auflösen.
+  //    Kein DB-Write — Items reisen in payload.items zurück zum Client.
+  //    confirmIngest schreibt sie nach Bestätigung durch den User in die DB.
   //    user_id muss explizit aus dem JWT geholt werden — im Service-Role-Kontext ist
-  //    auth.uid() immer NULL und würde den NOT NULL-Constraint auf user_id verletzen.
+  //    auth.uid() immer NULL und würde fetchPriceHistory (user-gefiltert) leer liefern.
   const shoppingEntries = normalizedEntries.filter(e => e.category === 'SHOPPING');
 
   if (shoppingEntries.length > 0) {
     const userId = getUserIdFromJWT(request);
     if (!userId) {
       return new Response(
-        JSON.stringify({ error: "Unauthorized: no user session for shopping insert" }),
+        JSON.stringify({ error: "Unauthorized: no user session for shopping enrichment" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // AI kann Strings (altes Format) oder Objekte (neues Format) liefern – beide fangen.
-    const itemsFlat = shoppingEntries.flatMap(e =>
-      (e.payload.items ?? []).map((raw) => {
+    for (const e of shoppingEntries) {
+      const rawItems = e.payload.items ?? [];
+      if (rawItems.length === 0) continue;
+
+      // Preis-Historien parallel abrufen; neuere Käufe fließen stärker gewichtet ein.
+      const priceHistories = await Promise.all(
+        rawItems.map((raw) => {
+          const isObj = raw !== null && typeof raw === 'object';
+          const label = isObj ? (raw as { label: string }).label : String(raw);
+          return fetchPriceHistory(supabase, userId, label);
+        })
+      );
+
+      // Angereicherte Items mit aufgelöstem estimatedPrice zurückschreiben.
+      e.payload.items = rawItems.map((raw, i) => {
         const isObj = raw !== null && typeof raw === 'object';
         const label: string = isObj ? (raw as { label: string }).label : String(raw);
         const aiPrice: number | null = isObj ? ((raw as { estimatedPrice?: number }).estimatedPrice ?? null) : null;
-        const rawCategory = isObj ? (raw as { category?: string }).category : undefined;
-        const category: ShoppingCategory = (SHOPPING_CATEGORIES as readonly string[]).includes(rawCategory ?? '') ? rawCategory as ShoppingCategory : 'SONSTIGES';
-        const rawUnit = isObj ? (raw as { unit?: string }).unit : undefined;
-        const validUnit = (SHOPPING_UNITS as readonly string[]).includes(rawUnit ?? '');
-        const unit: ShoppingUnit = validUnit ? rawUnit as ShoppingUnit : 'STUECK';
-        const rawCount = isObj ? (raw as { count?: unknown }).count : undefined;
-        const count: number = typeof rawCount === 'number' && rawCount >= 1 ? Math.round(rawCount) : 1;
-        const rawAmount = isObj ? (raw as { amount?: unknown }).amount : undefined;
-        // Invariante: amount ist null genau dann wenn unit = STUECK
-        const amount: number | null = unit !== 'STUECK' && typeof rawAmount === 'number' && rawAmount > 0 ? rawAmount : null;
-        const parentLabel: string | null = isObj ? ((raw as { parentLabel?: string }).parentLabel ?? null) : null;
-        return { label, aiPrice, category, count, amount, unit, parentLabel };
-      })
-    );
-
-    // Ober-Items, die tatsächlich als parentLabel referenziert werden, bekommen eine
-    // vorberechnete UUID, damit Sub-Items direkt beim Insert verknüpft werden können.
-    const referencedAsParent = new Set(
-      itemsFlat.filter(i => i.parentLabel).map(i => i.parentLabel!.toLowerCase())
-    );
-    const parentUuidMap = new Map<string, string>();
-    for (const item of itemsFlat) {
-      if (referencedAsParent.has(item.label.toLowerCase())) {
-        parentUuidMap.set(item.label.toLowerCase(), crypto.randomUUID());
-      }
-    }
-
-    // Preis-Historien parallel abrufen; neuere Käufe fließen stärker gewichtet ein.
-    const priceHistories = await Promise.all(
-      itemsFlat.map(({ label }) => fetchPriceHistory(supabase, userId, label))
-    );
-
-    const rows = itemsFlat.map(({ label, aiPrice, category, count, amount, unit, parentLabel }, i) => {
-      const preassignedId = parentUuidMap.get(label.toLowerCase());
-      return {
-        ...(preassignedId ? { id: preassignedId } : {}),
-        label,
-        category,
-        estimated_price: resolveItemPrice(priceHistories[i], aiPrice),
-        count,
-        amount,
-        unit,
-        is_done: false,
-        source_dump: captureId,
-        user_id: userId,
-        parent_id: parentLabel ? (parentUuidMap.get(parentLabel.toLowerCase()) ?? null) : null,
-      };
-    });
-
-    if (rows.length > 0) {
-      const { error: dbError } = await supabase.from('shopping_items').insert(rows);
-      if (dbError) {
-        return new Response(
-          JSON.stringify({ error: "Failed to insert shopping items", details: dbError.message }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+        const resolved = resolveItemPrice(priceHistories[i], aiPrice);
+        if (isObj) {
+          return { ...(raw as Record<string, unknown>), estimatedPrice: resolved ?? undefined };
+        }
+        return { label, estimatedPrice: resolved ?? undefined };
+      });
     }
   }
 
-  // Nur Ober-Items und standalone Items als Tags — Sub-Items (parentLabel gesetzt) bleiben taglos.
+  // Nur Top-Level-Items als Tags — Sub-Items (parentLabel gesetzt) bleiben taglos.
   for (const e of shoppingEntries) {
     e.payload.tags = (e.payload.items ?? [])
       .filter((raw) => {
@@ -267,7 +230,7 @@ Deno.serve(async (request) => {
     ? (ingestResponse.additionalInfos as unknown[]).filter(isValidAdditionalInfo)
     : [];
 
-  // 10. Alle Entries + additionalInfos zurückgeben — SHOPPING-Entries erscheinen als EntryCard im Dashboard.
+  // 10. Alle Entries + additionalInfos zurückgeben — SHOPPING-Entries tragen payload.items mit KI-Preisen.
   const responsePayload: Record<string, unknown> = { captureId, entries: normalizedEntries };
   if (additionalInfos.length > 0) responsePayload.additionalInfos = additionalInfos;
   return new Response(JSON.stringify(responsePayload), {

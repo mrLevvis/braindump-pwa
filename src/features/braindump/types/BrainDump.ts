@@ -102,6 +102,16 @@ export const TIME_OF_DAY_LABEL: Record<TimeOfDay, string> = {
   nachts:      'Nachts',
 };
 
+export interface ShoppingItemDraft {
+  label: string;
+  estimatedPrice?: number | null;
+  category?: string;
+  count?: number;
+  amount?: number | null;
+  unit?: string;
+  parentLabel?: string | null;
+}
+
 export interface EntryPayload {
   date?: string;         // ISO Datum (YYYY-MM-DD), falls im Text impliziert/erwähnt
   endDate?: string;      // YYYY-MM-DD — nur EVENT; inklusives Enddatum eines Zeitraums
@@ -110,7 +120,7 @@ export interface EntryPayload {
   deadline?: string;     // HH:MM (Fälligkeit) — nur TASK, wenn explizit "bis [Uhrzeit]" ohne startTime
   timeOfDay?: TimeOfDay; // Grobe Tageszeit wenn keine konkrete Uhrzeit, aber Tageszeitfenster erkennbar
   tags?: string[];       // Flexibler Kontext (z.B. ["Arbeit"])
-  items?: Array<string | { label: string; estimatedPrice?: number }>; // SHOPPING: Artikel (string legacy | Objekt mit Preisschätzung)
+  items?: ShoppingItemDraft[]; // SHOPPING: Artikel inkl. KI-Preisschätzung, Kategorie, Menge
 }
 
 /**

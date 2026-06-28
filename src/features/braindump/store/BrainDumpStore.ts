@@ -12,6 +12,7 @@ import {
   deleteShoppingItem,
   deleteShoppingItemsBySourceDump,
   fetchShoppingItems,
+  insertShoppingItemsFromDraft,
   updateShoppingItemLabel,
 } from "../../shopping/services/shoppingItemsService";
 
@@ -120,6 +121,14 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((set, 
         }));
 
         await insertEntries(newEntries);
+
+        // SHOPPING-Items aus den Drafts in die DB schreiben (erst nach User-Bestätigung).
+        const shoppingDrafts = preview.drafts.filter(d => d.category === 'SHOPPING');
+        await Promise.all(
+            shoppingDrafts.map(d =>
+                insertShoppingItemsFromDraft(preview.captureId, d.payload?.items ?? [])
+            )
+        );
 
         // Zusatzinfos an bestehende Entries anhängen (summary erweitern).
         if (preview.additionalInfos && preview.additionalInfos.length > 0) {
@@ -262,7 +271,17 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((set, 
 
         // Only run AI when the text content changed; otherwise fall back to a plain update.
         const hasTextChange = 'title' in patch || 'summary' in patch;
-        if (!hasTextChange) return get().updateEntry(id, patch);
+        if (!hasTextChange) {
+            const result = await get().updateEntry(id, patch);
+            // Sync shopping items when only payload.items changed (no text change, no AI needed).
+            if (result.status === 'updated' && patch.payload?.items !== undefined
+                && currentEntry.category === 'SHOPPING' && currentEntry.captureId) {
+                await deleteShoppingItemsBySourceDump(currentEntry.captureId);
+                await insertShoppingItemsFromDraft(currentEntry.captureId, patch.payload.items);
+                get().loadItems();
+            }
+            return result;
+        }
 
         const effectiveTitle = 'title' in patch ? patch.title : currentEntry.title;
         const effectiveSummary = 'summary' in patch ? patch.summary : currentEntry.summary;
@@ -312,6 +331,13 @@ export const useBrainDumpStore = create<BrainDumpState & ShoppingSlice>()((set, 
             if (data) set(() => ({ entries: data }));
             if (result.status === 'error') showErrorToast(result.message);
         } else if (finalPatch.category === 'SHOPPING' || currentEntry.category === 'SHOPPING') {
+            if (currentEntry.captureId) {
+                await deleteShoppingItemsBySourceDump(currentEntry.captureId);
+                await insertShoppingItemsFromDraft(
+                    currentEntry.captureId,
+                    finalPatch.payload?.items ?? []
+                );
+            }
             get().loadItems();
         }
 

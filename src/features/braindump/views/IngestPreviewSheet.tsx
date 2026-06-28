@@ -174,6 +174,8 @@ function DraftPreviewCard({ draft, onClick, onDelete }: Readonly<{ draft: EntryD
   }
 
   const { tintBackground } = CATEGORY_STYLES[draft.category];
+  const shoppingItems = draft.category === 'SHOPPING' ? (draft.payload?.items ?? []) : [];
+  const ITEMS_PREVIEW_LIMIT = 5;
   return (
     <div className="relative">
       <button type="button" className={CARD_BTN} onClick={onClick}>
@@ -182,7 +184,26 @@ function DraftPreviewCard({ draft, onClick, onDelete }: Readonly<{ draft: EntryD
             <CategoryBadge category={draft.category} />
             <p className="text-sm font-semibold leading-snug">{title}</p>
             {timeStr && <p className="text-xs text-muted-foreground">{timeStr}</p>}
-            <TagBadgeList tags={tags} />
+            {draft.category === 'SHOPPING' && shoppingItems.length > 0 ? (
+              <ul className="space-y-0.5">
+                {shoppingItems.slice(0, ITEMS_PREVIEW_LIMIT).map((item, i) => (
+                  <li key={i} className="flex items-center gap-1.5 text-xs text-foreground/70">
+                    <span className="h-1 w-1 shrink-0 rounded-full bg-muted-foreground/60" aria-hidden="true" />
+                    {item.label}
+                    {(item.count ?? 1) > 1 && (
+                      <span className="text-muted-foreground">×{item.count}</span>
+                    )}
+                  </li>
+                ))}
+                {shoppingItems.length > ITEMS_PREVIEW_LIMIT && (
+                  <li className="text-xs text-muted-foreground pl-2.5">
+                    +{shoppingItems.length - ITEMS_PREVIEW_LIMIT} weitere…
+                  </li>
+                )}
+              </ul>
+            ) : (
+              <TagBadgeList tags={tags} />
+            )}
             {draft.sourceExcerpt && (
               <p className="text-xs text-muted-foreground italic line-clamp-2">„{draft.sourceExcerpt}"</p>
             )}

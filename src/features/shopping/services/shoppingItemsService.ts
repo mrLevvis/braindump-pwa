@@ -6,8 +6,49 @@
 
 import { supabase } from '../../braindump/services/ApiClient';
 import type { ShoppingItem, ShoppingCategory, ShoppingUnit, DeleteResult, ToggleResult, UpdatePriceResult, UpdateLabelResult, UpdateNotesResult, UpdateDeadlineResult, UpdateCategoryResult, UpdateCountResult, UpdateAmountResult, UpdateUnitResult, UpdateParentResult } from '../types/ShoppingItem';
+import type { ShoppingItemDraft } from '../../braindump/types/BrainDump';
 
 const TABLE = 'shopping_items';
+
+export async function insertShoppingItemsFromDraft(
+  captureId: string,
+  items: ShoppingItemDraft[]
+): Promise<void> {
+  if (items.length === 0) return;
+
+  // Items, die selbst als parentLabel referenziert werden, bekommen eine vorberechnete
+  // UUID, damit Sub-Items beim Batch-Insert direkt verknüpft werden können.
+  const referencedAsParent = new Set(
+    items.filter(i => i.parentLabel).map(i => i.parentLabel!.toLowerCase())
+  );
+  const parentUuidMap = new Map<string, string>();
+  for (const item of items) {
+    if (referencedAsParent.has(item.label.toLowerCase())) {
+      parentUuidMap.set(item.label.toLowerCase(), crypto.randomUUID());
+    }
+  }
+
+  const rows = items.map((item) => {
+    const preassignedId = parentUuidMap.get(item.label.toLowerCase());
+    return {
+      ...(preassignedId ? { id: preassignedId } : {}),
+      label: item.label,
+      category: (item.category ?? 'SONSTIGES') as ShoppingCategory,
+      estimated_price: item.estimatedPrice ?? null,
+      count: item.count ?? 1,
+      amount: item.amount ?? null,
+      unit: (item.unit ?? 'STUECK') as ShoppingUnit,
+      is_done: false,
+      source_dump: captureId,
+      parent_id: item.parentLabel
+        ? (parentUuidMap.get(item.parentLabel.toLowerCase()) ?? null)
+        : null,
+    };
+  });
+
+  const { error } = await supabase.from(TABLE).insert(rows);
+  if (error) throw new Error(error.message);
+}
 
 export async function fetchShoppingItemsBySourceDump(captureId: string): Promise<ShoppingItem[]> {
   const { data, error } = await supabase
