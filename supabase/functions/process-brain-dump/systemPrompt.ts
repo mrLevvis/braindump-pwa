@@ -98,7 +98,8 @@ Gib das JSON exakt in dieser Form zurück:
       }
 
       // Für SHOPPING (stattdessen):
-      // "payload": { "items": [{"label": "Mehl", "estimatedPrice": 1.29, "category": "LEBENSMITTEL", "count": 2, "amount": 500, "unit": "G"}, {"label": "Zahnbürste", "estimatedPrice": 1.99, "category": "HYGIENE", "count": 3, "unit": "STUECK"}] }
+      // "payload": { "items": [{"label": "Apfelkuchen", "estimatedPrice": null, "category": "LEBENSMITTEL", "count": 1, "unit": "STUECK"}, {"label": "Mehl", "estimatedPrice": 0.99, "category": "LEBENSMITTEL", "count": 1, "amount": 500, "unit": "G", "parentLabel": "Apfelkuchen"}, {"label": "Zahnbürste", "estimatedPrice": 1.99, "category": "HYGIENE", "count": 3, "unit": "STUECK"}] }
+      // Ober-Item hat KEIN parentLabel; Sub-Items haben "parentLabel": "<Label des Ober-Items>".
 
       // Für EVENT mit Wiederholung (optional, zusätzlich zu payload):
       // "recurrence": {
@@ -139,6 +140,7 @@ Regeln:
   "label" enthält NUR den Artikelnamen (z.B. "500g Mehl" → label:"Mehl", count:1, amount:500, unit:"G").
   Kombinierte Fälle: "3× 1 l Milch" → label:"Milch", count:3, amount:1, unit:"L".
   Reine Stückzahl: "3 Zahnbürsten" → label:"Zahnbürste", count:3, unit:"STUECK" (kein amount).
+  Gruppierung: Wenn Artikel zu einem Ober-Konzept gehören (z.B. "Zutaten für X:", "für [Rezept]:", eingerückte Liste unter einem Oberbegriff), erzeuge ein Ober-Item ohne "parentLabel" und weise alle zugehörigen Sub-Items mit "parentLabel": "<Label des Ober-Items>" aus. Ober-Items haben keinen eigenen estimatedPrice (weglassen). Nur eine Ebene tief verschachteln.
   SHOPPING-Kategorien ("category" je Artikel, bei Unsicherheit immer "SONSTIGES"):
   "LEBENSMITTEL": Lebensmittel, Getränke, Obst, Gemüse, Milchprodukte, Fleisch, Backwaren
   "HAUSHALT":     Reinigungsmittel, Waschmittel, Küchenutensilien, Papierprodukte, Haushaltsgeräte
@@ -263,6 +265,14 @@ Ausgabe:
 {
   "entries": [
     {"category":"SHOPPING","title":"Einkaufsliste","sourceExcerpt":"2× 500g Mehl, 1,5 Liter Milch, 3 Zahnbürsten, 50 cm Kabel kaufen","summary":["4 Artikel: Mehl, Milch, Zahnbürste, Kabel"],"payload":{"items":[{"label":"Mehl","estimatedPrice":2.58,"category":"LEBENSMITTEL","count":2,"amount":500,"unit":"G"},{"label":"Milch","estimatedPrice":1.79,"category":"LEBENSMITTEL","count":1,"amount":1.5,"unit":"L"},{"label":"Zahnbürste","estimatedPrice":1.99,"category":"HYGIENE","count":3,"unit":"STUECK"},{"label":"Kabel","estimatedPrice":3.99,"category":"ELEKTRONIK","count":1,"amount":50,"unit":"CM"}]}}
+  ]
+}
+
+Eingabe: "Zutaten für Apfelkuchen kaufen: 500g Mehl, 200g Zucker, 3 Eier, 1kg Äpfel"
+Ausgabe:
+{
+  "entries": [
+    {"category":"SHOPPING","title":"Zutaten für Apfelkuchen","sourceExcerpt":"Zutaten für Apfelkuchen kaufen: 500g Mehl, 200g Zucker, 3 Eier, 1kg Äpfel","summary":["4 Zutaten: Mehl, Zucker, Eier, Äpfel"],"payload":{"items":[{"label":"Apfelkuchen","category":"LEBENSMITTEL","count":1,"unit":"STUECK"},{"label":"Mehl","estimatedPrice":0.79,"category":"LEBENSMITTEL","count":1,"amount":500,"unit":"G","parentLabel":"Apfelkuchen"},{"label":"Zucker","estimatedPrice":0.59,"category":"LEBENSMITTEL","count":1,"amount":200,"unit":"G","parentLabel":"Apfelkuchen"},{"label":"Ei","estimatedPrice":0.99,"category":"LEBENSMITTEL","count":3,"unit":"STUECK","parentLabel":"Apfelkuchen"},{"label":"Äpfel","estimatedPrice":1.49,"category":"LEBENSMITTEL","count":1,"amount":1,"unit":"KG","parentLabel":"Apfelkuchen"}]}}
   ]
 }
 

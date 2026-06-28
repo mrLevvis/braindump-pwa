@@ -29,6 +29,7 @@ export interface ShoppingItem {
   count: number;
   amount: number | null;
   unit: ShoppingUnit;
+  parent_id: string | null;
 }
 
 export type ToggleResult =
@@ -78,5 +79,10 @@ export type UpdateAmountResult =
 
 export type UpdateUnitResult =
   | { status: 'updated'; unit: ShoppingUnit }
+  | { status: 'not_found' }
+  | { status: 'error'; message: string };
+
+export type UpdateParentResult =
+  | { status: 'updated'; parentId: string | null }
   | { status: 'not_found' }
   | { status: 'error'; message: string };

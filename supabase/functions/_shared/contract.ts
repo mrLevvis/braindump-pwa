@@ -87,6 +87,7 @@ export interface ShoppingItemEntry {
   count?: number;
   amount?: number;
   unit?: ShoppingUnit;
+  parentLabel?: string;
 }
 
 export interface EntryPayload {

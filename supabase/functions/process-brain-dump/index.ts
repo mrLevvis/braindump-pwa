@@ -199,26 +199,44 @@ Deno.serve(async (request) => {
         const rawAmount = isObj ? (raw as { amount?: unknown }).amount : undefined;
         // Invariante: amount ist null genau dann wenn unit = STUECK
         const amount: number | null = unit !== 'STUECK' && typeof rawAmount === 'number' && rawAmount > 0 ? rawAmount : null;
-        return { label, aiPrice, category, count, amount, unit };
+        const parentLabel: string | null = isObj ? ((raw as { parentLabel?: string }).parentLabel ?? null) : null;
+        return { label, aiPrice, category, count, amount, unit, parentLabel };
       })
     );
+
+    // Ober-Items, die tatsächlich als parentLabel referenziert werden, bekommen eine
+    // vorberechnete UUID, damit Sub-Items direkt beim Insert verknüpft werden können.
+    const referencedAsParent = new Set(
+      itemsFlat.filter(i => i.parentLabel).map(i => i.parentLabel!.toLowerCase())
+    );
+    const parentUuidMap = new Map<string, string>();
+    for (const item of itemsFlat) {
+      if (referencedAsParent.has(item.label.toLowerCase())) {
+        parentUuidMap.set(item.label.toLowerCase(), crypto.randomUUID());
+      }
+    }
 
     // Preis-Historien parallel abrufen; neuere Käufe fließen stärker gewichtet ein.
     const priceHistories = await Promise.all(
       itemsFlat.map(({ label }) => fetchPriceHistory(supabase, userId, label))
     );
 
-    const rows = itemsFlat.map(({ label, aiPrice, category, count, amount, unit }, i) => ({
-      label,
-      category,
-      estimated_price: resolveItemPrice(priceHistories[i], aiPrice),
-      count,
-      amount,
-      unit,
-      is_done: false,
-      source_dump: captureId,
-      user_id: userId,
-    }));
+    const rows = itemsFlat.map(({ label, aiPrice, category, count, amount, unit, parentLabel }, i) => {
+      const preassignedId = parentUuidMap.get(label.toLowerCase());
+      return {
+        ...(preassignedId ? { id: preassignedId } : {}),
+        label,
+        category,
+        estimated_price: resolveItemPrice(priceHistories[i], aiPrice),
+        count,
+        amount,
+        unit,
+        is_done: false,
+        source_dump: captureId,
+        user_id: userId,
+        parent_id: parentLabel ? (parentUuidMap.get(parentLabel.toLowerCase()) ?? null) : null,
+      };
+    });
 
     if (rows.length > 0) {
       const { error: dbError } = await supabase.from('shopping_items').insert(rows);
@@ -231,12 +249,17 @@ Deno.serve(async (request) => {
     }
   }
 
-  // Item-Labels 1:1 als Tags in den Entry-Payload schreiben — kein KI-Ermessen.
+  // Nur Ober-Items und standalone Items als Tags — Sub-Items (parentLabel gesetzt) bleiben taglos.
   for (const e of shoppingEntries) {
-    e.payload.tags = (e.payload.items ?? []).map((raw) => {
-      const isObj = raw !== null && typeof raw === 'object';
-      return isObj ? (raw as { label: string }).label : String(raw);
-    });
+    e.payload.tags = (e.payload.items ?? [])
+      .filter((raw) => {
+        const isObj = raw !== null && typeof raw === 'object';
+        return isObj ? !(raw as { parentLabel?: string }).parentLabel : true;
+      })
+      .map((raw) => {
+        const isObj = raw !== null && typeof raw === 'object';
+        return isObj ? (raw as { label: string }).label : String(raw);
+      });
   }
 
   // 9. additionalInfos validieren — ungültige Einträge stillschweigend verwerfen.

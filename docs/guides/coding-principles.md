@@ -1,3 +1,6 @@
+# **Manual-First, AI-on-Top**
+Jedes Feature wird zuerst vollständig manuell bedienbar gebaut. KI-Automatisierung (z.B. via Brain-Dump-Parsing) ist immer eine optionale Ergänzung on top — nie Voraussetzung für die Nutzung. Wer kein KI-Feature nutzt, soll trotzdem den vollen Funktionsumfang manuell bedienen können.
+
 # **SRP (Single Responsibility Principle)**
 Jede Datei/Funktion hat nur *eine* Aufgabe. (z.B. React rendert nur das UI; Services machen API-Calls; der Store hält den State).
 

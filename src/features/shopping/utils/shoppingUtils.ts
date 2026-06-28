@@ -19,8 +19,25 @@ export function sortShoppingItemsByDeadline(items: ShoppingItem[]): ShoppingItem
 export function groupByCategory(items: ShoppingItem[]): Array<{ category: ShoppingCategory; items: ShoppingItem[] }> {
   const result: Array<{ category: ShoppingCategory; items: ShoppingItem[] }> = [];
   for (const category of SHOPPING_CATEGORIES) {
-    const catItems = sortShoppingItemsByDeadline(items.filter(i => i.category === category));
+    const catItems = sortShoppingItemsByDeadline(
+      items.filter(i => i.category === category && i.parent_id === null)
+    );
     if (catItems.length > 0) result.push({ category, items: catItems });
   }
   return result;
+}
+
+export function getSubItems(items: ShoppingItem[], parentId: string): ShoppingItem[] {
+  return items.filter(i => i.parent_id === parentId);
+}
+
+export function buildSubItemsMap(items: ShoppingItem[]): Map<string, ShoppingItem[]> {
+  const map = new Map<string, ShoppingItem[]>();
+  for (const item of items) {
+    if (item.parent_id) {
+      const existing = map.get(item.parent_id) ?? [];
+      map.set(item.parent_id, [...existing, item]);
+    }
+  }
+  return map;
 }

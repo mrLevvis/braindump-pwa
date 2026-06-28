@@ -1,5 +1,5 @@
 import type { ShoppingItem, ShoppingCategory, ShoppingUnit } from '../types/ShoppingItem';
-import { fetchShoppingItems, toggleShoppingItem, deleteShoppingItem, updateShoppingItemPrice, updateShoppingItemNotes, updateShoppingItemDeadline, updateShoppingItemCategory, updateShoppingItemCount, updateShoppingItemAmount, updateShoppingItemUnit } from '../services/shoppingItemsService';
+import { fetchShoppingItems, toggleShoppingItem, deleteShoppingItem, updateShoppingItemPrice, updateShoppingItemNotes, updateShoppingItemDeadline, updateShoppingItemCategory, updateShoppingItemCount, updateShoppingItemAmount, updateShoppingItemUnit, addShoppingGroup, addSubShoppingItem } from '../services/shoppingItemsService';
 import { showErrorToast } from '../../../hooks/useErrorToast';
 
 export interface ShoppingSlice {
@@ -14,6 +14,8 @@ export interface ShoppingSlice {
   updateItemCount: (id: string, count: number) => Promise<void>;
   updateItemAmount: (id: string, amount: number | null) => Promise<void>;
   updateItemUnit: (id: string, unit: ShoppingUnit) => Promise<void>;
+  addGroup: (label: string) => Promise<void>;
+  addSubItem: (label: string, parentId: string) => Promise<void>;
 }
 
 type SetSlice = (partial: Partial<ShoppingSlice>) => void;
@@ -112,6 +114,24 @@ export const createShoppingSlice = (set: SetSlice, get: GetSlice): ShoppingSlice
       showErrorToast(result.message);
       const items = await fetchShoppingItems().catch(() => null);
       if (items) set({ items });
+    }
+  },
+
+  addGroup: async (label) => {
+    try {
+      const item = await addShoppingGroup(label);
+      set({ items: [...get().items, item] });
+    } catch (e) {
+      showErrorToast((e as Error).message);
+    }
+  },
+
+  addSubItem: async (label, parentId) => {
+    try {
+      const item = await addSubShoppingItem(label, parentId);
+      set({ items: [...get().items, item] });
+    } catch (e) {
+      showErrorToast((e as Error).message);
     }
   },
 });

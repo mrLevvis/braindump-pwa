@@ -5,7 +5,7 @@
  */
 
 import { supabase } from '../../braindump/services/ApiClient';
-import type { ShoppingItem, ShoppingCategory, ShoppingUnit, DeleteResult, ToggleResult, UpdatePriceResult, UpdateLabelResult, UpdateNotesResult, UpdateDeadlineResult, UpdateCategoryResult, UpdateCountResult, UpdateAmountResult, UpdateUnitResult } from '../types/ShoppingItem';
+import type { ShoppingItem, ShoppingCategory, ShoppingUnit, DeleteResult, ToggleResult, UpdatePriceResult, UpdateLabelResult, UpdateNotesResult, UpdateDeadlineResult, UpdateCategoryResult, UpdateCountResult, UpdateAmountResult, UpdateUnitResult, UpdateParentResult } from '../types/ShoppingItem';
 
 const TABLE = 'shopping_items';
 
@@ -70,6 +70,39 @@ export async function addShoppingItem(captureId: string, label: string): Promise
 
   if (error) throw new Error(error.message);
   return data as ShoppingItem;
+}
+
+export async function addShoppingGroup(label: string): Promise<ShoppingItem> {
+  const { data, error } = await supabase
+    .from(TABLE)
+    .insert({ label, is_done: false, source_dump: null, category: 'SONSTIGES', count: 1, unit: 'STUECK', parent_id: null })
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as ShoppingItem;
+}
+
+export async function addSubShoppingItem(label: string, parentId: string): Promise<ShoppingItem> {
+  const { data, error } = await supabase
+    .from(TABLE)
+    .insert({ label, is_done: false, source_dump: null, category: 'SONSTIGES', count: 1, unit: 'STUECK', parent_id: parentId })
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as ShoppingItem;
+}
+
+export async function updateShoppingItemParent(id: string, parentId: string | null): Promise<UpdateParentResult> {
+  const { error, count } = await supabase
+    .from(TABLE)
+    .update({ parent_id: parentId }, { count: 'exact' })
+    .eq('id', id);
+
+  if (error) return { status: 'error', message: error.message };
+  if (count === 0) return { status: 'not_found' };
+  return { status: 'updated', parentId };
 }
 
 export async function updateShoppingItemLabel(id: string, label: string): Promise<UpdateLabelResult> {
