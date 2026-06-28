@@ -19,7 +19,7 @@ flowchart TD
     LLM_RESULT -- "Zusatzinfo zu\nbestehendem Entry" --> CASE_D["Fall D\n→ dump-flow-d.md"]
     LLM_RESULT -- "Mix: neue Entries\n+ Zusatzinfos" --> CASE_MIX["Fall D (Sonderfall)\nMix aus B + D"]
 
-    CASE_A & CASE_B & CASE_C & CASE_D & CASE_MIX --> PREVIEW["IngestPreviewSheet\nUser prüft strukturierte Entwürfe"]
+    CASE_A & CASE_B & CASE_C & CASE_D & CASE_MIX --> PREVIEW["IngestPreviewSheet\n(pendingPreview: IngestPreview)"]
 
     PREVIEW --> USER_ACTION{User-Aktion?}
 
@@ -29,7 +29,7 @@ flowchart TD
     USER_ACTION -- "Verwerfen" --> DISCARD["discardIngest\nkein DB-Write"]
 
     CONFIRM --> UPDATED_DASHBOARD([Dashboard aktualisiert])
-    UPDATED_DASHBOARD --> CLOSE([PreviewSheet geschlossen])
+    UPDATED_DASHBOARD --> CLOSE([IngestPreviewSheet geschlossen])
     DISCARD --> CLOSE
 ```
 

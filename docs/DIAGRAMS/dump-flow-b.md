@@ -29,19 +29,19 @@ sequenceDiagram
     Groq-->>EdgeFn: { entries: [Entry1, Entry2, ...EntryN] }
     EdgeFn-->>App: IngestResult { captureId, entries: [N Entries] }
     App->>App: pendingPreview setzen<br/>setProcessing(false)
-    App-->>User: IngestPreviewSheet anzeigen (N Draft-Karten)
+    App-->>User: IngestPreviewSheet anzeigen (drafts: EntryDraft[])
 
-    opt User bearbeitet einzelne Drafts
-        loop Pro Draft-Karte
-            User->>App: Draft-Karte antippen → EntryEditForm öffnen
+    opt User bearbeitet einzelne EntryDrafts
+        loop Pro EntryDraft
+            User->>App: EntryDraft antippen → EntryEditForm öffnen
             User->>App: Felder anpassen + Speichern
-            App->>App: Draft in pendingPreview aktualisieren
+            App->>App: EntryDraft in pendingPreview.drafts aktualisieren
         end
     end
 
-    opt User löscht einzelne Drafts
-        User->>App: Draft-Karte entfernen
-        App->>App: Draft aus pendingPreview entfernen
+    opt User löscht einzelne EntryDrafts
+        User->>App: EntryDraft entfernen
+        App->>App: EntryDraft aus pendingPreview.drafts entfernen
     end
 
     alt User bestätigt (verbleibende Drafts)
@@ -54,17 +54,17 @@ sequenceDiagram
     else User verwirft alle
         User->>App: discardIngest(captureId)
         App->>App: pendingPreview = null
-        App-->>User: PreviewSheet geschlossen (kein DB-Write)
+        App-->>User: IngestPreviewSheet geschlossen (kein DB-Write)
     end
 ```
 
 **Hinweise:**
 - Alle N Entries teilen sich dieselbe `captureId` — sie gehören zum selben Dump.
 - `insertEntries` ist ein einzelner Batch-Insert, kein N-maliges Einzelschreiben.
-- Wenn der User einzelne Drafts löscht und dann bestätigt, werden nur die
-  verbleibenden Drafts in die DB geschrieben.
-- Falls nach dem Löschen einzelner Drafts kein Draft mehr übrig ist, entspricht
-  das einem vollständigen Verwerfen (kein DB-Write).
+- Wenn der User einzelne `EntryDraft`s löscht und dann bestätigt, werden nur die
+  verbleibenden `EntryDraft`s in die DB geschrieben.
+- Falls nach dem Löschen aller `EntryDraft`s `pendingPreview.drafts` leer ist,
+  entspricht das einem vollständigen Verwerfen (kein DB-Write).
 
 ## Referenzen
 

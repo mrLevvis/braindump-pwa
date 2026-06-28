@@ -25,7 +25,7 @@ sequenceDiagram
     Groq-->>EdgeFn: { entries: [StructuredEntry] }
     EdgeFn-->>App: IngestResult { captureId, entries: [1 Entry] }
     App->>App: pendingPreview setzen<br/>setProcessing(false)
-    App-->>User: IngestPreviewSheet anzeigen (1 Draft)
+    App-->>User: IngestPreviewSheet anzeigen (1 EntryDraft)
 
     alt User bestätigt
         User->>App: confirmIngest(preview)
@@ -37,7 +37,7 @@ sequenceDiagram
     else User verwirft
         User->>App: discardIngest(captureId)
         App->>App: pendingPreview = null
-        App-->>User: PreviewSheet geschlossen (kein DB-Write)
+        App-->>User: IngestPreviewSheet geschlossen (kein DB-Write)
     end
 ```
 
