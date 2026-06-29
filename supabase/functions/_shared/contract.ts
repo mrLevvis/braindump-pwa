@@ -90,6 +90,13 @@ export interface ShoppingItemEntry {
   parentLabel?: string;
 }
 
+/** Eine Etappe innerhalb eines mehrtägigen EVENTs. dayOffset 0 = Starttag. */
+export interface EventStage {
+  label: string;
+  dayOffset: number;  // 0 = Starttag, 1 = nächster Tag, …
+  time?: string;      // HH:MM
+}
+
 export interface EntryPayload {
   date?: string;         // YYYY-MM-DD
   endDate?: string;      // YYYY-MM-DD — nur EVENT; inklusives Enddatum eines Zeitraums
@@ -99,6 +106,7 @@ export interface EntryPayload {
   timeOfDay?: TimeOfDay; // Grobe Tageszeit wenn keine konkrete Uhrzeit, aber Tageszeitfenster erkennbar
   tags?: string[];
   items?: ShoppingItemEntry[]; // SHOPPING: Liste der Einkaufsartikel mit Preisschätzung
+  stages?: EventStage[];       // Nur EVENT mit endDate: benannte Etappen (Abholung, Ankunft, …)
 }
 
 /** Ein strukturierter Eintrag, wie ihn die KI zurückgibt. */
@@ -202,5 +210,22 @@ export function normalizeEntryContract(entry: StructuredEntry): StructuredEntry 
     ? entry.recurrence
     : undefined;
 
-  return { ...entry, recurrence: validatedRecurrence };
+  // stages nur für EVENT mit endDate; ungültige Einzeleinträge rausfiltern.
+  let validatedStages = entry.payload.stages;
+  if (entry.category !== 'EVENT' || !entry.payload.endDate) {
+    validatedStages = undefined;
+  } else if (validatedStages != null) {
+    validatedStages = validatedStages.filter(
+      s => typeof s.label === 'string' && s.label.trim() !== '' &&
+           typeof s.dayOffset === 'number' && s.dayOffset >= 0 &&
+           (s.time == null || /^\d{2}:\d{2}$/.test(s.time)),
+    );
+    if (validatedStages.length === 0) validatedStages = undefined;
+  }
+
+  const payloadWithStages = validatedStages != null
+    ? { ...entry.payload, stages: validatedStages }
+    : (() => { const { stages: _s, ...rest } = entry.payload; return rest; })();
+
+  return { ...entry, payload: payloadWithStages, recurrence: validatedRecurrence };
 }

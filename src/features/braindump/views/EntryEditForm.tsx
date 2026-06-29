@@ -3,7 +3,7 @@ import { X, Plus, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import type { BrainDumpEntry, EntryCategory, EntryPatch, RecurrenceRule, ShoppingItemDraft, TimeOfDay } from '../types';
+import type { BrainDumpEntry, EntryCategory, EntryPatch, EventStage, RecurrenceRule, ShoppingItemDraft, TimeOfDay } from '../types';
 import { TIME_OF_DAY_OPTIONS, TIME_OF_DAY_LABEL } from '../types/BrainDump';
 import { RecurrencePickerSection } from './RecurrencePickerSection';
 import { useBrainDumpStore } from '../store';
@@ -83,6 +83,9 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
   const [predecessorIds, setPredecessorIds] = useState<string[]>(entry.dependsOn ?? []);
   const [predSearch, setPredSearch] = useState('');
   const [predDropdownOpen, setPredDropdownOpen] = useState(false);
+  const [stages, setStages] = useState<EventStage[]>(
+    () => (entry.payload?.stages ?? []).map(s => ({ ...s }))
+  );
   const [shoppingItems, setShoppingItems] = useState<ShoppingItemDraft[]>(
     () => (entry.payload?.items ?? []).map(item => ({ ...item }))
   );
@@ -179,6 +182,7 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
     if (isMultiDayMode) {
       setIsMultiDayMode(false);
       setEndDate('');
+      setStages([]);
     } else {
       setIsMultiDayMode(true);
       if (!endDate) setEndDate(date);
@@ -206,6 +210,9 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
       payload: {
         ...(category !== 'NOTE' && date ? { date } : {}),
         ...(category === 'EVENT' && endDate && endDate > (date || '') ? { endDate } : {}),
+        ...(category === 'EVENT' && endDate && endDate > (date || '') && stages.length > 0
+          ? { stages: stages.filter(s => s.label.trim()) }
+          : {}),
         ...(category !== 'NOTE' && startTime ? { startTime } : {}),
         ...(category !== 'NOTE' && endTime && startTime ? { endTime } : {}),
         ...(category === 'TASK' && deadline ? { deadline } : {}),
@@ -368,6 +375,61 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
               </div>
             )}
           </div>
+          {isMultiDayMode && (
+            <div className={SECTION_CLS}>
+              <p className={LABEL_CLS}>Etappen</p>
+              <div className="space-y-2">
+                {stages.map((stage, i) => (
+                  <div key={i} className="grid grid-cols-[1fr_5rem_4rem_1.5rem] items-center gap-2">
+                    <Input
+                      value={stage.label}
+                      onChange={e => setStages(prev => prev.map((s, idx) => idx === i ? { ...s, label: e.target.value } : s))}
+                      placeholder="Bezeichnung"
+                      className="h-7 text-sm"
+                    />
+                    <Input
+                      type="number"
+                      min={0}
+                      value={stage.dayOffset}
+                      onChange={e => setStages(prev => prev.map((s, idx) => idx === i ? { ...s, dayOffset: Math.max(0, parseInt(e.target.value) || 0) } : s))}
+                      className="h-7 text-sm text-center"
+                      title="Tag (0 = Starttag)"
+                    />
+                    <Input
+                      type="time"
+                      value={stage.time ?? ''}
+                      onChange={e => setStages(prev => prev.map((s, idx) => idx === i ? { ...s, time: e.target.value || undefined } : s))}
+                      className="h-7 text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setStages(prev => prev.filter((_, idx) => idx !== i))}
+                      aria-label="Etappe entfernen"
+                      className="shrink-0 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+                {stages.length > 0 && (
+                  <div className="grid grid-cols-[1fr_5rem_4rem_1.5rem] gap-2 pb-0.5">
+                    <p className="text-[10px] text-muted-foreground pl-3">Bezeichnung</p>
+                    <p className="text-[10px] text-muted-foreground text-center">Tag (+0…)</p>
+                    <p className="text-[10px] text-muted-foreground">Uhrzeit</p>
+                    <span />
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setStages(prev => [...prev, { label: '', dayOffset: 0 }])}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <Plus className="h-3 w-3" /> Etappe hinzufügen
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className={SECTION_CLS}>
             <p className={LABEL_CLS}>Wiederholung</p>
             {hasRecurrenceConflict && (

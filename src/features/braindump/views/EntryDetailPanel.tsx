@@ -532,6 +532,27 @@ export function EntryDetailPanel({ entry, open, onOpenChange }: Readonly<{
               </section>
             )}
 
+            {/* Stages — nur bei mehrtägigem EVENT */}
+            {entry.category === 'EVENT' && entry.payload.stages && entry.payload.stages.length > 0 && (
+              <section className="space-y-2" aria-label="Etappen">
+                <p className={labelCls}>Etappen</p>
+                <ul className="space-y-1.5">
+                  {entry.payload.stages.map((stage, i) => (
+                    <li key={i} className={`flex items-center gap-2.5 rounded-lg border ${s.sectionBorder} ${s.sectionBg} px-3 py-1.5`}>
+                      <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${s.bulletColor}`} aria-hidden="true" />
+                      <span className="text-sm font-medium flex-1">{stage.label}</span>
+                      {stage.time && (
+                        <span className="text-xs tabular-nums text-muted-foreground">{stage.time} Uhr</span>
+                      )}
+                      <span className="text-[10px] text-muted-foreground/60 shrink-0">
+                        {stage.dayOffset === 0 ? 'Tag 1' : `+${stage.dayOffset}d`}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
             {/* Recurrence info — shown for masters and virtual occurrences */}
             {isRecurring && (
               <section className="space-y-2" aria-label="Wiederholung">

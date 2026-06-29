@@ -75,12 +75,19 @@ const STICKY_CARD_INNER = [
   'border', 'border-sky-500/20',
 ].join(' ');
 
+function daysBetween(isoA: string, isoB: string): number {
+  const msA = new Date(`${isoA}T00:00:00`).getTime();
+  const msB = new Date(`${isoB}T00:00:00`).getTime();
+  return Math.round((msB - msA) / 86_400_000);
+}
+
 interface StickyEventBandProps {
+  date: string;
   events: readonly BrainDumpEntry[];
   onSelect: (entry: BrainDumpEntry) => void;
 }
 
-function StickyEventBand({ events, onSelect }: Readonly<StickyEventBandProps>) {
+function StickyEventBand({ date, events, onSelect }: Readonly<StickyEventBandProps>) {
   if (events.length === 0) return null;
   return (
     <div className={STICKY_BAND}>
@@ -91,13 +98,30 @@ function StickyEventBand({ events, onSelect }: Readonly<StickyEventBandProps>) {
             ? formatMultiDayRange(rangeStart, event.payload.endDate)
             : null;
           const title = event.title ?? event.original_text;
+
+          const currentOffset = rangeStart ? daysBetween(rangeStart, date) : null;
+          const todayStages = (event.payload.stages ?? []).filter(
+            s => currentOffset !== null && s.dayOffset === currentOffset,
+          );
+
           return (
             <button key={event.id} type="button" className={STICKY_CARD_BTN} onClick={() => onSelect(event)}>
               <div className={STICKY_CARD_INNER}>
                 <span className="h-2 w-2 rounded-full bg-sky-500 shrink-0" aria-hidden="true" />
-                <p className="text-xs font-medium text-sky-700 dark:text-sky-300 truncate flex-1 min-w-0">
-                  {title}
-                </p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-sky-700 dark:text-sky-300 truncate">
+                    {title}
+                  </p>
+                  {todayStages.length > 0 && (
+                    <div className="flex flex-wrap gap-x-2 mt-0.5">
+                      {todayStages.map((s, i) => (
+                        <span key={i} className="text-[10px] text-sky-600/80 dark:text-sky-400/80 tabular-nums">
+                          {s.time ? `${s.time} ${s.label}` : s.label}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 {rangeLabel && (
                   <span className="text-[10px] text-sky-600/70 dark:text-sky-400/70 shrink-0 tabular-nums">
                     {rangeLabel}
@@ -382,7 +406,7 @@ export function DayGrid({ date, entries, allDay, isToday, now, pxPerHour, nowLin
             className="absolute left-0 right-0 z-20"
             style={{ top: `${bandTopPx}px`, height: `${Math.max(0, bandBottomPx - bandTopPx)}px` }}
           >
-            <StickyEventBand events={multiDayEvents} onSelect={onSelect} />
+            <StickyEventBand date={date} events={multiDayEvents} onSelect={onSelect} />
           </div>
         )}
 

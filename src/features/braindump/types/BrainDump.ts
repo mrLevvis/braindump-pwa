@@ -112,6 +112,13 @@ export interface ShoppingItemDraft {
   parentLabel?: string | null;
 }
 
+/** Eine Etappe innerhalb eines mehrtägigen EVENTs. dayOffset 0 = Starttag. */
+export interface EventStage {
+  label: string;
+  dayOffset: number;  // 0 = Starttag, 1 = nächster Tag, …
+  time?: string;      // HH:MM
+}
+
 export interface EntryPayload {
   date?: string;         // ISO Datum (YYYY-MM-DD), falls im Text impliziert/erwähnt
   endDate?: string;      // YYYY-MM-DD — nur EVENT; inklusives Enddatum eines Zeitraums
@@ -121,6 +128,7 @@ export interface EntryPayload {
   timeOfDay?: TimeOfDay; // Grobe Tageszeit wenn keine konkrete Uhrzeit, aber Tageszeitfenster erkennbar
   tags?: string[];       // Flexibler Kontext (z.B. ["Arbeit"])
   items?: ShoppingItemDraft[]; // SHOPPING: Artikel inkl. KI-Preisschätzung, Kategorie, Menge
+  stages?: EventStage[]; // Nur EVENT mit endDate: benannte Etappen (Abholung, Ankunft, …)
 }
 
 /**

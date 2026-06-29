@@ -101,6 +101,15 @@ Gib das JSON exakt in dieser Form zurück:
       // "payload": { "items": [{"label": "Apfelkuchen", "estimatedPrice": null, "category": "LEBENSMITTEL", "count": 1, "unit": "STUECK"}, {"label": "Mehl", "estimatedPrice": 0.99, "category": "LEBENSMITTEL", "count": 1, "amount": 500, "unit": "G", "parentLabel": "Apfelkuchen"}, {"label": "Zahnbürste", "estimatedPrice": 1.99, "category": "HYGIENE", "count": 3, "unit": "STUECK"}] }
       // Ober-Item hat KEIN parentLabel; Sub-Items haben "parentLabel": "<Label des Ober-Items>".
 
+      // Für EVENT mit endDate und benannten Etappen (optional, in payload):
+      // "stages": [
+      //   {"label": "Abholung", "dayOffset": 0, "time": "12:00"},
+      //   {"label": "Rückkehr", "dayOffset": 2, "time": "18:00"}
+      // ]
+      // dayOffset: 0 = Starttag (date), 1 = nächster Tag, usw.
+      // time ist optional (HH:MM); label ist Pflicht.
+      // stages nur bei EVENT mit endDate; nur wenn Etappen explizit erwähnt.
+
       // Für EVENT mit Wiederholung (optional, zusätzlich zu payload):
       // "recurrence": {
       //   "freq": "DAILY"|"WEEKLY"|"MONTHLY"|"YEARLY",
@@ -121,6 +130,25 @@ Kategorien:
 - "NOTE":     Ein Gedanke/eine Info ohne Handlungsbedarf.
 - "SHOPPING": Alles, was gekauft, bestellt oder besorgt werden soll — egal ob ein einzelner Artikel oder eine ganze Einkaufsliste. Schlüsselwörter: "kaufen", "bestellen", "besorgen", "einkaufen", "brauche noch", "muss noch … holen/kaufen/bestellen". Genau EIN Entry; alle Artikel in payload.items. Kein date/startTime/endTime/tags im payload.
 - "recurrence" (nur für EVENT): Wenn eine Wiederholungsregel erkannt wird ("jeden Montag", "täglich", "jeden ersten Dienstag im Monat" usw.), setze das "recurrence"-Feld auf Top-Level des Entries (nicht in payload). Ohne erkennbare Wiederholung das Feld weglassen.
+
+Für EVENT-Einträge: Bestimme zuerst den EVENT-Typ, bevor du Felder setzt:
+
+AUFENTHALT — mehrtägiger Aufenthalt an einem Ort (Urlaub, Homeoffice woanders, Reise, Besuch)
+  → Ein einziger Entry mit date = erster Tag, endDate = letzter Tag
+  → startTime/endTime NUR setzen wenn explizit genannte Ankunfts- und Abreisezeitpunkte vorhanden
+  → Abholung, Rückkehr, Zwischenstopps → NICHT als separate Entries, sondern als "stages" im selben Entry
+  → "stages": [{"label": "Abholung", "dayOffset": 0, "time": "12:00"}, {"label": "Rückkehr", "dayOffset": 2, "time": "18:00"}]
+  → dayOffset: 0 = Starttag, 1 = nächster Tag, usw. — relativ zum date-Feld
+  → stages nur setzen wenn mindestens eine Etappe explizit im Text erwähnt wird
+
+FAHRT — einzelner Transport ohne Übernachtung (Abfahrt, Flug, kurze Reise am selben Tag)
+  → date + startTime; endTime nur wenn explizit genannt, sonst weglassen
+
+TERMIN — klassischer Einzeltermin mit Uhrzeit
+  → date + startTime + endTime (schätzen falls nicht genannt)
+
+BLOCK — Zeitblock ohne konkrete Uhrzeit ("ganzen Tag in der Arbeit", "Urlaub Montag")
+  → nur date (+ endDate falls mehrtägig), kein startTime erfinden
 
 Regeln:
 - "entries" ist IMMER ein Array — auch wenn nur ein Gedanke im Dump steckt (dann Länge 1).
@@ -273,6 +301,14 @@ Ausgabe:
 {
   "entries": [
     {"category":"SHOPPING","title":"Zutaten für Apfelkuchen","sourceExcerpt":"Zutaten für Apfelkuchen kaufen: 500g Mehl, 200g Zucker, 3 Eier, 1kg Äpfel","summary":["4 Zutaten: Mehl, Zucker, Eier, Äpfel"],"payload":{"items":[{"label":"Apfelkuchen","category":"LEBENSMITTEL","count":1,"unit":"STUECK"},{"label":"Mehl","estimatedPrice":0.79,"category":"LEBENSMITTEL","count":1,"amount":500,"unit":"G","parentLabel":"Apfelkuchen"},{"label":"Zucker","estimatedPrice":0.59,"category":"LEBENSMITTEL","count":1,"amount":200,"unit":"G","parentLabel":"Apfelkuchen"},{"label":"Ei","estimatedPrice":0.99,"category":"LEBENSMITTEL","count":3,"unit":"STUECK","parentLabel":"Apfelkuchen"},{"label":"Äpfel","estimatedPrice":1.49,"category":"LEBENSMITTEL","count":1,"amount":1,"unit":"KG","parentLabel":"Apfelkuchen"}]}}
+  ]
+}
+
+Eingabe: "ich bin überübermorgen bis in 5 Tagen bei meinen Eltern, Abholung 12 Uhr, Rückkehr 18 Uhr"
+Ausgabe:
+{
+  "entries": [
+    {"category":"EVENT","title":"Bei Eltern","sourceExcerpt":"überübermorgen bis in 5 Tagen bei meinen Eltern, Abholung 12 Uhr, Rückkehr 18 Uhr","summary":["Aufenthalt bei Eltern","Abholung Tag 1 um 12 Uhr","Rückkehr Tag 3 um 18 Uhr"],"payload":{"date":"${shiftIso(todayIso, 2)}","endDate":"${shiftIso(todayIso, 5)}","stages":[{"label":"Abholung","dayOffset":0,"time":"12:00"},{"label":"Rückkehr","dayOffset":3,"time":"18:00"}]}}
   ]
 }
 
