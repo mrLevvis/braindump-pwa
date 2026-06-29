@@ -7,6 +7,7 @@ import { defaultRecurrenceRule } from '../../timeline/recurrenceUtils';
 interface Props {
   value: RecurrenceRule | null;
   onChange: (rule: RecurrenceRule | null) => void;
+  disabled?: boolean;
 }
 
 const FREQ_LABELS: Record<RecurrenceFreq, string> = {
@@ -21,10 +22,11 @@ const PILL_BASE = 'rounded-lg border px-2 py-1 text-xs font-medium transition-co
 const PILL_ACTIVE = 'bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-500/40';
 const PILL_INACTIVE = 'border-border text-muted-foreground hover:bg-muted/50';
 
-export function RecurrencePickerSection({ value, onChange }: Readonly<Props>) {
+export function RecurrencePickerSection({ value, onChange, disabled = false }: Readonly<Props>) {
   const enabled = value != null;
 
   const toggle = () => {
+    if (disabled) return;
     onChange(enabled ? null : defaultRecurrenceRule());
   };
 
@@ -44,12 +46,13 @@ export function RecurrencePickerSection({ value, onChange }: Readonly<Props>) {
   };
 
   return (
-    <div className="space-y-3">
+    <div className={cn('space-y-3', disabled && 'pointer-events-none opacity-40')}>
       <button
         type="button"
         onClick={toggle}
         className="flex items-center gap-2 text-sm"
-        aria-pressed={enabled}
+        aria-pressed={enabled ? 'true' : 'false'}
+        disabled={disabled}
       >
         <span
           className={cn(

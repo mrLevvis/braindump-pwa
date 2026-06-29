@@ -110,6 +110,35 @@ flowchart TD
     D2 --> DB2
 ```
 
+## Mehrtägige Termine + Wiederholung
+
+Ein EVENT kann optional ein `endDate` haben (mehrtägig). Diese Kombination ist mit Wiederholung nur dann gültig, wenn sich die Occurrences **nicht überschneiden** — also wenn die Eventdauer kleiner ist als das Wiederholungsintervall.
+
+**Konflikt-Regel:**
+
+```
+durationDays = endDate - startDate (in Tagen)
+intervalDays = interval × Einheit (1 Tag / 7 Tage / ~30 Tage / ~365 Tage)
+
+Konflikt wenn: durationDays ≥ intervalDays
+```
+
+**Beispiele:**
+
+| Dauer | Wiederholung | Konflikt? |
+|-------|-------------|-----------|
+| Mo–Mi (3 Tage) | wöchentlich (7 Tage) | Nein ✓ |
+| Mo–So (7 Tage) | wöchentlich (7 Tage) | Ja ✗ |
+| Mo–Mi (3 Tage) | täglich (1 Tag) | Ja ✗ |
+| Mo–Fr (5 Tage) | alle 2 Wochen (14 Tage) | Nein ✓ |
+
+**UI-Verhalten bei Konflikt:**
+- `RecurrencePickerSection` wird ausgegraut und mit `disabled` markiert
+- Orangene Warnung erscheint im Wiederholungs-Abschnitt
+- Speichern-Button wird deaktiviert bis der Konflikt aufgelöst ist
+
+**Umsetzung:** `hasRecurrenceConflict` in `EntryEditForm.tsx` — berechneter Wert aus `isMultiDayMode`, `endDate`, `date` und `recurrence.freq`/`recurrence.interval`.
+
 ## Schlüsseldateien
 
 | Datei | Rolle |

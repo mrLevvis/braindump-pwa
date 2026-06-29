@@ -56,10 +56,12 @@
 │            │  [Edit-Button]                                     │
 │            ▼                                                    │
 │  EntryEditForm.tsx                                              │
-│  ├── Datum / Zeit       (TASK, EVENT)                           │
+│  ├── Datum / Zeit – eintägig: [Datum][Von][Bis]  (TASK, EVENT) │
+│  ├── Datum / Zeit – mehrtägig: [Von Datum+Zeit]  (EVENT)       │
+│  │                             [Bis Datum+Zeit]                 │
+│  │   Toggle "+ Mehrtägig / – Eintägig"                         │
 │  ├── Deadline           (TASK)                                  │
-│  ├── EndDatum           (EVENT)                                  │
-│  ├── Recurrence         (TASK, EVENT)                           │
+│  ├── Recurrence + Konfliktwarnung bei mehrtägig (EVENT)         │
 │  ├── Dependencies       (TASK)                                  │
 │  └── Tags / Summary     (alle)                                  │
 └─────────────────────────────────────────────────────────────────┘
@@ -69,20 +71,23 @@
 
 ## Kategorie-Feature-Matrix
 
-| Feature              | TASK | EVENT | NOTE | SHOPPING |
-|----------------------|:----:|:-----:|:----:|:--------:|
-| EntryCard            | ✓    | ✓     | ✓    | ✓        |
-| Datum / Zeit         | ✓    | ✓     | –    | –        |
-| Enddatum             | –    | ✓     | –    | –        |
-| Deadline             | ✓    | –     | –    | –        |
-| TimeOfDay            | ✓    | ✓     | –    | –        |
-| Completion Toggle    | ✓    | –     | –    | –        |
-| Wiederholung         | ✓    | ✓     | –    | –        |
-| Abhängigkeiten       | ✓    | –     | –    | –        |
-| Shopping-Items       | –    | –     | –    | ✓        |
-| Timeline-Darstellung | ✓    | ✓     | –    | –        |
-| Priorisierung (LLM)  | ✓    | –     | –    | –        |
-| Eigene View          | –    | –     | –    | ✓        |
+| Feature                     | TASK | EVENT | NOTE | SHOPPING |
+|-----------------------------|:----:|:-----:|:----:|:--------:|
+| EntryCard                   | ✓    | ✓     | ✓    | ✓        |
+| Datum / Zeit                | ✓    | ✓     | –    | –        |
+| Mehrtägig-Modus             | –    | ✓     | –    | –        |
+| Deadline                    | ✓    | –     | –    | –        |
+| TimeOfDay                   | ✓    | ✓     | –    | –        |
+| Completion Toggle           | ✓    | –     | –    | –        |
+| Wiederholung                | –    | ✓     | –    | –        |
+| Wiederholung + Mehrtägig    | –    | ⚠     | –    | –        |
+| Abhängigkeiten              | ✓    | –     | –    | –        |
+| Shopping-Items              | –    | –     | –    | ✓        |
+| Timeline-Darstellung        | ✓    | ✓     | –    | –        |
+| Priorisierung (LLM)         | ✓    | –     | –    | –        |
+| Eigene View                 | –    | –     | –    | ✓        |
+
+⚠ = Kombinierbar, solange Eventdauer < Wiederholungsintervall. Bei Konflikt (Dauer ≥ Intervall) wird das Speichern blockiert.
 
 ---
 

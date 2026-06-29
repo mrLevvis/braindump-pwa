@@ -71,6 +71,7 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
   const [category, setCategory] = useState<EntryCategory>(entry.category);
   const [date, setDate] = useState(entry.payload?.date ?? '');
   const [endDate, setEndDate] = useState(entry.payload?.endDate ?? '');
+  const [isMultiDayMode, setIsMultiDayMode] = useState(!!entry.payload?.endDate);
   const [startTime, setStartTime] = useState(entry.payload?.startTime ?? '');
   const [endTime, setEndTime] = useState(entry.payload?.endTime ?? '');
   const [deadline, setDeadline] = useState(entry.payload?.deadline ?? '');
@@ -174,6 +175,29 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
 
   const addSummaryLine = () => setSummary(prev => [...prev, '']);
 
+  const handleToggleMultiDay = () => {
+    if (isMultiDayMode) {
+      setIsMultiDayMode(false);
+      setEndDate('');
+    } else {
+      setIsMultiDayMode(true);
+      if (!endDate) setEndDate(date);
+    }
+  };
+
+  const hasRecurrenceConflict = (() => {
+    if (!isMultiDayMode || !endDate || !recurrence || endDate <= date) return false;
+    const durationDays = Math.round(
+      (new Date(endDate).getTime() - new Date(date).getTime()) / 86400000,
+    );
+    const intervalDays =
+      recurrence.freq === 'DAILY' ? recurrence.interval
+      : recurrence.freq === 'WEEKLY' ? recurrence.interval * 7
+      : recurrence.freq === 'MONTHLY' ? recurrence.interval * 30
+      : recurrence.interval * 365;
+    return durationDays >= intervalDays;
+  })();
+
   const handleSave = () => {
     const validShoppingItems = shoppingItems.filter(i => i.label.trim());
     const patch: EntryPatch = {
@@ -274,30 +298,59 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
         <>
           <div className={SECTION_CLS}>
             <p className={LABEL_CLS}>Datum &amp; Uhrzeit</p>
-            <div className={TIME_GRID_CLS}>
-              <div className="space-y-1">
-                <p className="text-[10px] text-muted-foreground">Datum</p>
-                <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
+            {!isMultiDayMode ? (
+              <div className={TIME_GRID_CLS}>
+                <div className="space-y-1">
+                  <p className="text-[10px] text-muted-foreground">Datum</p>
+                  <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] text-muted-foreground">Von</p>
+                  <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] text-muted-foreground">Bis</p>
+                  <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
+                </div>
               </div>
-              <div className="space-y-1">
-                <p className="text-[10px] text-muted-foreground">Von</p>
-                <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
+            ) : (
+              <div className="space-y-2">
+                <div className="grid grid-cols-[2rem_1fr_1fr] items-end gap-2">
+                  <span className="pb-1.5 text-xs font-medium text-muted-foreground">Von</span>
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-muted-foreground">Datum</p>
+                    <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-muted-foreground">Uhrzeit</p>
+                    <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-[2rem_1fr_1fr] items-end gap-2">
+                  <span className="pb-1.5 text-xs font-medium text-muted-foreground">Bis</span>
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-muted-foreground">Datum</p>
+                    <Input
+                      type="date"
+                      value={endDate}
+                      min={date || undefined}
+                      onChange={e => setEndDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-muted-foreground">Uhrzeit</p>
+                    <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
+                  </div>
+                </div>
               </div>
-              <div className="space-y-1">
-                <p className="text-[10px] text-muted-foreground">Bis</p>
-                <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
-              </div>
-            </div>
-            <div className="space-y-1 mt-2">
-              <p className="text-[10px] text-muted-foreground">Enddatum (optional, für mehrtägige Einträge)</p>
-              <Input
-                type="date"
-                value={endDate}
-                min={date || undefined}
-                onChange={e => setEndDate(e.target.value)}
-                className="sm:max-w-[calc(33.33%-0.5rem)]"
-              />
-            </div>
+            )}
+            <button
+              type="button"
+              onClick={handleToggleMultiDay}
+              className="mt-1.5 text-xs text-sky-600 hover:underline dark:text-sky-400"
+            >
+              {isMultiDayMode ? '– Eintägig' : '+ Mehrtägig'}
+            </button>
             {!startTime && (
               <div className="space-y-1 mt-2">
                 <p className="text-[10px] text-muted-foreground">Grobe Tageszeit</p>
@@ -317,7 +370,12 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
           </div>
           <div className={SECTION_CLS}>
             <p className={LABEL_CLS}>Wiederholung</p>
-            <RecurrencePickerSection value={recurrence} onChange={setRecurrence} />
+            {hasRecurrenceConflict && (
+              <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-800/50 dark:bg-amber-900/20 dark:text-amber-400">
+                Mehrtägiger Termin und Wiederholung überschneiden sich – diese Kombination ist nicht möglich.
+              </p>
+            )}
+            <RecurrencePickerSection value={recurrence} onChange={setRecurrence} disabled={hasRecurrenceConflict} />
           </div>
         </>
       )}
@@ -609,7 +667,7 @@ export function EntryEditForm({ entry, onSave, onCancel, isSaving, bottomSlot }:
         <Button type="button" variant="outline" size="sm" onClick={onCancel} disabled={isSaving}>
           Abbrechen
         </Button>
-        <Button type="button" size="sm" onClick={handleSave} disabled={isSaving}>
+        <Button type="button" size="sm" onClick={handleSave} disabled={isSaving || hasRecurrenceConflict}>
           {isSaving ? 'Speichert…' : 'Speichern'}
         </Button>
       </div>
